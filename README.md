@@ -1,0 +1,244 @@
+# Trimsock
+
+Trimsock is a stream-based communication protocol that:
+
+* is easy to implement
+* is human-readable
+* supports binary
+* can support most use cases via conventions
+
+It is intended for situations where most common protocols ( e.g. HTTP,
+WebSockets ) are overkill, yet a structured way for exchanging data is still
+needed. This can mean, among others, cases where pulling in a full-fledged HTTP
+/ WebSocket / other implementation would increase binary sizes too much, or
+cases where most of the protocol's features would be unused.
+
+## Specification
+
+> [!WARNING]  
+> The specification is still work in progress
+
+### Core
+
+Implementing the core specification is enough for conformance. Additional
+features may be built on top of it as conventions.
+
+#### Commands
+
+Trimsock exchanges *commands*, with each *command* consisting of the *command
+name*, a single space, the *command data* and a single newline character,
+delimiting the command:
+
+```
+[command name] [command data]\n
+```
+
+An example command:
+
+```
+login tom@acme.com:ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f
+```
+
+A *command* may omit the *command data*:
+
+```
+[command name] \n
+```
+
+Note that even without *command data*, the space character is required.
+
+*Commands* MUST be parsed as UTF-8 strings.
+
+#### Escape sequences in command data
+
+If the *command data* contains spaces, newlines, or any other character that is
+used by the protocol itself, it can be escaped. The following escape sequences
+are recognized:
+
+| Character | Escape sequence | Byte sequence (hexadecimal) |
+|-----------|-----------------|-----------------------------|
+| `\n`      | `\\n`           | `0x5C 0x6E`                 |
+| `\b`      | `\\b`           | `0x5C 0x62`                 |
+
+>[!NOTE]
+> Both the *Character* and *Escape sequence* columns are written as [C escape
+> sequences].
+
+#### Reserved characters in command names
+
+The conventions described later on use certain characters to encode extra
+information in command names. To avoid conflicting with these, implementations
+SHOULD NOT use the following characters in command names, unless implementing a
+convention that requires it:
+
+- `?`
+- `.`
+- `!`
+- `|`
+
+#### Binary data
+
+To support transmitting binary data, *command data* may be prefixed with the
+string `\b` ( backspace ), and a number declaring the size of the binary data.
+
+The receiving party must consider the next *n* bytes after the prefix sequence
+as binary. Once the binary data has been received, the command is terminated
+with the newline character.
+
+```
+[command name] \b[data size in bytes]\b[binary data]\n
+```
+
+Implementations may impose their own limits on the size of binary data, for
+security reasons.
+
+Example:
+
+```
+set-picture \b1524\b...\n
+```
+
+### Conventions
+
+Conventions build on top of the base specifications. They do so in a way that
+produces commands still adhering to the base specification. In other words, if
+a given implementation does not recognize a given convention, it can still at
+least parse the convention's commands.
+
+#### Multiple command parameters
+
+In case a command needs multiple parameters instead of a single *command data*
+blob, implementations may split the *command data* into multiple *command
+parameters*.
+
+This is done by splitting the *command data* at every space character:
+
+```
+[command name] [command parameter] [command parameter] [...]\n
+```
+
+For example:
+
+```
+set-user-details Tom Acme tom@acme.com
+```
+
+For this conventions, implementations MUST recognize the following escape
+sequence:
+
+| Character | Escape sequence | Byte sequence (hexadecimal) |
+|-----------|-----------------|-----------------------------|
+| ` `       | `\\s`           | `0x5C 0x73`                 |
+
+This allows *command parameters* to contain space characters.
+
+#### Request-response pairs
+
+A common use case is requesting some data, and then receiving it in a response
+message.
+
+To support this, *command names* may be extended with a *request id* that
+uniquely identifies the request-response exchange:
+
+```
+[command name]?[request-id] [command data]\n
+```
+
+This initiates a request with the given ID. Later commands can use this ID to
+uniquely identify the request they're responding to.
+
+Note that to an implementation that does not handle request-response pairs,
+this is still a valid command.
+
+The *request ID* must be a string unique to the connection. Implementations are
+free to choose their own approach, for example sequential IDs, [UUIDs], or
+[nanoids].
+
+Once a request is received, a response MUST be sent with the same request ID.
+If the request was successfully processed, send a *success response* in the
+following form:
+
+```
+.[request-id] [command data]\n
+```
+
+If the request cannot be processed, send an *error response*:
+
+```
+![request-id] [command data]\n
+```
+
+The contents of the *command data* are entirely up to the application - among
+others, it can be used to indicate why the request wasn't processed.
+
+For every request, only a single response MUST be sent. Further responses MUST NOT
+be considered. Implementations MAY discard further responses, or they MAY raise
+an error. Implementations MAY reuse request ID's, as long as that causes no
+ambiguity.
+
+An example request-response flow:
+
+```
+>>> login?pDYqh3ghn241 tom@acme.com:3dff73672811dcd9f93f3dd86ce4e04960b46e10827a55418c7cc35d596e9662\n
+>>> !pDYqh3ghn241 Wrong password!
+>>> login?i6QhjOtphK2m tom@acme.com:ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f\n
+<<< .i6QhjOtphK2m OK\n
+```
+
+#### Streaming
+
+Large amounts of data can be impractical to transmit in one large *command*.
+Instead, multiple commands are sent in order, each with a chunk of the full
+data.
+
+Streams may be initiated by the sender, or sent in response to a request.
+
+When initiated by the sender, the first message MUST denote the *command name*
+and the *stream ID*, along with the first data chunk:
+
+```
+[command name]|[stream-id] [data chunk]\n
+```
+
+If the stream is initiated in response to a request, the request ID MUST be
+used as the stream ID. The command name MUST NOT be included:
+
+```
+|[stream-id] [data chunk]\n
+```
+
+This first command is also used to transmit the first chunk of data.
+
+From here, each data chunk is sent in the same format:
+
+```
+|[stream-id] [data chunk]\n
+```
+
+Once all the data has been sent, the stream MUST be terminated with an empty
+data chunk:
+
+```
+|[stream-id] \n
+```
+
+An example stream exchange, combined with request-response pairs:
+
+```
+>>> get-file|AUygn0OwMgYu big-video.mp4
+<<< |AUygn0OwMgYu \b1024...\n
+<<< |AUygn0OwMgYu \b1024...\n
+<<< |AUygn0OwMgYu \b1024...\n
+<<< |AUygn0OwMgYu \n
+```
+
+>[!NOTE]
+> While the [Request-response pairs] convention specifies that only one
+> *response command* can be sent for a request, *stream commands* are exempt from
+> this rule, with the virtue of being a different kind of command.
+
+
+[C escape sequences]: https://en.wikipedia.org/wiki/Escape_sequences_in_C#Escape_sequences
+[UUIDs]: https://en.wikipedia.org/wiki/Universally_unique_identifier
+[nanoids]: https://github.com/ai/nanoid
+[Request-response pairs]: #request-response-pairs
