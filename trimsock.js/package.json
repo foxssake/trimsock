@@ -2,7 +2,13 @@
   "name": "trimsock",
   "module": "index.ts",
   "type": "module",
+  "scripts": {
+    "format": "biome format",
+    "lint": "biome lint",
+    "check": "biome check"
+  },
   "devDependencies": {
+    "@biomejs/biome": "1.9.4",
     "@types/bun": "latest"
   },
   "peerDependencies": {
