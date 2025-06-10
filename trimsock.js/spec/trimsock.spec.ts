@@ -40,7 +40,7 @@ describe("Trimsock", () => {
 
   test("should parse binary command in multiple chunks", () => {
     const trimsock = new Trimsock();
-    const inputs = ["comma", "nd \b4", "\bf\x00", "o\n"];
+    const inputs = ["comma", "nd \b4", "\bf\x00", "ox\n"];
 
     const results = inputs
       .map(input => Buffer.from(input, "ascii"))
@@ -49,7 +49,8 @@ describe("Trimsock", () => {
     expect(results).toEqual([
       [],
       [],
-      [{ name: "command", data: Buffer.from("f\x00o", "ascii")}]
+      [],
+      [{ name: "command", data: Buffer.from("f\x00ox", "ascii")}]
     ]);
   })
 })
