@@ -8,102 +8,45 @@ export interface ParseError {
 }
 
 const BS = 0x08;
-const NL = 0x0A;
+const NL = 0x0a;
 const SP = 0x20;
 
 enum ParserState {
-  COMMAND_NAME,
-  STRING_DATA,
-  BIN_DATA_PREFIX,
-  BIN_DATA_BODY,
-  BIN_DATA_CLOSE
-};
+  COMMAND_NAME = 0,
+  STRING_DATA = 1,
+  BIN_DATA_PREFIX = 2,
+  BIN_DATA_BODY = 3,
+  BIN_DATA_CLOSE = 4,
+}
 
 export class Trimsock {
-  private maxCommandSize: number = 16384;
-  private commandName: string = "";
+  private commandName = "";
   private commandDataChunks: Array<Buffer> = [];
-  private commandSizeString: string = "";
-  private binaryRemaining: number = 0;
+  private commandSizeString = "";
+  private binaryRemaining = 0;
   private state: ParserState = ParserState.COMMAND_NAME;
 
-  get status(): object {
-    return {
-      state: this.state,
-      name: this.commandName,
-      data: Buffer.concat(this.commandDataChunks),
-      size: this.commandSizeString,
-      remaining: this.binaryRemaining
-    }
-  }
+  public maxCommandSize = 16384;
 
   ingest(buffer: Buffer): Array<Command | ParseError> {
     const result: Array<Command | ParseError> = [];
-    for (let i = 0; i < buffer.byteLength;) {
-      if (this.state == ParserState.COMMAND_NAME) {
-        const spPos = buffer.indexOf(SP, i);
-
-        if (spPos < 0) {
-          this.commandName += buffer.toString("ascii", i, buffer.length);
+    for (let i = 0; i < buffer.byteLength && i >= 0; ) {
+      switch (this.state) {
+        case ParserState.COMMAND_NAME:
+          i = this.ingestCommandName(buffer, i, result);
           break;
-        } else {
-          this.commandName += buffer.toString("ascii", i, spPos);
-          i = spPos + 1;
-          this.state = ParserState.STRING_DATA;
-        }
-      } else if (this.state == ParserState.STRING_DATA) {
-        if (buffer[i] == BS) {
-          // Switch to binary
-          this.state = ParserState.BIN_DATA_PREFIX;
-          i += 1;
-          continue;
-        }
-
-        const nlPos = buffer.indexOf(NL, i);
-        if (nlPos < 0) {
-          this.commandDataChunks.push(Buffer.copyBytesFrom(buffer, i));
+        case ParserState.STRING_DATA:
+          i = this.ingestStringBody(buffer, i, result);
           break;
-        } else {
-          this.commandDataChunks.push(Buffer.copyBytesFrom(buffer, i, nlPos - i));
-          i = nlPos + 1;
-          result.push(this.emitCommand());
-        }
-      } else if (this.state == ParserState.BIN_DATA_PREFIX) {
-        const bsPos = buffer.indexOf(BS, i);
-
-        if (bsPos < 0) {
-          this.commandSizeString += buffer.toString("ascii", i);
+        case ParserState.BIN_DATA_PREFIX:
+          i = this.ingestBinPrefix(buffer, i, result);
           break;
-        } else {
-          this.commandSizeString += buffer.toString("ascii", i, bsPos);
-          i = bsPos + 1;
-
-          const size = parseInt(this.commandSizeString);
-          if (!isFinite(size)) {
-            result.push({ error: `Invalid command size: ${this.commandSizeString}` });
-            this.state = ParserState.COMMAND_NAME; // Try parsing more commands
-            continue;
-          }
-
-          this.state = ParserState.BIN_DATA_BODY;
-          this.binaryRemaining = size;
-        }
-      } else if (this.state == ParserState.BIN_DATA_BODY) {
-        const bytesAvailable = Math.min(this.binaryRemaining, buffer.byteLength - i);
-        this.commandDataChunks.push(Buffer.copyBytesFrom(buffer, i, bytesAvailable));
-
-        i += bytesAvailable;
-        this.binaryRemaining -= bytesAvailable;
-
-        if (this.binaryRemaining == 0)
-          this.state = ParserState.BIN_DATA_CLOSE;
-      } else if (this.state == ParserState.BIN_DATA_CLOSE) {
-        if (buffer[i] != NL)
-          result.push({ error: `Expected command terminating byte NL, got ${buffer[i]}!` });
-        
-        result.push(this.emitCommand());
-        this.state = ParserState.COMMAND_NAME;
-        i += 1;
+        case ParserState.BIN_DATA_BODY:
+          i = this.ingestBinBody(buffer, i, result);
+          break;
+        case ParserState.BIN_DATA_CLOSE:
+          i = this.ingestBinEnd(buffer, i, result);
+          break;
       }
     }
 
@@ -118,11 +61,111 @@ export class Trimsock {
     return Buffer.of(); // TODO
   }
 
+  private ingestCommandName(
+    buffer: Buffer,
+    at: number,
+    output: Array<Command | ParseError>,
+  ): number {
+    const spPos = buffer.indexOf(SP, at);
+
+    if (spPos < 0) {
+      this.commandName += buffer.toString("ascii", at, buffer.length);
+      return -1;
+    }
+
+    this.commandName += buffer.toString("ascii", at, spPos);
+    this.state = ParserState.STRING_DATA;
+    return spPos + 1;
+  }
+
+  private ingestStringBody(
+    buffer: Buffer,
+    at: number,
+    output: Array<Command | ParseError>,
+  ): number {
+    if (buffer[at] === BS) {
+      // Switch to binary
+      this.state = ParserState.BIN_DATA_PREFIX;
+      return at + 1;
+    }
+
+    const nlPos = buffer.indexOf(NL, at);
+    if (nlPos < 0) {
+      this.commandDataChunks.push(Buffer.copyBytesFrom(buffer, at));
+      return -1;
+    }
+    this.commandDataChunks.push(Buffer.copyBytesFrom(buffer, at, nlPos - at));
+    output.push(this.emitCommand());
+    return nlPos + 1;
+  }
+
+  private ingestBinPrefix(
+    buffer: Buffer,
+    at: number,
+    output: Array<Command | ParseError>,
+  ): number {
+    const bsPos = buffer.indexOf(BS, at);
+
+    if (bsPos < 0) {
+      this.commandSizeString += buffer.toString("ascii", at);
+      return -1;
+    }
+    this.commandSizeString += buffer.toString("ascii", at, bsPos);
+
+    const size = Number.parseInt(this.commandSizeString);
+    if (!Number.isFinite(size)) {
+      output.push({
+        error: `Invalid command size: ${this.commandSizeString}`,
+      });
+      this.state = ParserState.COMMAND_NAME; // Try parsing more commands
+      return at + 1;
+    }
+
+    this.state = ParserState.BIN_DATA_BODY;
+    this.binaryRemaining = size;
+
+    return bsPos + 1;
+  }
+
+  private ingestBinBody(
+    buffer: Buffer,
+    at: number,
+    output: Array<Command | ParseError>,
+  ): number {
+    const bytesAvailable = Math.min(
+      this.binaryRemaining,
+      buffer.byteLength - at,
+    );
+    this.commandDataChunks.push(
+      Buffer.copyBytesFrom(buffer, at, bytesAvailable),
+    );
+
+    this.binaryRemaining -= bytesAvailable;
+    if (this.binaryRemaining === 0) this.state = ParserState.BIN_DATA_CLOSE;
+
+    return at + bytesAvailable;
+  }
+
+  private ingestBinEnd(
+    buffer: Buffer,
+    at: number,
+    output: Array<Command | ParseError>,
+  ): number {
+    if (buffer[at] !== NL)
+      output.push({
+        error: `Expected command terminating byte NL, got ${buffer[at]}!`,
+      });
+
+    output.push(this.emitCommand());
+    this.state = ParserState.COMMAND_NAME;
+    return at + 1;
+  }
+
   private emitCommand(): Command {
     const result = {
       name: this.commandName,
-      data: Buffer.concat(this.commandDataChunks)
-    }
+      data: Buffer.concat(this.commandDataChunks),
+    };
 
     this.commandName = "";
     this.commandDataChunks = [];
