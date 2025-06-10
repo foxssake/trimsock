@@ -54,11 +54,18 @@ export class Trimsock {
   }
 
   asString(command: Command): string {
-    return ""; // TODO
+    return `${this.escapeCommandName(command.name)} ${this.escapeCommandData(command.data)}\n`;
   }
 
   asBinary(command: Command): Buffer {
-    return Buffer.of(); // TODO
+    return Buffer.concat([
+      Buffer.from(
+        `${this.escapeCommandName(command.name)} \b${command.data.byteLength}\b`,
+        "ascii",
+      ),
+      command.data,
+      Buffer.from("\n", "ascii"),
+    ]);
   }
 
   private ingestCommandName(
@@ -171,5 +178,26 @@ export class Trimsock {
     this.commandDataChunks = [];
 
     return result;
+  }
+
+  private escapeCommandName(name: string): string {
+    if (name.includes("\n") || name.includes("\b") || name.includes(" ")) {
+      return name
+        .replaceAll("\n", "\\n")
+        .replaceAll("\b", "\\b")
+        .replaceAll(" ", "\\s");
+    }
+
+    return name;
+  }
+
+  private escapeCommandData(buffer: Buffer): string {
+    const data = buffer.toString("ascii");
+    if (data.includes("\n") || data.includes("\b")) {
+      // Escape data if needed
+      return data.replaceAll("\n", "\\n").replaceAll("\b", "\\b");
+    }
+
+    return data;
   }
 }

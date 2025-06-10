@@ -75,6 +75,7 @@ convention that requires it:
 - `.`
 - `!`
 - `|`
+- `$`
 
 #### Binary data
 
