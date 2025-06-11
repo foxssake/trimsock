@@ -17,6 +17,8 @@ enum ParserState {
   BIN_DATA_PREFIX = 2,
   BIN_DATA_BODY = 3,
   BIN_DATA_CLOSE = 4,
+  SKIP_TO_NL = 5,
+  SKIP_BIN = 6
 }
 
 export class Trimsock {
@@ -47,6 +49,12 @@ export class Trimsock {
         case ParserState.BIN_DATA_CLOSE:
           i = this.ingestBinEnd(buffer, i, result);
           break;
+        case ParserState.SKIP_TO_NL:
+          i = this.ingestSkipToNl(buffer, i, result);
+          break;
+        case ParserState.SKIP_BIN:
+          i = this.ingestSkipBin(buffer, i, result);
+          break;
       }
     }
 
@@ -73,15 +81,19 @@ export class Trimsock {
     at: number,
     output: Array<Command | ParseError>,
   ): number {
-    const spPos = buffer.indexOf(SP, at);
+    let spPos = buffer.indexOf(SP, at);
 
-    if (spPos < 0) {
-      this.commandName += buffer.toString("ascii", at, buffer.length);
-      return -1;
+    if (spPos < 0) spPos = buffer.byteLength;
+    else this.state = ParserState.STRING_DATA;
+
+    if (this.queuedCommandLength() + (spPos - at) > this.maxCommandSize) {
+      output.push({ error: `Command length is above the allowed ${this.maxCommandSize} bytes!` });
+      this.state = ParserState.SKIP_TO_NL;
+      this.clearCommand();
+    } else {
+      this.commandName += buffer.toString("ascii", at, spPos);
     }
 
-    this.commandName += buffer.toString("ascii", at, spPos);
-    this.state = ParserState.STRING_DATA;
     return spPos + 1;
   }
 
@@ -96,13 +108,22 @@ export class Trimsock {
       return at + 1;
     }
 
-    const nlPos = buffer.indexOf(NL, at);
-    if (nlPos < 0) {
-      this.commandDataChunks.push(Buffer.copyBytesFrom(buffer, at));
-      return -1;
+    let nlPos = buffer.indexOf(NL, at);
+    const isTerminated = nlPos >= 0;
+
+    if (nlPos < 0) nlPos = buffer.byteLength;
+    else this.state = ParserState.COMMAND_NAME;
+
+    if (this.queuedCommandLength() + (nlPos - at) > this.maxCommandSize) {
+      output.push({ error: `Command length is above the allowed ${this.maxCommandSize} bytes!` });
+      this.state = ParserState.SKIP_TO_NL;
+      this.clearCommand();
+      return nlPos + 1;
     }
+
     this.commandDataChunks.push(Buffer.copyBytesFrom(buffer, at, nlPos - at));
-    output.push(this.emitCommand());
+    if (isTerminated) output.push(this.emitCommand());
+
     return nlPos + 1;
   }
 
@@ -130,6 +151,13 @@ export class Trimsock {
 
     this.state = ParserState.BIN_DATA_BODY;
     this.binaryRemaining = size;
+
+    if (this.queuedCommandLength() + size > this.maxCommandSize) {
+      output.push({ error: `Command length is above the allowed ${this.maxCommandSize} bytes!` });
+      this.clearCommand();
+      this.state = ParserState.SKIP_BIN;
+      this.binaryRemaining++;
+    }
 
     return bsPos + 1;
   }
@@ -168,6 +196,34 @@ export class Trimsock {
     return at + 1;
   }
 
+  private ingestSkipToNl(
+    buffer: Buffer,
+    at: number,
+    output: Array<Command | ParseError>,
+  ): number {
+    const nlPos = buffer.indexOf(NL, at);
+    if (nlPos >= 0) {
+      this.state = ParserState.COMMAND_NAME;
+      return nlPos + 1;
+    } else {
+      return -1;
+    }
+  }
+
+  private ingestSkipBin(
+    buffer: Buffer,
+    at: number,
+    output: Array<Command | ParseError>,
+  ): number {
+    const step = Math.min(buffer.byteLength - at, this.binaryRemaining);
+    this.binaryRemaining -= step;
+    
+    if (this.binaryRemaining == 0)
+      this.state = ParserState.COMMAND_NAME;
+
+    return at + step;
+  }
+
   private emitCommand(): Command {
     const data = Buffer.concat(this.commandDataChunks).toString("ascii");
 
@@ -176,10 +232,18 @@ export class Trimsock {
       data: Buffer.from(this.unescape(data)),
     };
 
+    this.clearCommand();
+    return result;
+  }
+
+  private clearCommand(): void {
     this.commandName = "";
     this.commandDataChunks = [];
+  }
 
-    return result;
+  private queuedCommandLength(): number {
+    // +2 for the separating space and terminating nl
+    return this.commandName.length + this.commandDataChunks.reduce((a, b) => a + b.byteLength, 0) + 2;
   }
 
   private escapeCommandName(name: string): string {
