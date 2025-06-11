@@ -58,11 +58,14 @@ these special characters are *escaped* based on the following table:
 | Character | Character byte | Escape sequence | Escape bytes |
 |-----------|----------------|-----------------|--------------|
 | `\n`      | `0x0A`         | `\\n`           | `0x5C 0x6E`  |
-| `\b`      | `0x08`         | `\\b`           | `0x5C 0x62`  |
 | ` `       | `0x20`         | `\\s`           | `0x5C 0x73`  |
 
 During parsing, these escape sequences must be replaced with their original
 counterparts.
+
+As only the initial space is considered as a separator between *command name*
+and *command data*, the spaces in the *command data* MAY NOT be escaped. If
+they are, implementations MUST parse them as such.
 
 #### Reserved characters in command names
 
@@ -79,24 +82,14 @@ convention that requires it:
 
 #### Binary data
 
-To support transmitting binary data, *command data* may be prefixed with the
-string `\b` ( backspace ), and a number declaring the size of the binary data.
-
-The receiving party must consider the next *n* bytes after the prefix sequence
-as binary. Once the binary data has been received, the command is terminated
-with the newline character.
-
-```
-[command name] \b[data size in bytes]\b[binary data]\n
-```
-
-Implementations may impose their own limits on the size of binary data, for
-security reasons.
+*Commands* are byte sequences, thus *command data* may contain arbitrary binary
+data. It is up to the receiving party to know whether the *command data* should
+be interpreted as binary or text.
 
 Example:
 
 ```
-set-picture \b1524\b...\n
+set-picture \xFF\xD8\xFF\xE1\x00\x18\x45\x78\x69\x66\x00\x00\x49\x49...\n
 ```
 
 ### Conventions

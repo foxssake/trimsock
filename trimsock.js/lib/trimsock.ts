@@ -7,25 +7,18 @@ export interface ParseError {
   error: string;
 }
 
-const BS = 0x08;
 const NL = 0x0a;
 const SP = 0x20;
 
 enum ParserState {
   COMMAND_NAME = 0,
   STRING_DATA = 1,
-  BIN_DATA_PREFIX = 2,
-  BIN_DATA_BODY = 3,
-  BIN_DATA_CLOSE = 4,
-  SKIP_TO_NL = 5,
-  SKIP_BIN = 6
+  SKIP_TO_NL = 2
 }
 
 export class Trimsock {
   private commandName = "";
   private commandDataChunks: Array<Buffer> = [];
-  private commandSizeString = "";
-  private binaryRemaining = 0;
   private state: ParserState = ParserState.COMMAND_NAME;
 
   public maxCommandSize = 16384;
@@ -40,20 +33,8 @@ export class Trimsock {
         case ParserState.STRING_DATA:
           i = this.ingestStringBody(buffer, i, result);
           break;
-        case ParserState.BIN_DATA_PREFIX:
-          i = this.ingestBinPrefix(buffer, i, result);
-          break;
-        case ParserState.BIN_DATA_BODY:
-          i = this.ingestBinBody(buffer, i, result);
-          break;
-        case ParserState.BIN_DATA_CLOSE:
-          i = this.ingestBinEnd(buffer, i, result);
-          break;
         case ParserState.SKIP_TO_NL:
           i = this.ingestSkipToNl(buffer, i, result);
-          break;
-        case ParserState.SKIP_BIN:
-          i = this.ingestSkipBin(buffer, i, result);
           break;
       }
     }
@@ -63,17 +44,6 @@ export class Trimsock {
 
   asString(command: Command): string {
     return `${this.escapeCommandName(command.name)} ${this.escapeCommandData(command.data)}\n`;
-  }
-
-  asBinary(command: Command): Buffer {
-    return Buffer.concat([
-      Buffer.from(
-        `${this.escapeCommandName(command.name)} \b${command.data.byteLength}\b`,
-        "ascii",
-      ),
-      command.data,
-      Buffer.from("\n", "ascii"),
-    ]);
   }
 
   private ingestCommandName(
@@ -102,12 +72,6 @@ export class Trimsock {
     at: number,
     output: Array<Command | ParseError>,
   ): number {
-    if (buffer[at] === BS) {
-      // Switch to binary
-      this.state = ParserState.BIN_DATA_PREFIX;
-      return at + 1;
-    }
-
     let nlPos = buffer.indexOf(NL, at);
     const isTerminated = nlPos >= 0;
 
@@ -127,75 +91,6 @@ export class Trimsock {
     return nlPos + 1;
   }
 
-  private ingestBinPrefix(
-    buffer: Buffer,
-    at: number,
-    output: Array<Command | ParseError>,
-  ): number {
-    const bsPos = buffer.indexOf(BS, at);
-
-    if (bsPos < 0) {
-      this.commandSizeString += buffer.toString("ascii", at);
-      return -1;
-    }
-    this.commandSizeString += buffer.toString("ascii", at, bsPos);
-
-    const size = Number.parseInt(this.commandSizeString);
-    if (!Number.isFinite(size)) {
-      output.push({
-        error: `Invalid command size: ${this.commandSizeString}`,
-      });
-      this.state = ParserState.COMMAND_NAME; // Try parsing more commands
-      return at + 1;
-    }
-
-    this.state = ParserState.BIN_DATA_BODY;
-    this.binaryRemaining = size;
-
-    if (this.queuedCommandLength() + size > this.maxCommandSize) {
-      output.push({ error: `Command length is above the allowed ${this.maxCommandSize} bytes!` });
-      this.clearCommand();
-      this.state = ParserState.SKIP_BIN;
-      this.binaryRemaining++;
-    }
-
-    return bsPos + 1;
-  }
-
-  private ingestBinBody(
-    buffer: Buffer,
-    at: number,
-    output: Array<Command | ParseError>,
-  ): number {
-    const bytesAvailable = Math.min(
-      this.binaryRemaining,
-      buffer.byteLength - at,
-    );
-    this.commandDataChunks.push(
-      Buffer.copyBytesFrom(buffer, at, bytesAvailable),
-    );
-
-    this.binaryRemaining -= bytesAvailable;
-    if (this.binaryRemaining === 0) this.state = ParserState.BIN_DATA_CLOSE;
-
-    return at + bytesAvailable;
-  }
-
-  private ingestBinEnd(
-    buffer: Buffer,
-    at: number,
-    output: Array<Command | ParseError>,
-  ): number {
-    if (buffer[at] !== NL)
-      output.push({
-        error: `Expected command terminating byte NL, got ${buffer[at]}!`,
-      });
-
-    output.push(this.emitCommand());
-    this.state = ParserState.COMMAND_NAME;
-    return at + 1;
-  }
-
   private ingestSkipToNl(
     buffer: Buffer,
     at: number,
@@ -208,20 +103,6 @@ export class Trimsock {
     } else {
       return -1;
     }
-  }
-
-  private ingestSkipBin(
-    buffer: Buffer,
-    at: number,
-    output: Array<Command | ParseError>,
-  ): number {
-    const step = Math.min(buffer.byteLength - at, this.binaryRemaining);
-    this.binaryRemaining -= step;
-    
-    if (this.binaryRemaining == 0)
-      this.state = ParserState.COMMAND_NAME;
-
-    return at + step;
   }
 
   private emitCommand(): Command {
