@@ -49,20 +49,20 @@ Note that even without *command data*, the space character is required.
 
 *Commands* MUST be parsed as UTF-8 strings.
 
-#### Escape sequences in command data
+#### Escape sequences
 
-If the *command data* contains spaces, newlines, or any other character that is
-used by the protocol itself, it can be escaped. The following escape sequences
-are recognized:
+Both the *command name* and *command data* may want to encode characters that
+are otherwise used for the protocol itself, e.g. newlines. In these cases,
+these special characters are *escaped* based on the following table:
 
-| Character | Escape sequence | Byte sequence (hexadecimal) |
-|-----------|-----------------|-----------------------------|
-| `\n`      | `\\n`           | `0x5C 0x6E`                 |
-| `\b`      | `\\b`           | `0x5C 0x62`                 |
+| Character | Character byte | Escape sequence | Escape bytes |
+|-----------|----------------|-----------------|--------------|
+| `\n`      | `0x0A`         | `\\n`           | `0x5C 0x6E`  |
+| `\b`      | `0x08`         | `\\b`           | `0x5C 0x62`  |
+| ` `       | `0x20`         | `\\s`           | `0x5C 0x73`  |
 
->[!NOTE]
-> Both the *Character* and *Escape sequence* columns are written as [C escape
-> sequences].
+During parsing, these escape sequences must be replaced with their original
+counterparts.
 
 #### Reserved characters in command names
 

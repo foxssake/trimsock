@@ -169,9 +169,11 @@ export class Trimsock {
   }
 
   private emitCommand(): Command {
+    const data = Buffer.concat(this.commandDataChunks).toString("ascii");
+
     const result = {
-      name: this.commandName,
-      data: Buffer.concat(this.commandDataChunks),
+      name: this.unescape(this.commandName),
+      data: Buffer.from(this.unescape(data)),
     };
 
     this.commandName = "";
@@ -181,23 +183,23 @@ export class Trimsock {
   }
 
   private escapeCommandName(name: string): string {
-    if (name.includes("\n") || name.includes("\b") || name.includes(" ")) {
-      return name
-        .replaceAll("\n", "\\n")
-        .replaceAll("\b", "\\b")
-        .replaceAll(" ", "\\s");
-    }
-
-    return name;
+    return name
+      .replaceAll("\n", "\\n")
+      .replaceAll("\b", "\\b")
+      .replaceAll(" ", "\\s");
   }
 
   private escapeCommandData(buffer: Buffer): string {
     const data = buffer.toString("ascii");
-    if (data.includes("\n") || data.includes("\b")) {
-      // Escape data if needed
-      return data.replaceAll("\n", "\\n").replaceAll("\b", "\\b");
-    }
+    return data
+      .replaceAll("\n", "\\n")
+      .replaceAll("\b", "\\b");
+  }
 
-    return data;
+  private unescape(data: string): string {
+    return data
+      .replaceAll("\\s", " ")
+      .replaceAll("\\n", "\n")
+      .replaceAll("\\b", "\b");
   }
 }

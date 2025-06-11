@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { type Command, Trimsock } from "@lib/trimsock";
+import { Trimsock } from "@lib/trimsock";
 
 describe("Trimsock", () => {
   describe("ingest()", () => {
@@ -57,6 +57,24 @@ describe("Trimsock", () => {
         [],
         [{ name: "command", data: Buffer.from("f\x00ox", "ascii") }],
       ]);
+    });
+
+    test("should unescape command name", () => {
+      const trimsock = new Trimsock();
+      const input = Buffer.from("co\\smm\\nand\\b data\n", "ascii");
+      const expected = [
+        { name: "co mm\nand\b", data: Buffer.from("data", "ascii") },
+      ];
+      expect(trimsock.ingest(input)).toEqual(expected);
+    });
+
+    test("should unescape command data", () => {
+      const trimsock = new Trimsock();
+      const input = Buffer.from("command data \\n\\b\\s\n", "ascii");
+      const expected = [
+        { name: "command", data: Buffer.from("data \n\b ", "ascii") },
+      ];
+      expect(trimsock.ingest(input)).toEqual(expected);
     });
   });
 
