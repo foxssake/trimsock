@@ -7,11 +7,7 @@ export interface ParseError {
   error: string;
 }
 
-export interface Trace {
-  message: string;
-}
-
-type ParserOutput = Command | ParseError | Trace;
+export type ParserOutput = Command | ParseError;
 
 const NL = 0x0a;
 const SP = 0x20;

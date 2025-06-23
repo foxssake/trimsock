@@ -1,6 +1,6 @@
 {
   "name": "trimsock",
-  "module": "index.ts",
+  "module": "lib/trimsock.ts",
   "type": "module",
   "scripts": {
     "format": "biome format",
