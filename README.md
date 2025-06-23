@@ -58,6 +58,7 @@ these special characters are *escaped* based on the following table:
 | Character | Character byte | Escape sequence | Escape bytes |
 |-----------|----------------|-----------------|--------------|
 | `\n`      | `0x0A`         | `\\n`           | `0x5C 0x6E`  |
+| `\r`      | `0x0D`         | `\\r`           | `0x5C 0x72`  |
 | ` `       | `0x20`         | `\\s`           | `0x5C 0x73`  |
 
 During parsing, these escape sequences must be replaced with their original
@@ -80,16 +81,24 @@ convention that requires it:
 - `|`
 - `$`
 
-#### Binary data
+#### Raw data
 
-*Commands* are byte sequences, thus *command data* may contain arbitrary binary
-data. It is up to the receiving party to know whether the *command data* should
-be interpreted as binary or text.
+In some cases, it can be beneficial to send larger chunks of data without
+escaping and unescaping the *command data*.
+
+In these cases, commands with *raw data* may be sent, with the following
+format:
+
+```
+\r[command name] [data size in bytes]\n
+[raw data]\n
+```
 
 Example:
 
 ```
-set-picture \xFF\xD8\xFF\xE1\x00\x18\x45\x78\x69\x66\x00\x00\x49\x49...\n
+\rset-picture 1524\n
+\xFF\xD8\xFF\xE1\x00\x18\x45\x78\x69\x66\x00\x00\x49\x49...\n
 ```
 
 ### Conventions

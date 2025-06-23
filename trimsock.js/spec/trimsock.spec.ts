@@ -46,9 +46,9 @@ describe("Trimsock", () => {
 
       test("should unescape command name", () => {
         const trimsock = new Trimsock();
-        const input = Buffer.from("co\\smm\\nand data\n", "ascii");
+        const input = Buffer.from("\\rco\\smm\\nand data\n", "ascii");
         const expected = [
-          { name: "co mm\nand", data: Buffer.from("data", "ascii") },
+          { name: "\rco mm\nand", data: Buffer.from("data", "ascii") },
         ];
         expect(trimsock.ingest(input)).toEqual(expected);
       });
@@ -61,6 +61,32 @@ describe("Trimsock", () => {
         ];
         expect(trimsock.ingest(input)).toEqual(expected);
       });
+
+      test("should parse raw data", () => {
+        const trimsock = new Trimsock();
+        const input = Buffer.from("\rcommand 4\n\n\n\n \n")
+        const expected = [
+          { name: "command", data: Buffer.from("\n\n\n ", "ascii")}
+        ]
+        expect(trimsock.ingest(input)).toEqual(expected);
+      })
+
+      test("should parse raw data in chunks", () => {
+        const trimsock = new Trimsock();
+        const inputs = ["\rcomma", "nd 1", "0\n0123", "45678", "9\n"];
+
+        const results = inputs
+          .map((input) => Buffer.from(input, "ascii"))
+          .map((input) => trimsock.ingest(input));
+
+        expect(results).toEqual([
+          [],
+          [],
+          [],
+          [],
+          [{ name: "command", data: Buffer.from("0123456789", "ascii") }],
+        ]);
+      })
     })
 
     describe("commands exceeding size limit", () => {
@@ -75,7 +101,7 @@ describe("Trimsock", () => {
 
         expect(results).toEqual([
           [],
-          [{ error: "Command length is above the allowed 6 bytes!" }],
+          [{ error: "Expected command length 9 is above the allowed 6 bytes!" }],
           [],
           [{ name: "cmd", data: Buffer.of() }],
         ]);
@@ -93,7 +119,25 @@ describe("Trimsock", () => {
         expect(results).toEqual([
           [],
           [],
-          [{ error: "Command length is above the allowed 10 bytes!" }],
+          [{ error: "Expected command length 11 is above the allowed 10 bytes!" }],
+          [{ name: "cmd", data: Buffer.of() }],
+        ]);
+      })
+
+      test("should ignore if raw command data exceeds max size", () => {
+        const trimsock = new Trimsock();
+        trimsock.maxCommandSize = 12;
+        const inputs = ["\rcom", "mand ", "16", "\nfoo bar quix", " oof\ncmd \n"];
+
+        const results = inputs
+          .map((input) => Buffer.from(input, "ascii"))
+          .map((input) => trimsock.ingest(input));
+
+        expect(results).toEqual([
+          [],
+          [],
+          [],
+          [{ error: "Queued raw data of 16 bytes is larger than max command size of 12 bytes" }],
           [{ name: "cmd", data: Buffer.of() }],
         ]);
       })
@@ -116,6 +160,7 @@ describe("Trimsock", () => {
         "com\\nmand data\n",
       ],
       ["should escape space in name", "comm and", "data", "comm\\sand data\n"],
+      ["should escape \\r in name", "\rcommand", "data", "\\rcommand data\n"]
     ];
 
     for (const kase of kases) {
