@@ -17,13 +17,13 @@ enum ParserState {
   STRING_DATA = 1,
   RAW_DATA = 2,
   SKIP_TO_NL = 3,
-  SKIP_RAW = 4
+  SKIP_RAW = 4,
 }
 
 export class Trimsock {
   private commandName = "";
   private commandDataChunks: Array<Buffer> = [];
-  private rawBytesRemaining: number = 0;
+  private rawBytesRemaining = 0;
   private state: ParserState = ParserState.COMMAND_NAME;
 
   public maxCommandSize = 16384;
@@ -71,9 +71,11 @@ export class Trimsock {
     if (spPos < 0) spPos = buffer.byteLength;
     else this.state = ParserState.STRING_DATA;
 
-    const expectedSize = this.queuedCommandLength() + (spPos - at)
+    const expectedSize = this.queuedCommandLength() + (spPos - at);
     if (expectedSize > this.maxCommandSize) {
-      output.push({ error: `Expected command length ${expectedSize} is above the allowed ${this.maxCommandSize} bytes!` });
+      output.push({
+        error: `Expected command length ${expectedSize} is above the allowed ${this.maxCommandSize} bytes!`,
+      });
       this.state = ParserState.SKIP_TO_NL;
       this.clearCommand();
     } else {
@@ -94,10 +96,12 @@ export class Trimsock {
     if (nlPos < 0) nlPos = buffer.byteLength;
     else this.state = ParserState.COMMAND_NAME;
 
-    const expectedSize = this.queuedCommandLength() + (nlPos - at)
+    const expectedSize = this.queuedCommandLength() + (nlPos - at);
 
     if (expectedSize > this.maxCommandSize) {
-      output.push({ error: `Expected command length ${expectedSize} is above the allowed ${this.maxCommandSize} bytes!` });
+      output.push({
+        error: `Expected command length ${expectedSize} is above the allowed ${this.maxCommandSize} bytes!`,
+      });
       this.state = ParserState.SKIP_TO_NL;
       this.clearCommand();
       return nlPos + 1;
@@ -106,26 +110,29 @@ export class Trimsock {
     this.commandDataChunks.push(Buffer.copyBytesFrom(buffer, at, nlPos - at));
     if (isTerminated) {
       // TODO: Extract to method
-      if (this.commandName.at(0) == "\r") {
+      if (this.commandName.at(0) === "\r") {
         // Raw data
-        const sizeString = Buffer.concat(this.commandDataChunks).toString("ascii");
-        this.rawBytesRemaining = parseInt(sizeString);
+        const sizeString = Buffer.concat(this.commandDataChunks).toString(
+          "ascii",
+        );
+        this.rawBytesRemaining = Number.parseInt(sizeString);
 
-        if (!isFinite(this.rawBytesRemaining)) {
-          output.push({ error: `Invalid size string: ${sizeString}` })
+        if (!Number.isFinite(this.rawBytesRemaining)) {
+          output.push({ error: `Invalid size string: ${sizeString}` });
           return nlPos + 1;
         }
 
         if (this.rawBytesRemaining > this.maxCommandSize) {
-          output.push({ error: `Queued raw data of ${sizeString} bytes is larger than max command size of ${this.maxCommandSize} bytes` })
+          output.push({
+            error: `Queued raw data of ${sizeString} bytes is larger than max command size of ${this.maxCommandSize} bytes`,
+          });
           this.state = ParserState.SKIP_RAW;
           return nlPos + 1;
         }
 
         this.state = ParserState.RAW_DATA;
         this.commandDataChunks = [];
-      } else
-        output.push(this.emitCommand());
+      } else output.push(this.emitCommand());
     }
 
     return nlPos + 1;
@@ -136,22 +143,26 @@ export class Trimsock {
     at: number,
     output: Array<ParserOutput>,
   ): number {
-    if (this.rawBytesRemaining == 0) {
+    if (this.rawBytesRemaining === 0) {
       // Bytes already ingested, waiting for terminating newline
       this.state = ParserState.COMMAND_NAME;
 
-      if (buffer.at(at) != NL) {
-        output.push({ error: `Expected NL after raw command data, got "${String.fromCodePoint(buffer.at(at) ?? 0)}" ( ${buffer.at(at)} )` });
+      if (buffer.at(at) !== NL) {
+        output.push({
+          error: `Expected NL after raw command data, got "${String.fromCodePoint(buffer.at(at) ?? 0)}" ( ${buffer.at(at)} )`,
+        });
       }
 
       return at + 1;
     }
 
     const bytesAvailable = Math.min(buffer.length - at, this.rawBytesRemaining);
-    this.commandDataChunks.push(Buffer.copyBytesFrom(buffer, at, bytesAvailable));
+    this.commandDataChunks.push(
+      Buffer.copyBytesFrom(buffer, at, bytesAvailable),
+    );
     this.rawBytesRemaining -= bytesAvailable;
 
-    if (this.rawBytesRemaining == 0) {
+    if (this.rawBytesRemaining === 0) {
       output.push(this.emitRawCommand());
     }
 
@@ -167,9 +178,8 @@ export class Trimsock {
     if (nlPos >= 0) {
       this.state = ParserState.COMMAND_NAME;
       return nlPos + 1;
-    } else {
-      return -1;
     }
+    return -1;
   }
 
   private ingestSkipRaw(
@@ -177,12 +187,14 @@ export class Trimsock {
     at: number,
     output: Array<ParserOutput>,
   ): number {
-    if (this.rawBytesRemaining == 0) {
+    if (this.rawBytesRemaining === 0) {
       // Bytes already ingested, waiting for terminating newline
       this.state = ParserState.COMMAND_NAME;
 
-      if (buffer.at(at) != NL) {
-        output.push({ error: `Expected NL after raw command data, got "${String.fromCodePoint(buffer.at(at) ?? 0)}" ( ${buffer.at(at)} )` });
+      if (buffer.at(at) !== NL) {
+        output.push({
+          error: `Expected NL after raw command data, got "${String.fromCodePoint(buffer.at(at) ?? 0)}" ( ${buffer.at(at)} )`,
+        });
       }
 
       this.clearCommand();
@@ -190,7 +202,9 @@ export class Trimsock {
     }
 
     const bytesAvailable = Math.min(buffer.length - at, this.rawBytesRemaining);
-    this.commandDataChunks.push(Buffer.copyBytesFrom(buffer, at, bytesAvailable));
+    this.commandDataChunks.push(
+      Buffer.copyBytesFrom(buffer, at, bytesAvailable),
+    );
     this.rawBytesRemaining -= bytesAvailable;
 
     return at + bytesAvailable;
@@ -224,7 +238,11 @@ export class Trimsock {
 
   private queuedCommandLength(): number {
     // +2 for the separating space and terminating nl
-    return this.commandName.length + this.commandDataChunks.reduce((a, b) => a + b.byteLength, 0) + 2;
+    return (
+      this.commandName.length +
+      this.commandDataChunks.reduce((a, b) => a + b.byteLength, 0) +
+      2
+    );
   }
 
   private escapeCommandName(name: string): string {
