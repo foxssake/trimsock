@@ -1,0 +1,269 @@
+export interface Command {
+  name: string;
+  data: Buffer;
+}
+
+export interface ParseError {
+  error: string;
+}
+
+export type ParserOutput = Command | ParseError;
+
+const NL = 0x0a;
+const SP = 0x20;
+
+enum ParserState {
+  COMMAND_NAME = 0,
+  STRING_DATA = 1,
+  RAW_DATA = 2,
+  SKIP_TO_NL = 3,
+  SKIP_RAW = 4,
+}
+
+export class Trimsock {
+  private commandName = "";
+  private commandDataChunks: Array<Buffer> = [];
+  private rawBytesRemaining = 0;
+  private state: ParserState = ParserState.COMMAND_NAME;
+
+  public maxCommandSize = 16384;
+
+  ingest(buffer: Buffer): Array<ParserOutput> {
+    const result: Array<ParserOutput> = [];
+    for (let i = 0; i < buffer.byteLength && i >= 0; ) {
+      switch (this.state) {
+        case ParserState.COMMAND_NAME:
+          i = this.ingestCommandName(buffer, i, result);
+          break;
+        case ParserState.STRING_DATA:
+          i = this.ingestStringBody(buffer, i, result);
+          break;
+        case ParserState.RAW_DATA:
+          i = this.ingestRawBody(buffer, i, result);
+          break;
+        case ParserState.SKIP_TO_NL:
+          i = this.ingestSkipToNl(buffer, i, result);
+          break;
+        case ParserState.SKIP_RAW:
+          i = this.ingestSkipRaw(buffer, i, result);
+          break;
+      }
+    }
+
+    return result;
+  }
+
+  asString(command: Command): string {
+    return `${this.escapeCommandName(command.name)} ${this.escapeCommandData(command.data)}\n`;
+  }
+
+  asRawString(command: Command): string {
+    return `${this.escapeCommandName(command.name)} ${command.data.byteLength}\n${command.data.toString("ascii")}\n`;
+  }
+
+  private ingestCommandName(
+    buffer: Buffer,
+    at: number,
+    output: Array<ParserOutput>,
+  ): number {
+    let spPos = buffer.indexOf(SP, at);
+
+    if (spPos < 0) spPos = buffer.byteLength;
+    else this.state = ParserState.STRING_DATA;
+
+    const expectedSize = this.queuedCommandLength() + (spPos - at);
+    if (expectedSize > this.maxCommandSize) {
+      output.push({
+        error: `Expected command length ${expectedSize} is above the allowed ${this.maxCommandSize} bytes!`,
+      });
+      this.state = ParserState.SKIP_TO_NL;
+      this.clearCommand();
+    } else {
+      this.commandName += buffer.toString("ascii", at, spPos);
+    }
+
+    return spPos + 1;
+  }
+
+  private ingestStringBody(
+    buffer: Buffer,
+    at: number,
+    output: Array<ParserOutput>,
+  ): number {
+    let nlPos = buffer.indexOf(NL, at);
+    const isTerminated = nlPos >= 0;
+
+    if (nlPos < 0) nlPos = buffer.byteLength;
+    else this.state = ParserState.COMMAND_NAME;
+
+    const expectedSize = this.queuedCommandLength() + (nlPos - at);
+
+    if (expectedSize > this.maxCommandSize) {
+      output.push({
+        error: `Expected command length ${expectedSize} is above the allowed ${this.maxCommandSize} bytes!`,
+      });
+      this.state = ParserState.SKIP_TO_NL;
+      this.clearCommand();
+      return nlPos + 1;
+    }
+
+    this.commandDataChunks.push(Buffer.copyBytesFrom(buffer, at, nlPos - at));
+    if (isTerminated) {
+      // TODO: Extract to method
+      if (this.commandName.at(0) === "\r") {
+        // Raw data
+        const sizeString = Buffer.concat(this.commandDataChunks).toString(
+          "ascii",
+        );
+        this.rawBytesRemaining = Number.parseInt(sizeString);
+
+        if (!Number.isFinite(this.rawBytesRemaining)) {
+          output.push({ error: `Invalid size string: ${sizeString}` });
+          return nlPos + 1;
+        }
+
+        if (this.rawBytesRemaining > this.maxCommandSize) {
+          output.push({
+            error: `Queued raw data of ${sizeString} bytes is larger than max command size of ${this.maxCommandSize} bytes`,
+          });
+          this.state = ParserState.SKIP_RAW;
+          return nlPos + 1;
+        }
+
+        this.state = ParserState.RAW_DATA;
+        this.commandDataChunks = [];
+      } else output.push(this.emitCommand());
+    }
+
+    return nlPos + 1;
+  }
+
+  private ingestRawBody(
+    buffer: Buffer,
+    at: number,
+    output: Array<ParserOutput>,
+  ): number {
+    if (this.rawBytesRemaining === 0) {
+      // Bytes already ingested, waiting for terminating newline
+      this.state = ParserState.COMMAND_NAME;
+
+      if (buffer.at(at) !== NL) {
+        output.push({
+          error: `Expected NL after raw command data, got "${String.fromCodePoint(buffer.at(at) ?? 0)}" ( ${buffer.at(at)} )`,
+        });
+      }
+
+      return at + 1;
+    }
+
+    const bytesAvailable = Math.min(buffer.length - at, this.rawBytesRemaining);
+    this.commandDataChunks.push(
+      Buffer.copyBytesFrom(buffer, at, bytesAvailable),
+    );
+    this.rawBytesRemaining -= bytesAvailable;
+
+    if (this.rawBytesRemaining === 0) {
+      output.push(this.emitRawCommand());
+    }
+
+    return at + bytesAvailable;
+  }
+
+  private ingestSkipToNl(
+    buffer: Buffer,
+    at: number,
+    output: Array<ParserOutput>,
+  ): number {
+    const nlPos = buffer.indexOf(NL, at);
+    if (nlPos >= 0) {
+      this.state = ParserState.COMMAND_NAME;
+      return nlPos + 1;
+    }
+    return -1;
+  }
+
+  private ingestSkipRaw(
+    buffer: Buffer,
+    at: number,
+    output: Array<ParserOutput>,
+  ): number {
+    if (this.rawBytesRemaining === 0) {
+      // Bytes already ingested, waiting for terminating newline
+      this.state = ParserState.COMMAND_NAME;
+
+      if (buffer.at(at) !== NL) {
+        output.push({
+          error: `Expected NL after raw command data, got "${String.fromCodePoint(buffer.at(at) ?? 0)}" ( ${buffer.at(at)} )`,
+        });
+      }
+
+      this.clearCommand();
+      return at + 1;
+    }
+
+    const bytesAvailable = Math.min(buffer.length - at, this.rawBytesRemaining);
+    this.commandDataChunks.push(
+      Buffer.copyBytesFrom(buffer, at, bytesAvailable),
+    );
+    this.rawBytesRemaining -= bytesAvailable;
+
+    return at + bytesAvailable;
+  }
+
+  private emitCommand(): Command {
+    const data = Buffer.concat(this.commandDataChunks).toString("ascii");
+
+    const result = {
+      name: this.unescape(this.commandName),
+      data: Buffer.from(this.unescape(data)),
+    };
+
+    this.clearCommand();
+    return result;
+  }
+
+  private emitRawCommand(): Command {
+    const name = this.unescape(this.commandName.substring(1));
+    const data = Buffer.concat(this.commandDataChunks);
+
+    this.clearCommand();
+
+    return { name, data };
+  }
+
+  private clearCommand(): void {
+    this.commandName = "";
+    this.commandDataChunks = [];
+  }
+
+  private queuedCommandLength(): number {
+    // +2 for the separating space and terminating nl
+    return (
+      this.commandName.length +
+      this.commandDataChunks.reduce((a, b) => a + b.byteLength, 0) +
+      2
+    );
+  }
+
+  private escapeCommandName(name: string): string {
+    return name
+      .replaceAll("\n", "\\n")
+      .replaceAll("\r", "\\r")
+      .replaceAll(" ", "\\s");
+  }
+
+  private escapeCommandData(buffer: Buffer): string {
+    const data = buffer.toString("ascii");
+    return data
+      .replaceAll("\n", "\\n")
+      .replaceAll("\r", "\\r")
+      .replaceAll(" ", "\\s");
+  }
+
+  private unescape(data: string): string {
+    return data
+      .replaceAll("\\s", " ")
+      .replaceAll("\\n", "\n")
+      .replaceAll("\\r", "\r");
+  }
+}

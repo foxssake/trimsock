@@ -49,20 +49,24 @@ Note that even without *command data*, the space character is required.
 
 *Commands* MUST be parsed as UTF-8 strings.
 
-#### Escape sequences in command data
+#### Escape sequences
 
-If the *command data* contains spaces, newlines, or any other character that is
-used by the protocol itself, it can be escaped. The following escape sequences
-are recognized:
+Both the *command name* and *command data* may want to encode characters that
+are otherwise used for the protocol itself, e.g. newlines. In these cases,
+these special characters are *escaped* based on the following table:
 
-| Character | Escape sequence | Byte sequence (hexadecimal) |
-|-----------|-----------------|-----------------------------|
-| `\n`      | `\\n`           | `0x5C 0x6E`                 |
-| `\b`      | `\\b`           | `0x5C 0x62`                 |
+| Character | Character byte | Escape sequence | Escape bytes |
+|-----------|----------------|-----------------|--------------|
+| `\n`      | `0x0A`         | `\\n`           | `0x5C 0x6E`  |
+| `\r`      | `0x0D`         | `\\r`           | `0x5C 0x72`  |
+| ` `       | `0x20`         | `\\s`           | `0x5C 0x73`  |
 
->[!NOTE]
-> Both the *Character* and *Escape sequence* columns are written as [C escape
-> sequences].
+During parsing, these escape sequences must be replaced with their original
+counterparts.
+
+As only the initial space is considered as a separator between *command name*
+and *command data*, the spaces in the *command data* MAY NOT be escaped. If
+they are, implementations MUST parse them as such.
 
 #### Reserved characters in command names
 
@@ -75,27 +79,26 @@ convention that requires it:
 - `.`
 - `!`
 - `|`
+- `$`
 
-#### Binary data
+#### Raw data
 
-To support transmitting binary data, *command data* may be prefixed with the
-string `\b` ( backspace ), and a number declaring the size of the binary data.
+In some cases, it can be beneficial to send larger chunks of data without
+escaping and unescaping the *command data*.
 
-The receiving party must consider the next *n* bytes after the prefix sequence
-as binary. Once the binary data has been received, the command is terminated
-with the newline character.
+In these cases, commands with *raw data* may be sent, with the following
+format:
 
 ```
-[command name] \b[data size in bytes]\b[binary data]\n
+\r[command name] [data size in bytes]\n
+[raw data]\n
 ```
-
-Implementations may impose their own limits on the size of binary data, for
-security reasons.
 
 Example:
 
 ```
-set-picture \b1524\b...\n
+\rset-picture 1524\n
+\xFF\xD8\xFF\xE1\x00\x18\x45\x78\x69\x66\x00\x00\x49\x49...\n
 ```
 
 ### Conventions
