@@ -4,8 +4,16 @@ export interface BaseCommand {
   isRaw: boolean;
 }
 
-export interface MultiparamCommand extends BaseCommand {
+interface MultiparamCommand extends BaseCommand {
   params?: Array<string>;
 }
 
-export interface Command extends BaseCommand, MultiparamCommand {}
+interface RequestResponseCommand extends BaseCommand {
+  requestId?: string;
+
+  isRequest?: boolean;
+  isSuccessResponse?: boolean;
+  isErrorResponse?: boolean;
+}
+
+export interface Command extends BaseCommand, MultiparamCommand, RequestResponseCommand {}
