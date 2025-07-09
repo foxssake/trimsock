@@ -1,7 +1,6 @@
-export interface Command {
-  name: string;
-  data: Buffer;
-}
+import type { Command } from "./command";
+import type { Convention } from "./convention";
+import { MultiparamConvention } from "./conventions/multiparam";
 
 export interface ParseError {
   error: string;
@@ -20,13 +19,25 @@ enum ParserState {
   SKIP_RAW = 4,
 }
 
+function isCommand(what: ParserOutput): boolean {
+  return (what as Command).name !== undefined;
+}
+
 export class Trimsock {
   private commandName = "";
   private commandDataChunks: Array<Buffer> = [];
   private rawBytesRemaining = 0;
   private state: ParserState = ParserState.COMMAND_NAME;
 
+  private conventions: Array<Convention> = [];
+
   public maxCommandSize = 16384;
+
+  withConventions(): Trimsock {
+    this.conventions = [new MultiparamConvention()];
+
+    return this;
+  }
 
   ingest(buffer: Buffer): Array<ParserOutput> {
     const result: Array<ParserOutput> = [];
@@ -50,7 +61,9 @@ export class Trimsock {
       }
     }
 
-    return result;
+    return result.map((item) =>
+      isCommand(item) ? this.applyConventions(item as Command) : item,
+    );
   }
 
   asString(command: Command): string {
@@ -59,6 +72,14 @@ export class Trimsock {
 
   asRawString(command: Command): string {
     return `${this.escapeCommandName(command.name)} ${command.data.byteLength}\n${command.data.toString("ascii")}\n`;
+  }
+
+  private applyConventions(command: Command): Command {
+    let result = command;
+    for (const convention of this.conventions)
+      result = convention.process(result);
+
+    return result;
   }
 
   private ingestCommandName(
@@ -214,8 +235,9 @@ export class Trimsock {
     const data = Buffer.concat(this.commandDataChunks).toString("ascii");
 
     const result = {
-      name: this.unescape(this.commandName),
-      data: Buffer.from(this.unescape(data)),
+      name: this.unescapeCommandName(this.commandName),
+      data: Buffer.from(this.unescapeCommandData(data)),
+      isRaw: false,
     };
 
     this.clearCommand();
@@ -223,12 +245,12 @@ export class Trimsock {
   }
 
   private emitRawCommand(): Command {
-    const name = this.unescape(this.commandName.substring(1));
+    const name = this.unescapeCommandData(this.commandName.substring(1));
     const data = Buffer.concat(this.commandDataChunks);
 
     this.clearCommand();
 
-    return { name, data };
+    return { name, data, isRaw: true };
   }
 
   private clearCommand(): void {
@@ -260,10 +282,14 @@ export class Trimsock {
       .replaceAll(" ", "\\s");
   }
 
-  private unescape(data: string): string {
+  private unescapeCommandName(data: string): string {
     return data
       .replaceAll("\\s", " ")
       .replaceAll("\\n", "\n")
       .replaceAll("\\r", "\r");
+  }
+
+  private unescapeCommandData(data: string): string {
+    return data.replaceAll("\\n", "\n").replaceAll("\\r", "\r");
   }
 }
