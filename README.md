@@ -64,9 +64,8 @@ these special characters are *escaped* based on the following table:
 During parsing, these escape sequences must be replaced with their original
 counterparts.
 
-As only the initial space is considered as a separator between *command name*
-and *command data*, the spaces in the *command data* MAY NOT be escaped. If
-they are, implementations MUST parse them as such.
+The space character's escape sequence is only recognized in the *command name*.
+In command data, the `\\s` character sequence is left as-is.
 
 #### Reserved characters in command names
 
@@ -134,6 +133,9 @@ sequence:
 | ` `       | `\\s`           | `0x5C 0x73`                 |
 
 This allows *command parameters* to contain space characters.
+
+Conforming implementations MUST NOT parse *raw command data* as multiple
+parameters.
 
 #### Request-response pairs
 
