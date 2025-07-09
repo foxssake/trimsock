@@ -1,6 +1,9 @@
 import type { Command } from "./command";
-import type { Convention } from "./convention";
-import { MultiparamConvention } from "./conventions/multiparam";
+import {
+  type Convention,
+  MultiparamConvention,
+  RequestResponseConvention,
+} from "./conventions";
 
 export interface ParseError {
   error: string;
@@ -34,7 +37,10 @@ export class Trimsock {
   public maxCommandSize = 16384;
 
   withConventions(): Trimsock {
-    this.conventions = [new MultiparamConvention()];
+    this.conventions = [
+      new MultiparamConvention(),
+      new RequestResponseConvention(),
+    ];
 
     return this;
   }

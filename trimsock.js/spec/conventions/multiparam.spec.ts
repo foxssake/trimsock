@@ -11,7 +11,6 @@ describe("MultiparamConvention", () => {
         name: "command",
         data: Buffer.from("quix", "ascii"),
         isRaw: true,
-        params: ["quix"],
       },
     ]);
   });
@@ -26,14 +25,13 @@ describe("MultiparamConvention", () => {
       },
     ]);
   });
-  test("should parse single param", () => {
+  test("should skip single param", () => {
     const trimsock = new Trimsock().withConventions();
     expect(trimsock.ingest(Buffer.from("command foo\n", "ascii"))).toEqual([
       {
         name: "command",
         data: Buffer.from("foo", "ascii"),
         isRaw: false,
-        params: ["foo"],
       },
     ]);
   });
