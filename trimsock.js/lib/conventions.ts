@@ -18,23 +18,33 @@ export class MultiparamConvention implements Convention {
 export class RequestResponseConvention implements Convention {
   public process(command: Command): Command {
     const name = command.name;
-    if (!/[?\.!]/.test(name))
-      return command; // not a request / response
+    if (!/[?\.!]/.test(name)) return command; // not a request / response
 
-    if (name.includes("?")) 
+    if (name.includes("?"))
       return { ...command, ...this.parseName(name, "?"), isRequest: true };
-    else if (name.includes("."))
-      return { ...command, ...this.parseName(name, "."), isSuccessResponse: true };
-    else if (name.includes("!"))
-      return { ...command, ...this.parseName(name, "!"), isErrorResponse: true };
+    if (name.includes("."))
+      return {
+        ...command,
+        ...this.parseName(name, "."),
+        isSuccessResponse: true,
+      };
+    if (name.includes("!"))
+      return {
+        ...command,
+        ...this.parseName(name, "!"),
+        isErrorResponse: true,
+      };
 
     return command;
   }
 
-  private parseName(name: string, separator: string): { name: string, requestId: string } {
-      const idx = name.indexOf(separator);
-      const subname = name.substring(0, idx);
-      const requestId = name.substring(idx + 1);
+  private parseName(
+    name: string,
+    separator: string,
+  ): { name: string; requestId: string } {
+    const idx = name.indexOf(separator);
+    const subname = name.substring(0, idx);
+    const requestId = name.substring(idx + 1);
 
     return { name: subname, requestId };
   }

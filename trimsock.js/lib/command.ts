@@ -16,4 +16,7 @@ interface RequestResponseCommand extends BaseCommand {
   isErrorResponse?: boolean;
 }
 
-export interface Command extends BaseCommand, MultiparamCommand, RequestResponseCommand {}
+export interface Command
+  extends BaseCommand,
+    MultiparamCommand,
+    RequestResponseCommand {}
