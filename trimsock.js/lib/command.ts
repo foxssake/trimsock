@@ -8,5 +8,4 @@ export interface MultiparamCommand extends BaseCommand {
   params?: Array<string>;
 }
 
-export interface Command extends BaseCommand, MultiparamCommand {};
-
+export interface Command extends BaseCommand, MultiparamCommand {}

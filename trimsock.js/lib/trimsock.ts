@@ -19,8 +19,8 @@ enum ParserState {
   SKIP_RAW = 4,
 }
 
-function isCommand(what: any): boolean {
-  return typeof(what) == 'object' && what.name != undefined && typeof(what.name) == 'string';
+function isCommand(what: ParserOutput): boolean {
+  return (what as Command).name !== undefined;
 }
 
 export class Trimsock {
@@ -34,9 +34,7 @@ export class Trimsock {
   public maxCommandSize = 16384;
 
   withConventions(): Trimsock {
-    this.conventions = [
-      new MultiparamConvention()
-    ]
+    this.conventions = [new MultiparamConvention()];
 
     return this;
   }
@@ -63,7 +61,9 @@ export class Trimsock {
       }
     }
 
-    return result.map(item => isCommand(item) ? this.applyConventions(item as Command) : item);
+    return result.map((item) =>
+      isCommand(item) ? this.applyConventions(item as Command) : item,
+    );
   }
 
   asString(command: Command): string {
@@ -237,7 +237,7 @@ export class Trimsock {
     const result = {
       name: this.unescapeCommandName(this.commandName),
       data: Buffer.from(this.unescapeCommandData(data)),
-      isRaw: false
+      isRaw: false,
     };
 
     this.clearCommand();
@@ -290,8 +290,6 @@ export class Trimsock {
   }
 
   private unescapeCommandData(data: string): string {
-    return data
-      .replaceAll("\\n", "\n")
-      .replaceAll("\\r", "\r");
+    return data.replaceAll("\\n", "\n").replaceAll("\\r", "\r");
   }
 }
