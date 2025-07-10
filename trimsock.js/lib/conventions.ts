@@ -21,31 +21,48 @@ export class RequestResponseConvention implements Convention {
     if (!/[?\.!]/.test(name)) return command; // not a request / response
 
     if (name.includes("?"))
-      return { ...command, ...this.parseName(name, "?"), isRequest: true };
+      return { ...command, ...parseName(name, "?"), isRequest: true };
     if (name.includes("."))
       return {
         ...command,
-        ...this.parseName(name, "."),
+        ...parseName(name, "."),
         isSuccessResponse: true,
       };
     if (name.includes("!"))
       return {
         ...command,
-        ...this.parseName(name, "!"),
+        ...parseName(name, "!"),
         isErrorResponse: true,
       };
 
     return command;
   }
+}
 
-  private parseName(
-    name: string,
-    separator: string,
-  ): { name: string; requestId: string } {
-    const idx = name.indexOf(separator);
-    const subname = name.substring(0, idx);
-    const requestId = name.substring(idx + 1);
+export class StreamConvention implements Convention {
+  public process(command: Command): Command {
+    const name = command.name;
+    if (!name.includes("|")) return command; // not a stream command
 
-    return { name: subname, requestId };
+    const parts = parseName(name, "|");
+
+    return {
+      ...command,
+      name: parts.name,
+      streamId: parts.requestId,
+      isStreamChunk: command.data.byteLength > 0 ? true : undefined,
+      isStreamEnd: command.data.byteLength <= 0 ? true : undefined,
+    };
   }
+}
+
+function parseName(
+  name: string,
+  separator: string,
+): { name: string; requestId: string } {
+  const idx = name.indexOf(separator);
+  const subname = name.substring(0, idx);
+  const requestId = name.substring(idx + 1);
+
+  return { name: subname, requestId };
 }

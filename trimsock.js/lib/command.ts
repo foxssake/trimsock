@@ -16,7 +16,15 @@ interface RequestResponseCommand extends BaseCommand {
   isErrorResponse?: boolean;
 }
 
+interface StreamCommand extends BaseCommand {
+  streamId?: string;
+
+  isStreamChunk?: boolean;
+  isStreamEnd?: boolean;
+}
+
 export interface Command
   extends BaseCommand,
     MultiparamCommand,
-    RequestResponseCommand {}
+    RequestResponseCommand,
+    StreamCommand {}

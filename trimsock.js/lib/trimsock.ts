@@ -3,6 +3,7 @@ import {
   type Convention,
   MultiparamConvention,
   RequestResponseConvention,
+  StreamConvention,
 } from "./conventions";
 
 export interface ParseError {
@@ -40,6 +41,7 @@ export class Trimsock {
     this.conventions = [
       new MultiparamConvention(),
       new RequestResponseConvention(),
+      new StreamConvention(),
     ];
 
     return this;
