@@ -190,6 +190,17 @@ An example request-response flow:
 <<< .i6QhjOtphK2m OK\n
 ```
 
+The response commands SHOULD NOT contain the original command name.
+Implementations are free to ignore the command name, as they only rely on the
+request ID. Which means that this is a valid exchange as well:
+
+```
+>>> login?pDYqh3ghn241 tom@acme.com:3dff73672811dcd9f93f3dd86ce4e04960b46e10827a55418c7cc35d596e9662\n
+>>> login!pDYqh3ghn241 Wrong password!
+>>> login?i6QhjOtphK2m tom@acme.com:ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f\n
+<<< login.i6QhjOtphK2m OK\n
+```
+
 #### Streaming
 
 Large amounts of data can be impractical to transmit in one large *command*.
