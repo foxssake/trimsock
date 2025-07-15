@@ -1,4 +1,4 @@
-import type { Command } from "./command";
+import { escapeCommandData, escapeCommandName, unescapeCommandData, unescapeCommandName, type Command } from "./command";
 import {
   type Convention,
   MultiparamConvention,
@@ -73,14 +73,6 @@ export class Trimsock {
     return result.map((item) =>
       isCommand(item) ? this.applyConventions(item as Command) : item,
     );
-  }
-
-  asString(command: Command): string {
-    return `${this.escapeCommandName(command.name)} ${this.escapeCommandData(command.data)}\n`;
-  }
-
-  asRawString(command: Command): string {
-    return `${this.escapeCommandName(command.name)} ${command.data.byteLength}\n${command.data.toString("ascii")}\n`;
   }
 
   private applyConventions(command: Command): Command {
@@ -244,8 +236,8 @@ export class Trimsock {
     const data = Buffer.concat(this.commandDataChunks).toString("ascii");
 
     const result = {
-      name: this.unescapeCommandName(this.commandName),
-      data: Buffer.from(this.unescapeCommandData(data)),
+      name: unescapeCommandName(this.commandName),
+      data: Buffer.from(unescapeCommandData(data)),
       isRaw: false,
     };
 
@@ -254,7 +246,7 @@ export class Trimsock {
   }
 
   private emitRawCommand(): Command {
-    const name = this.unescapeCommandData(this.commandName.substring(1));
+    const name = unescapeCommandData(this.commandName.substring(1));
     const data = Buffer.concat(this.commandDataChunks);
 
     this.clearCommand();
@@ -274,31 +266,5 @@ export class Trimsock {
       this.commandDataChunks.reduce((a, b) => a + b.byteLength, 0) +
       2
     );
-  }
-
-  private escapeCommandName(name: string): string {
-    return name
-      .replaceAll("\n", "\\n")
-      .replaceAll("\r", "\\r")
-      .replaceAll(" ", "\\s");
-  }
-
-  private escapeCommandData(buffer: Buffer): string {
-    const data = buffer.toString("ascii");
-    return data
-      .replaceAll("\n", "\\n")
-      .replaceAll("\r", "\\r")
-      .replaceAll(" ", "\\s");
-  }
-
-  private unescapeCommandName(data: string): string {
-    return data
-      .replaceAll("\\s", " ")
-      .replaceAll("\\n", "\n")
-      .replaceAll("\\r", "\r");
-  }
-
-  private unescapeCommandData(data: string): string {
-    return data.replaceAll("\\n", "\n").replaceAll("\\r", "\r");
   }
 }

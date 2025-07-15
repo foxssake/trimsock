@@ -193,38 +193,4 @@ describe("Trimsock", () => {
       });
     });
   });
-
-  describe("asString()", () => {
-    const kases = [
-      ["should stringify", "command", "data", "command data\n"],
-      [
-        "should escape newline in data",
-        "command",
-        "da\nta",
-        "command da\\nta\n",
-      ],
-      [
-        "should escape newline in name",
-        "com\nmand",
-        "data",
-        "com\\nmand data\n",
-      ],
-      ["should escape space in name", "comm and", "data", "comm\\sand data\n"],
-      ["should escape \\r in name", "\rcommand", "data", "\\rcommand data\n"],
-    ];
-
-    for (const kase of kases) {
-      const [name, commandName, commandData, expected] = kase;
-      test(name, () => {
-        const trimsock = new Trimsock();
-        const command = {
-          name: commandName,
-          data: Buffer.from(commandData, "ascii"),
-          isRaw: false,
-        };
-
-        expect(trimsock.asString(command)).toBe(expected);
-      });
-    }
-  });
 });
