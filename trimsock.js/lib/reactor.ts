@@ -6,7 +6,6 @@ export type CommandHandler = (
   command: Command,
   response: TrimsockResponse,
 ) => void;
-export type OutputSink = (data: string) => void;
 
 export interface TrimsockResponse {
   send(command: Command): void;
@@ -82,16 +81,16 @@ export class SocketReactor<SocketData = undefined> extends Reactor<
           this.ingest(data, socket);
         },
         open: (socket) => {
-          baseHandlers.open?.call(baseHandlers.data, socket);
+          baseHandlers.open?.call(baseHandlers.open, socket);
         },
         close: (socket, error) => {
-          baseHandlers.close?.call(baseHandlers.data, socket, error);
+          baseHandlers.close?.call(baseHandlers.close, socket, error);
         },
         drain: (socket) => {
-          baseHandlers.drain?.call(baseHandlers.data, socket);
+          baseHandlers.drain?.call(baseHandlers.drain, socket);
         },
         error: (socket, error) => {
-          baseHandlers.error?.call(baseHandlers.data, socket, error);
+          baseHandlers.error?.call(baseHandlers.error, socket, error);
         },
       },
     };
