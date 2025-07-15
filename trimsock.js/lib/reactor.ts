@@ -1,8 +1,11 @@
 import type { SocketHandler } from "bun";
 import type { Command } from "./command";
-import { isCommand, Trimsock } from "./trimsock";
+import { Trimsock, isCommand } from "./trimsock";
 
-export type CommandHandler = (command: Command, response: TrimsockResponse) => void;
+export type CommandHandler = (
+  command: Command,
+  response: TrimsockResponse,
+) => void;
 export type OutputSink = (data: string) => void;
 
 export interface TrimsockResponse {
@@ -12,9 +15,7 @@ export interface TrimsockResponse {
 export abstract class Reactor<T> {
   private handlers: Map<string, CommandHandler> = new Map();
 
-  constructor(
-    private trimsock: Trimsock = new Trimsock().withConventions()
-  ) {}
+  constructor(private trimsock: Trimsock = new Trimsock().withConventions()) {}
 
   public on(commandName: string, handler: CommandHandler): this {
     this.handlers.set(commandName, handler);
@@ -23,9 +24,9 @@ export abstract class Reactor<T> {
   }
 
   public ingest(data: Buffer, source: T) {
-    this.trimsock.ingest(data)
-      .filter(it => isCommand(it))
-      .forEach(command => this.handle(command as Command, source));
+    for (const item of this.trimsock.ingest(data)) {
+      if (isCommand(item)) this.handle(item as Command, source);
+    }
   }
 
   public send(target: T, command: Command) {
@@ -38,24 +39,30 @@ export abstract class Reactor<T> {
     const handler = this.handlers.get(command.name);
     if (handler) {
       handler(command, {
-        send: (cmd) => this.write(this.trimsock.asString(cmd), source)
+        send: (cmd) => this.write(this.trimsock.asString(cmd), source),
       });
     }
   }
 }
 
-export class SocketReactor<SocketData = undefined> extends Reactor<Bun.Socket<SocketData>> {
-  public listen(options: Bun.TCPSocketListenOptions<SocketData>): Bun.TCPSocketListener<SocketData> {
+export class SocketReactor<SocketData = undefined> extends Reactor<
+  Bun.Socket<SocketData>
+> {
+  public listen(
+    options: Bun.TCPSocketListenOptions<SocketData>,
+  ): Bun.TCPSocketListener<SocketData> {
     return Bun.listen({
       ...options,
-      ...this.wrapHandlers(options)
-    })
+      ...this.wrapHandlers(options),
+    });
   }
 
-  public connect(options: Bun.TCPSocketConnectOptions<SocketData>): Promise<Bun.Socket<SocketData>> {
+  public connect(
+    options: Bun.TCPSocketConnectOptions<SocketData>,
+  ): Promise<Bun.Socket<SocketData>> {
     return Bun.connect({
       ...options,
-      ...this.wrapHandlers(options)
+      ...this.wrapHandlers(options),
     });
   }
 
@@ -63,28 +70,30 @@ export class SocketReactor<SocketData = undefined> extends Reactor<Bun.Socket<So
     target.write(data);
   }
 
-  private wrapHandlers(options: Bun.SocketOptions<SocketData>): Bun.SocketOptions<SocketData> {
+  private wrapHandlers(
+    options: Bun.SocketOptions<SocketData>,
+  ): Bun.SocketOptions<SocketData> {
     const baseHandlers: SocketHandler<SocketData> = options.socket ?? {};
 
     return {
       socket: {
         data: (socket, data) => {
-          baseHandlers.data?.call(baseHandlers.data, socket, data)
-          this.ingest(data, socket)
-        }, 
+          baseHandlers.data?.call(baseHandlers.data, socket, data);
+          this.ingest(data, socket);
+        },
         open: (socket) => {
-          baseHandlers.open?.call(baseHandlers.data, socket)
+          baseHandlers.open?.call(baseHandlers.data, socket);
         },
         close: (socket, error) => {
-          baseHandlers.close?.call(baseHandlers.data, socket, error)
+          baseHandlers.close?.call(baseHandlers.data, socket, error);
         },
         drain: (socket) => {
-          baseHandlers.drain?.call(baseHandlers.data, socket)
+          baseHandlers.drain?.call(baseHandlers.data, socket);
         },
         error: (socket, error) => {
-          baseHandlers.error?.call(baseHandlers.data, socket, error)
+          baseHandlers.error?.call(baseHandlers.data, socket, error);
         },
-      }
-    }
+      },
+    };
   }
 }
