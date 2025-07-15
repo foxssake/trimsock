@@ -1,5 +1,5 @@
 import type { SocketHandler } from "bun";
-import type { Command } from "./command";
+import { type Command, serialize } from "./command";
 import { Trimsock, isCommand } from "./trimsock";
 
 export type CommandHandler = (
@@ -29,7 +29,7 @@ export abstract class Reactor<T> {
   }
 
   public send(target: T, command: Command) {
-    this.write(this.trimsock.asString(command), target);
+    this.write(serialize(command), target);
   }
 
   protected abstract write(data: string, target: T): void;
@@ -38,7 +38,7 @@ export abstract class Reactor<T> {
     const handler = this.handlers.get(command.name);
     if (handler) {
       handler(command, {
-        send: (cmd) => this.write(this.trimsock.asString(cmd), source),
+        send: (cmd) => this.write(serialize(cmd), source),
       });
     }
   }
