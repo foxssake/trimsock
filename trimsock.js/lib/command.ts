@@ -33,29 +33,28 @@ export function serialize(command: Command): string {
   let name = "";
 
   // Figure out final command name
-  if (command.streamId) 
-    name = `${command.name}|${command.streamId}`
-  else if (command.isRequest)
-    name = `${command.name}?${command.requestId}`
+  if (command.streamId) name = `${command.name}|${command.streamId}`;
+  else if (command.isRequest) name = `${command.name}?${command.requestId}`;
   else if (command.isSuccessResponse)
-    name = `${command.name}.${command.requestId}`
+    name = `${command.name}.${command.requestId}`;
   else if (command.isErrorResponse)
-    name = `${command.name}!${command.requestId}`
-  else
-    name = command.name;
+    name = `${command.name}!${command.requestId}`;
+  else name = command.name;
 
   name = escapeCommandName(name);
 
   // Early return for raw commands
   if (command.isRaw)
-    return `\r${name} ${command.data.byteLength}\n` + command.data.toString("ascii") + "\n"
+    if (command.data.byteLength == 0)
+      return `\r${name} \n`
+    else
+      return `\r${name} ${command.data.byteLength}\n` + command.data.toString("ascii") + "\n"
 
   // Figure out data
   let data = "";
   if (command.params)
-    data = command.params.map(it => escapeCommandData(it)).join(" ")
-  else
-    data = escapeCommandData(command.data.toString("ascii"))
+    data = command.params.map((it) => escapeCommandData(it)).join(" ");
+  else data = escapeCommandData(command.data.toString("ascii"));
 
   return `${name} ${data}\n`;
 }

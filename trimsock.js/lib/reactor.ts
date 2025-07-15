@@ -1,5 +1,5 @@
 import type { SocketHandler } from "bun";
-import { serialize, type Command } from "./command";
+import { type Command, serialize } from "./command";
 import { Trimsock, isCommand } from "./trimsock";
 
 export type CommandHandler = (

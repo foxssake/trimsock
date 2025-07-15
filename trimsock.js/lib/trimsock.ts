@@ -1,4 +1,10 @@
-import { escapeCommandData, escapeCommandName, unescapeCommandData, unescapeCommandName, type Command } from "./command";
+import {
+  type Command,
+  escapeCommandData,
+  escapeCommandName,
+  unescapeCommandData,
+  unescapeCommandName,
+} from "./command";
 import {
   type Convention,
   MultiparamConvention,
