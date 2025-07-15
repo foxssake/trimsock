@@ -1,11 +1,11 @@
 import { SocketReactor } from "@lib/reactor";
 import { randomUUIDv7 } from "bun";
 
-const sessionIds: Map<Bun.Socket, string> = new Map();
+type SocketContext = { sessionId: string };
 
-const reactor = new SocketReactor()
+const reactor = new SocketReactor<SocketContext>()
   .on("echo", (cmd, response) => response.send(cmd))
-  .on("info", (cmd, response) =>
+  .on("info", (_, response) =>
     response.send({
       name: "info",
       data: Buffer.from("trimsock reactor", "ascii"),
@@ -19,7 +19,7 @@ reactor.listen({
   socket: {
     open(socket) {
       const sessionId = randomUUIDv7();
-      sessionIds.set(socket, sessionId);
+      socket.data = { sessionId };
 
       console.log("Created session ", sessionId);
       reactor.send(socket, {
@@ -29,12 +29,11 @@ reactor.listen({
       });
     },
     close(socket, error) {
-      const sessionId = sessionIds.get(socket);
-      sessionIds.delete(socket);
+      const sessionId = socket.data.sessionId;
       console.log("Closed session ", sessionId, error);
     },
     error(socket, error) {
-      const sessionId = sessionIds.get(socket);
+      const sessionId = socket.data.sessionId;
       console.error("Error in session ", sessionId, error);
     },
   },
