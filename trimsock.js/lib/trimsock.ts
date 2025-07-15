@@ -23,7 +23,8 @@ enum ParserState {
   SKIP_RAW = 4,
 }
 
-function isCommand(what: ParserOutput): boolean {
+// TODO: Change ingest output so this is not needed
+export function isCommand(what: ParserOutput): boolean {
   return (what as Command).name !== undefined;
 }
 
