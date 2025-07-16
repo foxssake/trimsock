@@ -1,17 +1,18 @@
 import { SocketReactor } from "@lib/reactor";
 import { randomUUIDv7 } from "bun";
+import { serialize } from "node:v8";
 
 type SocketContext = { sessionId: string };
 
 const reactor = new SocketReactor<SocketContext>()
   .on("echo", (cmd, response) => response.send(cmd))
   .on("info", (_, response) =>
-    response.send({
-      name: "info",
+    response.reply({
       data: Buffer.from("trimsock reactor", "ascii"),
-      isRaw: false,
     }),
-  );
+  )
+  .onUnknown((cmd, response) => response.failOrSend({ name: cmd.name, data: Buffer.from(`Unknown command: ${cmd.name}`, "ascii")}))
+  .onError((cmd, response, error) => response.failOrSend({ name: cmd.name, data: Buffer.from(`Failed to process command: ${serialize(cmd)}\nError: ${error}`, "ascii")}));
 
 reactor.listen({
   hostname: "localhost",
