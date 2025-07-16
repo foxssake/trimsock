@@ -1,7 +1,7 @@
+import assert from "node:assert";
 import type { SocketHandler } from "bun";
 import { type Command, serialize } from "./command";
 import { Trimsock, isCommand } from "./trimsock";
-import assert from 'node:assert';
 
 export type CommandHandler = (
   command: Command,
@@ -11,13 +11,13 @@ export type CommandHandler = (
 export type CommandErrorHandler = (
   command: Command,
   response: TrimsockResponse,
-  error: any
+  error: unknown,
 ) => void;
 
 export class TrimsockResponse {
   constructor(
     private write: (what: Command) => void,
-    private command?: Command
+    private command?: Command,
   ) {}
 
   send(what: Command): void {
@@ -25,38 +25,39 @@ export class TrimsockResponse {
   }
 
   canReply(): boolean {
-    return this.command?.requestId !== undefined
+    return this.command?.requestId !== undefined;
   }
 
-  reply(what: Omit<Command, 'name'>): void {
-    this.requireRequestId(this.command?.requestId)
+  reply(what: Omit<Command, "name">): void {
+    this.requireRequestId(this.command?.requestId);
     this.write({
       ...what,
       name: "",
       requestId: this.command.requestId,
       isSuccessResponse: true,
-    })
+    });
   }
 
-  fail(what: Omit<Command, 'name'>): void {
-    this.requireRequestId(this.command?.requestId)
+  fail(what: Omit<Command, "name">): void {
+    this.requireRequestId(this.command?.requestId);
     this.write({
       ...what,
       name: "",
       requestId: this.command.requestId,
-      isErrorResponse: true
-    })
+      isErrorResponse: true,
+    });
   }
 
   failOrSend(what: Command): void {
-    if (this.canReply())
-      this.fail(what)
-    else
-      this.send(what)
+    if (this.canReply()) this.fail(what);
+    else this.send(what);
   }
 
   private requireRequestId(requestId?: string): asserts requestId {
-    assert(requestId !== undefined, "Can't reply if the command has no request id!");
+    assert(
+      requestId !== undefined,
+      "Can't reply if the command has no request id!",
+    );
   }
 }
 
@@ -98,16 +99,14 @@ export abstract class Reactor<T> {
     const handler = this.handlers.get(command.name);
     const response = new TrimsockResponse(
       (cmd) => this.write(serialize(cmd), source),
-      command
-    )
+      command,
+    );
 
     try {
-    if (handler)
-      handler(command, response)
-    else
-      this.defaultHandler(command, response)
+      if (handler) handler(command, response);
+      else this.defaultHandler(command, response);
     } catch (error) {
-      this.errorHandler(command, response, error)
+      this.errorHandler(command, response, error);
     }
   }
 }

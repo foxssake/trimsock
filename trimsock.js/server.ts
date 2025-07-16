@@ -1,6 +1,6 @@
+import { serialize } from "@lib/command";
 import { SocketReactor } from "@lib/reactor";
 import { randomUUIDv7 } from "bun";
-import { serialize } from "node:v8";
 
 type SocketContext = { sessionId: string };
 
@@ -11,12 +11,26 @@ const reactor = new SocketReactor<SocketContext>()
       data: Buffer.from("trimsock reactor", "ascii"),
     }),
   )
-  .onUnknown((cmd, response) => response.failOrSend({ name: cmd.name, data: Buffer.from(`Unknown command: ${cmd.name}`, "ascii")}))
-  .onError((cmd, response, error) => response.failOrSend({ name: cmd.name, data: Buffer.from(`Failed to process command: ${serialize(cmd)}\nError: ${error}`, "ascii")}));
+  .onUnknown((cmd, response) =>
+    response.failOrSend({
+      name: cmd.name,
+      data: Buffer.from(`Unknown command: ${cmd.name}`, "ascii"),
+    }),
+  )
+  .onError((cmd, response, error) =>
+    response.failOrSend({
+      name: cmd.name,
+      data: Buffer.from(
+        `Failed to process command: ${serialize(cmd)}\nError: ${error}`,
+        "ascii",
+      ),
+    }),
+  );
 
+const port = 8890
 reactor.listen({
   hostname: "localhost",
-  port: 8890,
+  port,
   socket: {
     open(socket) {
       const sessionId = randomUUIDv7();
@@ -40,4 +54,4 @@ reactor.listen({
   },
 });
 
-console.log("Listening");
+console.log("Listening on port", port);

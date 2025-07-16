@@ -44,11 +44,10 @@ export function serialize(command: Command): string {
   name = escapeCommandName(name);
 
   // Early return for raw commands
-  if (command.isRaw) 
-    return (command.data.byteLength !== 0)
+  if (command.isRaw)
+    return command.data.byteLength !== 0
       ? `\r${name} ${command.data.byteLength}\n${command.data.toString("ascii")}\n`
-      : `${name} \n`
-  
+      : `${name} \n`;
 
   // Figure out data
   let data = "";
