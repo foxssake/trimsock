@@ -5,23 +5,47 @@ import { Trimsock, isCommand } from "./trimsock";
 
 export type CommandHandler = (
   command: Command,
-  response: TrimsockResponse,
+  exchange: TrimsockExchange,
 ) => void;
 
 export type CommandErrorHandler = (
   command: Command,
-  response: TrimsockResponse,
+  exchange: TrimsockExchange,
   error: unknown,
 ) => void;
 
-export class TrimsockResponse {
+export class TrimsockExchange {
+  private replyResolvers: Array<(command: Command) => void> = [];
+
   constructor(
     private write: (what: Command) => void,
-    private command?: Command,
+    private requestExchange: (what: Command) => TrimsockExchange,
+    private close: () => void,
+    private command?: Command
   ) {}
 
-  send(what: Command): void {
-    this.write(what);
+  push(what: Command): void {
+    if (what.isSuccessResponse) {
+      for (const resolve of this.replyResolvers)
+        resolve(what)
+      this.replyResolvers = []
+      this.close()
+    }
+  }
+
+  send(what: Command): TrimsockExchange {
+    this.write(what)
+    return this.requestExchange(what)
+  }
+
+  request(what: Command): TrimsockExchange {
+    const req: Command = {
+      ...what,
+      isRequest: true,
+      requestId: "0123" // TODO: Randomgen
+    }
+
+    return this.send(req)
   }
 
   canReply(): boolean {
@@ -53,6 +77,10 @@ export class TrimsockResponse {
     else this.send(what);
   }
 
+  onReply(): Promise<Command> {
+    return new Promise(resolve => this.replyResolvers.push(resolve))
+  }
+
   private requireRequestId(requestId?: string): asserts requestId {
     assert(
       requestId !== undefined,
@@ -65,6 +93,8 @@ export abstract class Reactor<T> {
   private handlers: Map<string, CommandHandler> = new Map();
   private defaultHandler: CommandHandler = () => {};
   private errorHandler: CommandErrorHandler = () => {};
+
+  private exchanges: Map<string, TrimsockExchange> = new Map();
 
   constructor(private trimsock: Trimsock = new Trimsock().withConventions()) {}
 
@@ -96,18 +126,51 @@ export abstract class Reactor<T> {
   protected abstract write(data: string, target: T): void;
 
   private handle(command: Command, source: T) {
+    // This is an ongoing exchange
+    const exchangeId = command.requestId ?? command.streamId;
+    if (exchangeId !== undefined && this.exchanges.has(exchangeId)) {
+      const exchange = this.exchanges.get(exchangeId)!!
+      exchange.push(command)
+      return
+    }
+
+    // New exchange
     const handler = this.handlers.get(command.name);
-    const response = new TrimsockResponse(
-      (cmd) => this.write(serialize(cmd), source),
-      command,
-    );
+    const exchange = this.ensureExchange(command, source);
 
     try {
-      if (handler) handler(command, response);
-      else this.defaultHandler(command, response);
+      if (handler) handler(command, exchange);
+      else this.defaultHandler(command, exchange);
     } catch (error) {
-      this.errorHandler(command, response, error);
+      this.errorHandler(command, exchange, error);
     }
+  }
+
+  private findExchange(command: Command): TrimsockExchange | undefined {
+    const id = command.requestId ?? command.streamId;
+    return id !== undefined ? this.exchanges.get(id) : undefined;
+  }
+
+  private ensureExchange(command: Command, source: T): TrimsockExchange {
+    const id = command.requestId ?? command.streamId;
+
+    if (id === undefined)
+      return this.makeExchange(command, source)
+
+    const exchange = this.findExchange(command) ?? this.makeExchange(command, source);
+    this.exchanges.set(id, exchange)
+    return exchange
+  }
+
+  private makeExchange(command: Command, source: T): TrimsockExchange {
+    return new TrimsockExchange(
+      (cmd) => this.write(serialize(cmd), source),
+      (cmd) => this.ensureExchange(cmd, source),
+      () => { if(command.requestId ?? command.streamId)
+        this.exchanges.delete(command?.requestId ?? command?.streamId!!)
+      },
+      command
+    )
   }
 }
 
