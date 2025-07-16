@@ -12,11 +12,14 @@ const reactor = new SocketReactor<SocketContext>()
     }),
   )
   .on("askme", async (_, exchange) => {
-    console.log("Asking for a number")
+    console.log("Asking for a number");
     const result = await exchange
-      .request({ name: "answer", data: Buffer.from("Give me a number pls", "ascii") })
-      .onReply()
-    console.log("Response is ", result.data.toString("ascii"))
+      .request({
+        name: "answer",
+        data: Buffer.from("Give me a number pls", "ascii"),
+      })
+      .onReply();
+    console.log("Response is ", result.data.toString("ascii"));
   })
   .onUnknown((cmd, exchange) =>
     exchange.failOrSend({
@@ -34,7 +37,7 @@ const reactor = new SocketReactor<SocketContext>()
     }),
   );
 
-const port = 8890
+const port = 8890;
 reactor.listen({
   hostname: "localhost",
   port,

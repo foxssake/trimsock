@@ -16,36 +16,42 @@ export type CommandErrorHandler = (
 
 export class TrimsockExchange {
   private replyResolvers: Array<(command: Command) => void> = [];
+  private replyRejectors: Array<(command: Command) => void> = [];
 
   constructor(
     private write: (what: Command) => void,
     private requestExchange: (what: Command) => TrimsockExchange,
     private close: () => void,
-    private command?: Command
+    private command?: Command,
   ) {}
 
   push(what: Command): void {
     if (what.isSuccessResponse) {
-      for (const resolve of this.replyResolvers)
-        resolve(what)
-      this.replyResolvers = []
-      this.close()
+      for (const resolve of this.replyResolvers) resolve(what);
+      this.replyResolvers = [];
+      this.replyRejectors = [];
+      this.close();
+    } else if (what.isErrorResponse) {
+      for (const reject of this.replyRejectors) reject(what);
+      this.replyResolvers = [];
+      this.replyRejectors = [];
+      this.close();
     }
   }
 
   send(what: Command): TrimsockExchange {
-    this.write(what)
-    return this.requestExchange(what)
+    this.write(what);
+    return this.requestExchange(what);
   }
 
   request(what: Command): TrimsockExchange {
     const req: Command = {
       ...what,
       isRequest: true,
-      requestId: "0123" // TODO: Randomgen
-    }
+      requestId: "0123", // TODO: Randomgen
+    };
 
-    return this.send(req)
+    return this.send(req);
   }
 
   canReply(): boolean {
@@ -78,7 +84,10 @@ export class TrimsockExchange {
   }
 
   onReply(): Promise<Command> {
-    return new Promise(resolve => this.replyResolvers.push(resolve))
+    return new Promise((resolve, reject) => {
+      this.replyResolvers.push(resolve);
+      this.replyRejectors.push(reject);
+    });
   }
 
   private requireRequestId(requestId?: string): asserts requestId {
@@ -128,10 +137,11 @@ export abstract class Reactor<T> {
   private handle(command: Command, source: T) {
     // This is an ongoing exchange
     const exchangeId = command.requestId ?? command.streamId;
-    if (exchangeId !== undefined && this.exchanges.has(exchangeId)) {
-      const exchange = this.exchanges.get(exchangeId)!!
-      exchange.push(command)
-      return
+    if (exchangeId !== undefined) {
+      const exchange = this.exchanges.get(exchangeId);
+      assert(exchange, `Unknown exchange id: ${exchangeId}!`);
+      exchange.push(command);
+      return;
     }
 
     // New exchange
@@ -154,23 +164,24 @@ export abstract class Reactor<T> {
   private ensureExchange(command: Command, source: T): TrimsockExchange {
     const id = command.requestId ?? command.streamId;
 
-    if (id === undefined)
-      return this.makeExchange(command, source)
+    if (id === undefined) return this.makeExchange(command, source);
 
-    const exchange = this.findExchange(command) ?? this.makeExchange(command, source);
-    this.exchanges.set(id, exchange)
-    return exchange
+    const exchange =
+      this.findExchange(command) ?? this.makeExchange(command, source);
+    this.exchanges.set(id, exchange);
+    return exchange;
   }
 
   private makeExchange(command: Command, source: T): TrimsockExchange {
     return new TrimsockExchange(
       (cmd) => this.write(serialize(cmd), source),
       (cmd) => this.ensureExchange(cmd, source),
-      () => { if(command.requestId ?? command.streamId)
-        this.exchanges.delete(command?.requestId ?? command?.streamId!!)
+      () => {
+        const exchangeId = command.requestId ?? command.streamId;
+        if (exchangeId) this.exchanges.delete(exchangeId);
       },
-      command
-    )
+      command,
+    );
   }
 }
 
