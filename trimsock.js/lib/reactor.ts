@@ -14,6 +14,18 @@ export type CommandErrorHandler = (
   error: unknown,
 ) => void;
 
+function generateExchangeId(): string {
+  const charset =
+    "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+  const buffer = new Uint8Array(4);
+  crypto.getRandomValues(buffer);
+
+  return [...buffer]
+    .map((idx) => charset.charAt(idx % charset.length))
+    .join("");
+}
+
 export class TrimsockExchange {
   private replyResolvers: Array<(command: Command) => void> = [];
   private replyRejectors: Array<(command: Command) => void> = [];
@@ -48,7 +60,7 @@ export class TrimsockExchange {
     const req: Command = {
       ...what,
       isRequest: true,
-      requestId: "0123", // TODO: Randomgen
+      requestId: generateExchangeId(),
     };
 
     return this.send(req);
@@ -137,7 +149,7 @@ export abstract class Reactor<T> {
   private handle(command: Command, source: T) {
     // This is an ongoing exchange
     const exchangeId = command.requestId ?? command.streamId;
-    if (exchangeId !== undefined) {
+    if (exchangeId !== undefined && !command.isRequest) {
       const exchange = this.exchanges.get(exchangeId);
       assert(exchange, `Unknown exchange id: ${exchangeId}!`);
       exchange.push(command);
