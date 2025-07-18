@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import type { SocketHandler } from "bun";
-import { type Command, serialize } from "./command";
+import { type Command, getExchangeId, serialize } from "./command";
 import { Trimsock, isCommand } from "./trimsock";
 
 export type CommandHandler = (
@@ -14,11 +14,11 @@ export type CommandErrorHandler = (
   error: unknown,
 ) => void;
 
-function generateExchangeId(): string {
+function generateExchangeId(length: number): string {
   const charset =
     "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-  const buffer = new Uint8Array(4);
+  const buffer = new Uint8Array(~~length);
   crypto.getRandomValues(buffer);
 
   return [...buffer]
@@ -29,6 +29,7 @@ function generateExchangeId(): string {
 export class TrimsockExchange {
   private replyResolvers: Array<(command: Command) => void> = [];
   private replyRejectors: Array<(command: Command) => void> = [];
+  private streamResolvers: Array<(command: Command) => void> = [];
 
   constructor(
     private write: (what: Command) => void,
@@ -40,14 +41,20 @@ export class TrimsockExchange {
   push(what: Command): void {
     if (what.isSuccessResponse) {
       for (const resolve of this.replyResolvers) resolve(what);
-      this.replyResolvers = [];
-      this.replyRejectors = [];
+      this.clearPromises()
       this.close();
     } else if (what.isErrorResponse) {
       for (const reject of this.replyRejectors) reject(what);
-      this.replyResolvers = [];
-      this.replyRejectors = [];
+      this.clearPromises()
       this.close();
+    } else if (what.isStreamChunk || what.isStreamEnd) {
+      for (const resolve of this.streamResolvers) resolve(what);
+      this.streamResolvers = [];
+
+      if (what.isStreamEnd) {
+        this.clearPromises()
+        this.close()
+      }
     }
   }
 
@@ -60,7 +67,7 @@ export class TrimsockExchange {
     const req: Command = {
       ...what,
       isRequest: true,
-      requestId: generateExchangeId(),
+      requestId: generateExchangeId(4),
     };
 
     return this.send(req);
@@ -102,11 +109,38 @@ export class TrimsockExchange {
     });
   }
 
+  onStream(): Promise<Command> {
+    return new Promise((resolve, reject) => {
+      this.streamResolvers.push(resolve);
+      this.replyRejectors.push(reject);
+    });
+  }
+
+  async* chunks(): AsyncGenerator<Command> {
+    if (this.command !== undefined)
+      yield this.command
+
+    while (true) {
+      const chunk = await this.onStream();
+
+      if (chunk.isStreamEnd)
+        break
+
+      yield chunk
+    }
+  }
+
   private requireRequestId(requestId?: string): asserts requestId {
     assert(
       requestId !== undefined,
       "Can't reply if the command has no request id!",
     );
+  }
+
+  private clearPromises(): void {
+    this.replyResolvers = []
+    this.replyRejectors = []
+    this.streamResolvers = []
   }
 }
 
@@ -136,7 +170,12 @@ export abstract class Reactor<T> {
 
   public ingest(data: Buffer, source: T) {
     for (const item of this.trimsock.ingest(data)) {
+      try {
       if (isCommand(item)) this.handle(item as Command, source);
+      } catch (err) {
+        console.log(err)
+        throw err
+      }
     }
   }
 
@@ -147,25 +186,52 @@ export abstract class Reactor<T> {
   protected abstract write(data: string, target: T): void;
 
   private handle(command: Command, source: T) {
-    // This is an ongoing exchange
-    const exchangeId = command.requestId ?? command.streamId;
-    if (exchangeId !== undefined && !command.isRequest) {
-      const exchange = this.exchanges.get(exchangeId);
+    const exchangeId = getExchangeId(command);
+
+    if (this.isNewExchange(command)) {
+      const handler = this.handlers.get(command.name);
+      const exchange = this.ensureExchange(command, source);
+
+      try {
+        if (handler) handler(command, exchange);
+        else this.defaultHandler(command, exchange);
+      } catch (error) {
+        this.errorHandler(command, exchange, error);
+      }
+    } else {
+      const exchange = exchangeId && this.exchanges.get(exchangeId)
       assert(exchange, `Unknown exchange id: ${exchangeId}!`);
       exchange.push(command);
-      return;
+    }
+  }
+
+  private isNewExchange(command: Command): boolean {
+    const exchangeId = getExchangeId(command);
+    const hasExchangeId = exchangeId !== undefined
+    const knownExchange = hasExchangeId && this.exchanges.get(exchangeId);
+
+    // Request-response
+    if (command.isRequest) {
+      assert(hasExchangeId, 'Request command is missing its request id!')
+      return true
+    }
+    if (command.isSuccessResponse || command.isErrorResponse) {
+      assert(hasExchangeId, 'Response command is missing its request id!')
+      return false
     }
 
-    // New exchange
-    const handler = this.handlers.get(command.name);
-    const exchange = this.ensureExchange(command, source);
-
-    try {
-      if (handler) handler(command, exchange);
-      else this.defaultHandler(command, exchange);
-    } catch (error) {
-      this.errorHandler(command, exchange, error);
+    // Streams
+    if (command.isStreamChunk) {
+      assert(hasExchangeId, 'Stream chunk command is missing its request id!')
+      return knownExchange === undefined
     }
+    if (command.isStreamEnd) {
+      assert(hasExchangeId, 'Stream chunk command is missing its request id!')
+      return false
+    }
+
+    // Regular commands
+    return true
   }
 
   private findExchange(command: Command): TrimsockExchange | undefined {
