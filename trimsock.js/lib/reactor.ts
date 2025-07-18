@@ -3,14 +3,14 @@ import type { SocketHandler } from "bun";
 import { type Command, getExchangeId, serialize } from "./command";
 import { Trimsock, isCommand } from "./trimsock";
 
-export type CommandHandler = (
+export type CommandHandler<T> = (
   command: Command,
-  exchange: TrimsockExchange,
+  exchange: TrimsockExchange<T>,
 ) => void;
 
-export type CommandErrorHandler = (
+export type CommandErrorHandler<T> = (
   command: Command,
-  exchange: TrimsockExchange,
+  exchange: TrimsockExchange<T>,
   error: unknown,
 ) => void;
 
@@ -26,14 +26,15 @@ function generateExchangeId(length: number): string {
     .join("");
 }
 
-export class TrimsockExchange {
+export class TrimsockExchange<T> {
   private replyResolvers: Array<(command: Command) => void> = [];
   private replyRejectors: Array<(command: Command) => void> = [];
   private streamResolvers: Array<(command: Command) => void> = [];
 
   constructor(
-    private write: (what: Command) => void,
-    private requestExchange: (what: Command) => TrimsockExchange,
+    public readonly source: T,
+    private write: (what: Command, to: T) => void,
+    private requestExchange: (what: Command, source: T) => TrimsockExchange<T>,
     private close: () => void,
     private command?: Command,
   ) {}
@@ -58,12 +59,12 @@ export class TrimsockExchange {
     }
   }
 
-  send(what: Command): TrimsockExchange {
-    this.write(what);
-    return this.requestExchange(what);
+  send(what: Command, to: T = this.source): TrimsockExchange<T> {
+    this.write(what, to);
+    return this.requestExchange(what, to);
   }
 
-  request(what: Command): TrimsockExchange {
+  request(what: Command): TrimsockExchange<T> {
     const req: Command = {
       ...what,
       isRequest: true,
@@ -84,7 +85,8 @@ export class TrimsockExchange {
       name: "",
       requestId: this.command.requestId,
       isSuccessResponse: true,
-    });
+    }, this.source);
+    this.close()
   }
 
   fail(what: Omit<Command, "name">): void {
@@ -94,7 +96,7 @@ export class TrimsockExchange {
       name: "",
       requestId: this.command.requestId,
       isErrorResponse: true,
-    });
+    }, this.source);
   }
 
   failOrSend(what: Command): void {
@@ -145,25 +147,25 @@ export class TrimsockExchange {
 }
 
 export abstract class Reactor<T> {
-  private handlers: Map<string, CommandHandler> = new Map();
-  private defaultHandler: CommandHandler = () => {};
-  private errorHandler: CommandErrorHandler = () => {};
+  private handlers: Map<string, CommandHandler<T>> = new Map();
+  private defaultHandler: CommandHandler<T> = () => {};
+  private errorHandler: CommandErrorHandler<T> = () => {};
 
-  private exchanges: Map<string, TrimsockExchange> = new Map();
+  private exchanges: Map<string, TrimsockExchange<T>> = new Map();
 
   constructor(private trimsock: Trimsock = new Trimsock().withConventions()) {}
 
-  public on(commandName: string, handler: CommandHandler): this {
+  public on(commandName: string, handler: CommandHandler<T>): this {
     this.handlers.set(commandName, handler);
     return this;
   }
 
-  public onUnknown(handler: CommandHandler): this {
+  public onUnknown(handler: CommandHandler<T>): this {
     this.defaultHandler = handler;
     return this;
   }
 
-  public onError(handler: CommandErrorHandler): this {
+  public onError(handler: CommandErrorHandler<T>): this {
     this.errorHandler = handler;
     return this;
   }
@@ -234,12 +236,12 @@ export abstract class Reactor<T> {
     return true;
   }
 
-  private findExchange(command: Command): TrimsockExchange | undefined {
+  private findExchange(command: Command): TrimsockExchange<T> | undefined {
     const id = command.requestId ?? command.streamId;
     return id !== undefined ? this.exchanges.get(id) : undefined;
   }
 
-  private ensureExchange(command: Command, source: T): TrimsockExchange {
+  private ensureExchange(command: Command, source: T): TrimsockExchange<T> {
     const id = command.requestId ?? command.streamId;
 
     if (id === undefined) return this.makeExchange(command, source);
@@ -250,13 +252,15 @@ export abstract class Reactor<T> {
     return exchange;
   }
 
-  private makeExchange(command: Command, source: T): TrimsockExchange {
+  private makeExchange(command: Command | undefined, source: T): TrimsockExchange<T> {
     return new TrimsockExchange(
-      (cmd) => this.write(serialize(cmd), source),
-      (cmd) => this.ensureExchange(cmd, source),
+      source,
+      (cmd, to) => this.write(serialize(cmd), to),
+      (cmd, to) => this.ensureExchange(cmd, to),
       () => {
-        const exchangeId = command.requestId ?? command.streamId;
-        if (exchangeId) this.exchanges.delete(exchangeId);
+        const exchangeId = command?.requestId ?? command?.streamId;
+        if (exchangeId !== undefined)
+          this.exchanges.delete(exchangeId);
       },
       command,
     );
