@@ -80,23 +80,29 @@ export class TrimsockExchange<T> {
 
   reply(what: Omit<Command, "name">): void {
     this.requireRequestId(this.command?.requestId);
-    this.write({
-      ...what,
-      name: "",
-      requestId: this.command.requestId,
-      isSuccessResponse: true,
-    }, this.source);
-    this.close()
+    this.write(
+      {
+        ...what,
+        name: "",
+        requestId: this.command.requestId,
+        isSuccessResponse: true,
+      },
+      this.source,
+    );
+    this.close();
   }
 
   fail(what: Omit<Command, "name">): void {
     this.requireRequestId(this.command?.requestId);
-    this.write({
-      ...what,
-      name: "",
-      requestId: this.command.requestId,
-      isErrorResponse: true,
-    }, this.source);
+    this.write(
+      {
+        ...what,
+        name: "",
+        requestId: this.command.requestId,
+        isErrorResponse: true,
+      },
+      this.source,
+    );
   }
 
   failOrSend(what: Command): void {
@@ -252,15 +258,17 @@ export abstract class Reactor<T> {
     return exchange;
   }
 
-  private makeExchange(command: Command | undefined, source: T): TrimsockExchange<T> {
+  private makeExchange(
+    command: Command | undefined,
+    source: T,
+  ): TrimsockExchange<T> {
     return new TrimsockExchange(
       source,
       (cmd, to) => this.write(serialize(cmd), to),
       (cmd, to) => this.ensureExchange(cmd, to),
       () => {
         const exchangeId = command?.requestId ?? command?.streamId;
-        if (exchangeId !== undefined)
-          this.exchanges.delete(exchangeId);
+        if (exchangeId !== undefined) this.exchanges.delete(exchangeId);
       },
       command,
     );
