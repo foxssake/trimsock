@@ -103,6 +103,7 @@ export class TrimsockExchange {
   }
 
   onReply(): Promise<Command> {
+    // TODO: Test what happens if the exchange is already closed
     return new Promise((resolve, reject) => {
       this.replyResolvers.push(resolve);
       this.replyRejectors.push(reject);
@@ -110,6 +111,7 @@ export class TrimsockExchange {
   }
 
   onStream(): Promise<Command> {
+    // TODO: Test what happens if the exchange is already closed
     return new Promise((resolve, reject) => {
       this.streamResolvers.push(resolve);
       this.replyRejectors.push(reject);
@@ -117,11 +119,11 @@ export class TrimsockExchange {
   }
 
   async *chunks(): AsyncGenerator<Command> {
+    // TODO: Test what happens if `onStream()` has been called before
     if (this.command !== undefined) yield this.command;
 
     while (true) {
       const chunk = await this.onStream();
-
       if (chunk.isStreamEnd) break;
 
       yield chunk;
