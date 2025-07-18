@@ -82,3 +82,7 @@ export function unescapeCommandName(data: string): string {
 export function unescapeCommandData(data: string): string {
   return data.replaceAll("\\n", "\n").replaceAll("\\r", "\r");
 }
+
+export function getExchangeId(command?: Command): string | undefined {
+  return command?.streamId ?? command?.requestId;
+}

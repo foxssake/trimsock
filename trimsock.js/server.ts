@@ -21,6 +21,12 @@ const reactor = new SocketReactor<SocketContext>()
       .onReply();
     console.log("Response is ", result.data.toString("ascii"));
   })
+  .on("stream", async (_, exchange) => {
+    console.log("Started stream");
+    for await (const chunk of exchange.chunks())
+      console.log("Chunk", chunk.data.toString("ascii"), chunk.data);
+    console.log("Finished stream");
+  })
   .onUnknown((cmd, exchange) =>
     exchange.failOrSend({
       name: cmd.name,
