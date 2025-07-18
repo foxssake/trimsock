@@ -187,8 +187,9 @@ export abstract class Reactor<T> {
     }
   }
 
-  public send(target: T, command: Command) {
+  public send(target: T, command: Command): TrimsockExchange<T> {
     this.write(serialize(command), target);
+    return this.ensureExchange(command, target);
   }
 
   protected abstract write(data: string, target: T): void;

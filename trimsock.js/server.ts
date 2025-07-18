@@ -88,8 +88,10 @@ reactor.listen({
       reactor.send(socket, {
         name: "greet",
         data: Buffer.from(sessionId, "ascii"),
-        isRaw: false,
-      });
+      }).send({
+          name: "stats",
+          data: Buffer.from(`Active connections: ${sockets.size}`, "ascii")
+        });
     },
     close(socket, error) {
       const sessionId = socket.data.sessionId;
