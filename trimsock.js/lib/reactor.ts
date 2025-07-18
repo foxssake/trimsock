@@ -41,19 +41,19 @@ export class TrimsockExchange {
   push(what: Command): void {
     if (what.isSuccessResponse) {
       for (const resolve of this.replyResolvers) resolve(what);
-      this.clearPromises()
+      this.clearPromises();
       this.close();
     } else if (what.isErrorResponse) {
       for (const reject of this.replyRejectors) reject(what);
-      this.clearPromises()
+      this.clearPromises();
       this.close();
     } else if (what.isStreamChunk || what.isStreamEnd) {
       for (const resolve of this.streamResolvers) resolve(what);
       this.streamResolvers = [];
 
       if (what.isStreamEnd) {
-        this.clearPromises()
-        this.close()
+        this.clearPromises();
+        this.close();
       }
     }
   }
@@ -116,17 +116,15 @@ export class TrimsockExchange {
     });
   }
 
-  async* chunks(): AsyncGenerator<Command> {
-    if (this.command !== undefined)
-      yield this.command
+  async *chunks(): AsyncGenerator<Command> {
+    if (this.command !== undefined) yield this.command;
 
     while (true) {
       const chunk = await this.onStream();
 
-      if (chunk.isStreamEnd)
-        break
+      if (chunk.isStreamEnd) break;
 
-      yield chunk
+      yield chunk;
     }
   }
 
@@ -138,9 +136,9 @@ export class TrimsockExchange {
   }
 
   private clearPromises(): void {
-    this.replyResolvers = []
-    this.replyRejectors = []
-    this.streamResolvers = []
+    this.replyResolvers = [];
+    this.replyRejectors = [];
+    this.streamResolvers = [];
   }
 }
 
@@ -171,10 +169,10 @@ export abstract class Reactor<T> {
   public ingest(data: Buffer, source: T) {
     for (const item of this.trimsock.ingest(data)) {
       try {
-      if (isCommand(item)) this.handle(item as Command, source);
+        if (isCommand(item)) this.handle(item as Command, source);
       } catch (err) {
-        console.log(err)
-        throw err
+        console.log(err);
+        throw err;
       }
     }
   }
@@ -199,7 +197,7 @@ export abstract class Reactor<T> {
         this.errorHandler(command, exchange, error);
       }
     } else {
-      const exchange = exchangeId && this.exchanges.get(exchangeId)
+      const exchange = exchangeId && this.exchanges.get(exchangeId);
       assert(exchange, `Unknown exchange id: ${exchangeId}!`);
       exchange.push(command);
     }
@@ -207,31 +205,31 @@ export abstract class Reactor<T> {
 
   private isNewExchange(command: Command): boolean {
     const exchangeId = getExchangeId(command);
-    const hasExchangeId = exchangeId !== undefined
+    const hasExchangeId = exchangeId !== undefined;
     const knownExchange = hasExchangeId && this.exchanges.get(exchangeId);
 
     // Request-response
     if (command.isRequest) {
-      assert(hasExchangeId, 'Request command is missing its request id!')
-      return true
+      assert(hasExchangeId, "Request command is missing its request id!");
+      return true;
     }
     if (command.isSuccessResponse || command.isErrorResponse) {
-      assert(hasExchangeId, 'Response command is missing its request id!')
-      return false
+      assert(hasExchangeId, "Response command is missing its request id!");
+      return false;
     }
 
     // Streams
     if (command.isStreamChunk) {
-      assert(hasExchangeId, 'Stream chunk command is missing its request id!')
-      return knownExchange === undefined
+      assert(hasExchangeId, "Stream chunk command is missing its request id!");
+      return knownExchange === undefined;
     }
     if (command.isStreamEnd) {
-      assert(hasExchangeId, 'Stream chunk command is missing its request id!')
-      return false
+      assert(hasExchangeId, "Stream chunk command is missing its request id!");
+      return false;
     }
 
     // Regular commands
-    return true
+    return true;
   }
 
   private findExchange(command: Command): TrimsockExchange | undefined {
