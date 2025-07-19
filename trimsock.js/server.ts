@@ -1,5 +1,5 @@
 import assert from "node:assert";
-import { serialize } from "@lib/command";
+import { Command } from "@lib/command";
 import { SocketReactor } from "@lib/reactor";
 import type { Socket } from "bun";
 
@@ -41,9 +41,9 @@ const reactor = new SocketReactor<SocketContext>()
     console.log("Finished stream");
   })
   .on("proxy", (cmd, exchange) => {
-    assert(cmd.params && cmd.params.length === 2, "Command needs two params!");
-    const peerId = cmd.params[0];
-    const data = cmd.params[1];
+    cmd.requireParams(2);
+    const peerId = cmd.requireParam(0);
+    const data = cmd.requireParam(1);
 
     const target = sockets.values().find((it) => it.data.sessionId === peerId);
     assert(target, `Unknown peer: ${peerId}`);
@@ -69,7 +69,7 @@ const reactor = new SocketReactor<SocketContext>()
     exchange.failOrSend({
       name: cmd.name,
       data: Buffer.from(
-        `Failed to process command: ${serialize(cmd)}\nError: ${message}`,
+        `Failed to process command: ${Command.serialize(cmd)}\nError: ${message}`,
         "ascii",
       ),
     });

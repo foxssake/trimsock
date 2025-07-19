@@ -1,11 +1,11 @@
-import type { Command } from "./command";
+import type { CommandSpec } from "./command";
 
 export interface Convention {
-  process(command: Command): Command;
+  process(command: CommandSpec): CommandSpec;
 }
 
 export class MultiparamConvention implements Convention {
-  public process(command: Command): Command {
+  public process(command: CommandSpec): CommandSpec {
     if (!command.data.includes(" ")) return command;
 
     const text = command.data.toString("ascii");
@@ -16,7 +16,7 @@ export class MultiparamConvention implements Convention {
 }
 
 export class RequestResponseConvention implements Convention {
-  public process(command: Command): Command {
+  public process(command: CommandSpec): CommandSpec {
     const name = command.name;
     if (!/[?\.!]/.test(name)) return command; // not a request / response
 
@@ -40,7 +40,7 @@ export class RequestResponseConvention implements Convention {
 }
 
 export class StreamConvention implements Convention {
-  public process(command: Command): Command {
+  public process(command: CommandSpec): CommandSpec {
     const name = command.name;
     if (!name.includes("|")) return command; // not a stream command
 

@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import type { SocketHandler } from "bun";
-import { type Command, getExchangeId, serialize } from "./command";
+import { Command, type CommandSpec } from "./command";
 import { Trimsock, isCommand } from "./trimsock";
 
 export type CommandHandler<T> = (
@@ -33,8 +33,11 @@ export class TrimsockExchange<T> {
 
   constructor(
     public readonly source: T,
-    private write: (what: Command, to: T) => void,
-    private requestExchange: (what: Command, source: T) => TrimsockExchange<T>,
+    private write: (what: CommandSpec, to: T) => void,
+    private requestExchange: (
+      what: CommandSpec,
+      source: T,
+    ) => TrimsockExchange<T>,
     private close: () => void,
     private command?: Command,
   ) {}
@@ -59,13 +62,13 @@ export class TrimsockExchange<T> {
     }
   }
 
-  send(what: Command, to: T = this.source): TrimsockExchange<T> {
+  send(what: CommandSpec, to: T = this.source): TrimsockExchange<T> {
     this.write(what, to);
     return this.requestExchange(what, to);
   }
 
-  request(what: Command): TrimsockExchange<T> {
-    const req: Command = {
+  request(what: CommandSpec): TrimsockExchange<T> {
+    const req: CommandSpec = {
       ...what,
       isRequest: true,
       requestId: generateExchangeId(4),
@@ -75,16 +78,16 @@ export class TrimsockExchange<T> {
   }
 
   canReply(): boolean {
-    return this.command?.requestId !== undefined;
+    return this.command?.id !== undefined;
   }
 
-  reply(what: Omit<Command, "name">): void {
-    this.requireRequestId(this.command?.requestId);
+  reply(what: Omit<CommandSpec, "name">): void {
+    this.requireRepliable();
     this.write(
       {
         ...what,
         name: "",
-        requestId: this.command.requestId,
+        requestId: this.command?.requireId(),
         isSuccessResponse: true,
       },
       this.source,
@@ -92,40 +95,36 @@ export class TrimsockExchange<T> {
     this.close();
   }
 
-  replyOrSend(what: Command): void {
+  replyOrSend(what: CommandSpec): void {
     if (this.canReply()) this.reply(what);
     else this.send(what);
   }
 
-  fail(what: Omit<Command, "name">): void {
-    this.requireRequestId(this.command?.requestId);
+  fail(what: Omit<CommandSpec, "name">): void {
+    this.requireRepliable();
     this.write(
       {
         ...what,
         name: "",
-        requestId: this.command.requestId,
+        requestId: this.command?.requireId(),
         isErrorResponse: true,
       },
       this.source,
     );
   }
 
-  failOrSend(what: Command): void {
+  failOrSend(what: CommandSpec): void {
     if (this.canReply()) this.fail(what);
     else this.send(what);
   }
 
-  stream(what: Omit<Command, "name" | "streamId">): void {
-    const exchangeId = getExchangeId(this.command);
-    assert(
-      exchangeId !== undefined,
-      "Can't stream without a request or stream ID!",
-    );
+  stream(what: Omit<CommandSpec, "name" | "streamId">): void {
+    this.requireRepliable();
     this.write(
       {
         ...what,
         name: "",
-        streamId: exchangeId,
+        streamId: this.command?.requireId(),
         isStreamChunk: true,
       },
       this.source,
@@ -133,16 +132,12 @@ export class TrimsockExchange<T> {
   }
 
   finishStream(): void {
-    const exchangeId = getExchangeId(this.command);
-    assert(
-      exchangeId !== undefined,
-      "Can't stream without a request or stream ID!",
-    );
+    this.requireRepliable();
     this.write(
       {
         name: "",
         data: Buffer.of(),
-        streamId: exchangeId,
+        streamId: this.command?.requireId(),
         isStreamEnd: true,
       },
       this.source,
@@ -150,7 +145,7 @@ export class TrimsockExchange<T> {
     this.close();
   }
 
-  onReply(): Promise<Command> {
+  onReply(): Promise<CommandSpec> {
     // TODO: Test what happens if the exchange is already closed
     return new Promise((resolve, reject) => {
       this.replyResolvers.push(resolve);
@@ -158,7 +153,7 @@ export class TrimsockExchange<T> {
     });
   }
 
-  onStream(): Promise<Command> {
+  onStream(): Promise<CommandSpec> {
     // TODO: Test what happens if the exchange is already closed
     return new Promise((resolve, reject) => {
       this.streamResolvers.push(resolve);
@@ -166,7 +161,7 @@ export class TrimsockExchange<T> {
     });
   }
 
-  async *chunks(): AsyncGenerator<Command> {
+  async *chunks(): AsyncGenerator<CommandSpec> {
     // TODO: Test what happens if `onStream()` has been called before
     if (this.command !== undefined) yield this.command;
 
@@ -178,11 +173,8 @@ export class TrimsockExchange<T> {
     }
   }
 
-  private requireRequestId(requestId?: string): asserts requestId {
-    assert(
-      requestId !== undefined,
-      "Can't reply if the command has no request id!",
-    );
+  private requireRepliable() {
+    assert(this.canReply(), "No replies can be sent to this command!");
   }
 
   private clearPromises(): void {
@@ -219,7 +211,8 @@ export abstract class Reactor<T> {
   public ingest(data: Buffer, source: T) {
     for (const item of this.trimsock.ingest(data)) {
       try {
-        if (isCommand(item)) this.handle(item as Command, source);
+        if (isCommand(item))
+          this.handle(new Command(item as CommandSpec), source);
       } catch (err) {
         console.log(err);
         throw err;
@@ -227,15 +220,16 @@ export abstract class Reactor<T> {
     }
   }
 
-  public send(target: T, command: Command): TrimsockExchange<T> {
-    this.write(serialize(command), target);
+  public send(target: T, spec: CommandSpec): TrimsockExchange<T> {
+    const command = new Command(spec);
+    this.write(command.serialize(), target);
     return this.ensureExchange(command, target);
   }
 
   protected abstract write(data: string, target: T): void;
 
   private handle(command: Command, source: T) {
-    const exchangeId = getExchangeId(command);
+    const exchangeId = command.id;
 
     if (this.isNewExchange(command)) {
       const handler = this.handlers.get(command.name);
@@ -255,7 +249,7 @@ export abstract class Reactor<T> {
   }
 
   private isNewExchange(command: Command): boolean {
-    const exchangeId = getExchangeId(command);
+    const exchangeId = command.id;
     const hasExchangeId = exchangeId !== undefined;
     const knownExchange = hasExchangeId && this.exchanges.get(exchangeId);
 
@@ -305,8 +299,8 @@ export abstract class Reactor<T> {
   ): TrimsockExchange<T> {
     return new TrimsockExchange(
       source,
-      (cmd, to) => this.write(serialize(cmd), to),
-      (cmd, to) => this.ensureExchange(cmd, to),
+      (cmd, to) => this.write(Command.serialize(cmd), to),
+      (cmd, to) => this.ensureExchange(new Command(cmd), to),
       () => {
         const exchangeId = command?.requestId ?? command?.streamId;
         if (exchangeId !== undefined) this.exchanges.delete(exchangeId);

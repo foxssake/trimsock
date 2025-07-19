@@ -1,10 +1,4 @@
-import {
-  type Command,
-  escapeCommandData,
-  escapeCommandName,
-  unescapeCommandData,
-  unescapeCommandName,
-} from "./command";
+import { Command, type CommandSpec } from "./command";
 import {
   type Convention,
   MultiparamConvention,
@@ -16,7 +10,7 @@ export interface ParseError {
   error: string;
 }
 
-export type ParserOutput = Command | ParseError;
+export type ParserOutput = CommandSpec | ParseError;
 
 const NL = 0x0a;
 const SP = 0x20;
@@ -31,7 +25,7 @@ enum ParserState {
 
 // TODO: Change ingest output so this is not needed
 export function isCommand(what: ParserOutput): boolean {
-  return (what as Command).name !== undefined;
+  return (what as CommandSpec).name !== undefined;
 }
 
 export class Trimsock {
@@ -77,11 +71,11 @@ export class Trimsock {
     }
 
     return result.map((item) =>
-      isCommand(item) ? this.applyConventions(item as Command) : item,
+      isCommand(item) ? this.applyConventions(item as CommandSpec) : item,
     );
   }
 
-  private applyConventions(command: Command): Command {
+  private applyConventions(command: CommandSpec): CommandSpec {
     let result = command;
     for (const convention of this.conventions)
       result = convention.process(result);
@@ -238,12 +232,12 @@ export class Trimsock {
     return at + bytesAvailable;
   }
 
-  private emitCommand(): Command {
+  private emitCommand(): CommandSpec {
     const data = Buffer.concat(this.commandDataChunks).toString("ascii");
 
     const result = {
-      name: unescapeCommandName(this.commandName),
-      data: Buffer.from(unescapeCommandData(data)),
+      name: Command.unescapeName(this.commandName),
+      data: Buffer.from(Command.unescapeData(data)),
       isRaw: false,
     };
 
@@ -251,8 +245,8 @@ export class Trimsock {
     return result;
   }
 
-  private emitRawCommand(): Command {
-    const name = unescapeCommandData(this.commandName.substring(1));
+  private emitRawCommand(): CommandSpec {
+    const name = Command.unescapeData(this.commandName.substring(1));
     const data = Buffer.concat(this.commandDataChunks);
 
     this.clearCommand();

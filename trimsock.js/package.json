@@ -1,6 +1,6 @@
 {
   "name": "trimsock",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "module": "lib/trimsock.ts",
   "type": "module",
   "scripts": {
