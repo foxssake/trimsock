@@ -5,12 +5,12 @@ import { Trimsock, isCommand } from "./trimsock";
 
 export type CommandHandler<T> = (
   command: Command,
-  exchange: TrimsockExchange<T>,
+  exchange: Exchange<T>,
 ) => void;
 
 export type CommandErrorHandler<T> = (
   command: Command,
-  exchange: TrimsockExchange<T>,
+  exchange: Exchange<T>,
   error: unknown,
 ) => void;
 
@@ -26,7 +26,28 @@ function generateExchangeId(length: number): string {
     .join("");
 }
 
-export class TrimsockExchange<T> {
+export interface ReadableExchange {
+  onReply(): Promise<CommandSpec>;
+  onStream(): Promise<CommandSpec>;
+  chunks(): AsyncGenerator<CommandSpec>;
+}
+
+export interface WritableExchange<T> {
+  send(what: CommandSpec, to?: T): this;
+  request(what: CommandSpec): this;
+  reply(what: Omit<CommandSpec, "name">): void;
+  fail(what: Omit<CommandSpec, "name">): void;
+  stream(what: Omit<CommandSpec, "name" | "streamId">): void;
+  finishStream(): void;
+
+  canReply(): boolean;
+  replyOrSend(what: CommandSpec): void;
+  failOrSend(what: CommandSpec): void;
+}
+
+export interface Exchange<T> extends ReadableExchange, WritableExchange<T> {}
+
+export class ReactorExchange<T> implements Exchange<T> {
   private replyResolvers: Array<(command: Command) => void> = [];
   private replyRejectors: Array<(command: Command) => void> = [];
   private streamResolvers: Array<(command: Command) => void> = [];
@@ -37,7 +58,7 @@ export class TrimsockExchange<T> {
     private requestExchange: (
       what: CommandSpec,
       source: T,
-    ) => TrimsockExchange<T>,
+    ) => ThisType<ReactorExchange<T>>,
     private close: () => void,
     private command?: Command,
   ) {}
@@ -62,12 +83,12 @@ export class TrimsockExchange<T> {
     }
   }
 
-  send(what: CommandSpec, to: T = this.source): TrimsockExchange<T> {
-    this.write(what, to);
-    return this.requestExchange(what, to);
+  send(what: CommandSpec, to?: T): this {
+    this.write(what, to ?? this.source);
+    return this.requestExchange(what, to ?? this.source) as this;
   }
 
-  request(what: CommandSpec): TrimsockExchange<T> {
+  request(what: CommandSpec): this {
     const req: CommandSpec = {
       ...what,
       isRequest: true,
@@ -189,7 +210,7 @@ export abstract class Reactor<T> {
   private defaultHandler: CommandHandler<T> = () => {};
   private errorHandler: CommandErrorHandler<T> = () => {};
 
-  private exchanges: Map<string, TrimsockExchange<T>> = new Map();
+  private exchanges: Map<string, ReactorExchange<T>> = new Map();
 
   constructor(private trimsock: Trimsock = new Trimsock().withConventions()) {}
 
@@ -208,7 +229,7 @@ export abstract class Reactor<T> {
     return this;
   }
 
-  public ingest(data: Buffer, source: T) {
+  public ingest(data: Buffer, source: T): void {
     for (const item of this.trimsock.ingest(data)) {
       try {
         if (isCommand(item))
@@ -220,7 +241,7 @@ export abstract class Reactor<T> {
     }
   }
 
-  public send(target: T, spec: CommandSpec): TrimsockExchange<T> {
+  public send(target: T, spec: CommandSpec): Exchange<T> {
     const command = new Command(spec);
     this.write(command.serialize(), target);
     return this.ensureExchange(command, target);
@@ -277,12 +298,12 @@ export abstract class Reactor<T> {
     return true;
   }
 
-  private findExchange(command: Command): TrimsockExchange<T> | undefined {
+  private findExchange(command: Command): ReactorExchange<T> | undefined {
     const id = command.requestId ?? command.streamId;
     return id !== undefined ? this.exchanges.get(id) : undefined;
   }
 
-  private ensureExchange(command: Command, source: T): TrimsockExchange<T> {
+  private ensureExchange(command: Command, source: T): ReactorExchange<T> {
     const id = command.requestId ?? command.streamId;
 
     if (id === undefined) return this.makeExchange(command, source);
@@ -296,8 +317,8 @@ export abstract class Reactor<T> {
   private makeExchange(
     command: Command | undefined,
     source: T,
-  ): TrimsockExchange<T> {
-    return new TrimsockExchange(
+  ): ReactorExchange<T> {
+    return new ReactorExchange(
       source,
       (cmd, to) => this.write(Command.serialize(cmd), to),
       (cmd, to) => this.ensureExchange(new Command(cmd), to),
