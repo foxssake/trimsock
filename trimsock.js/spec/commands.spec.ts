@@ -55,6 +55,16 @@ describe("Commands", () => {
         "command|0123 foo\n",
       ],
       [
+        "should serialize stream chunk with empty id",
+        {
+          name: "command",
+          streamId: "",
+          isStreamChunk: true,
+          data: Buffer.from("foo", "ascii")
+        },
+        "command| foo\n"
+      ],
+      [
         "should serialize stream end",
         {
           name: "command",
