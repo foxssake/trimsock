@@ -33,7 +33,8 @@ export function serialize(command: Command): string {
   let name = "";
 
   // Figure out final command name
-  if (command.streamId) name = `${command.name}|${command.streamId}`;
+  if (command.isStreamChunk || command.isStreamEnd)
+    name = `${command.name}|${command.streamId}`;
   else if (command.isRequest) name = `${command.name}?${command.requestId}`;
   else if (command.isSuccessResponse)
     name = `${command.name}.${command.requestId}`;

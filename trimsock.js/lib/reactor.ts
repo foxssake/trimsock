@@ -92,6 +92,11 @@ export class TrimsockExchange<T> {
     this.close();
   }
 
+  replyOrSend(what: Command): void {
+    if (this.canReply()) this.reply(what);
+    else this.send(what);
+  }
+
   fail(what: Omit<Command, "name">): void {
     this.requireRequestId(this.command?.requestId);
     this.write(
@@ -108,6 +113,41 @@ export class TrimsockExchange<T> {
   failOrSend(what: Command): void {
     if (this.canReply()) this.fail(what);
     else this.send(what);
+  }
+
+  stream(what: Omit<Command, "name" | "streamId">): void {
+    const exchangeId = getExchangeId(this.command);
+    assert(
+      exchangeId !== undefined,
+      "Can't stream without a request or stream ID!",
+    );
+    this.write(
+      {
+        ...what,
+        name: "",
+        streamId: exchangeId,
+        isStreamChunk: true,
+      },
+      this.source,
+    );
+  }
+
+  finishStream(): void {
+    const exchangeId = getExchangeId(this.command);
+    assert(
+      exchangeId !== undefined,
+      "Can't stream without a request or stream ID!",
+    );
+    this.write(
+      {
+        name: "",
+        data: Buffer.of(),
+        streamId: exchangeId,
+        isStreamEnd: true,
+      },
+      this.source,
+    );
+    this.close();
   }
 
   onReply(): Promise<Command> {

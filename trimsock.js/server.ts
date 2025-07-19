@@ -55,7 +55,8 @@ const reactor = new SocketReactor<SocketContext>()
   })
   .on("sessions", (_, exchange) => {
     for (const socket of sockets)
-      exchange.reply({ data: Buffer.from(socket.data.sessionId, "ascii") });
+      exchange.stream({ data: Buffer.from(socket.data.sessionId, "ascii") });
+    exchange.finishStream();
   })
   .onUnknown((cmd, exchange) =>
     exchange.failOrSend({
@@ -85,12 +86,14 @@ reactor.listen({
       sockets.add(socket);
 
       console.log("Created session ", sessionId);
-      reactor.send(socket, {
-        name: "greet",
-        data: Buffer.from(sessionId, "ascii"),
-      }).send({
+      reactor
+        .send(socket, {
+          name: "greet",
+          data: Buffer.from(sessionId, "ascii"),
+        })
+        .send({
           name: "stats",
-          data: Buffer.from(`Active connections: ${sockets.size}`, "ascii")
+          data: Buffer.from(`Active connections: ${sockets.size}`, "ascii"),
         });
     },
     close(socket, error) {
