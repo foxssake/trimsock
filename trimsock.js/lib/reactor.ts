@@ -116,8 +116,11 @@ export class TrimsockExchange<T> {
   }
 
   stream(what: Omit<Command, "name" | "streamId">): void {
-    const exchangeId = getExchangeId(this.command)
-    assert(exchangeId !== undefined, "Can't stream without a request or stream ID!")
+    const exchangeId = getExchangeId(this.command);
+    assert(
+      exchangeId !== undefined,
+      "Can't stream without a request or stream ID!",
+    );
     this.write(
       {
         ...what,
@@ -130,8 +133,11 @@ export class TrimsockExchange<T> {
   }
 
   finishStream(): void {
-    const exchangeId = getExchangeId(this.command)
-    assert(exchangeId !== undefined, "Can't stream without a request or stream ID!")
+    const exchangeId = getExchangeId(this.command);
+    assert(
+      exchangeId !== undefined,
+      "Can't stream without a request or stream ID!",
+    );
     this.write(
       {
         name: "",

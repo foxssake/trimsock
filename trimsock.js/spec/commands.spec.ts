@@ -60,9 +60,9 @@ describe("Commands", () => {
           name: "command",
           streamId: "",
           isStreamChunk: true,
-          data: Buffer.from("foo", "ascii")
+          data: Buffer.from("foo", "ascii"),
         },
-        "command| foo\n"
+        "command| foo\n",
       ],
       [
         "should serialize stream end",

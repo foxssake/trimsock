@@ -56,7 +56,7 @@ const reactor = new SocketReactor<SocketContext>()
   .on("sessions", (_, exchange) => {
     for (const socket of sockets)
       exchange.stream({ data: Buffer.from(socket.data.sessionId, "ascii") });
-    exchange.finishStream()
+    exchange.finishStream();
   })
   .onUnknown((cmd, exchange) =>
     exchange.failOrSend({
