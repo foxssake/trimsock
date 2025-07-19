@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { type CommandSpec, Command } from "@lib/command";
+import { Command, type CommandSpec } from "@lib/command";
 
 describe("Commands", () => {
   describe("serialize()", () => {

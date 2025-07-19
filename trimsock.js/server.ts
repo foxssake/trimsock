@@ -1,7 +1,7 @@
 import assert from "node:assert";
+import { Command } from "@lib/command";
 import { SocketReactor } from "@lib/reactor";
 import type { Socket } from "bun";
-import { Command } from "@lib/command";
 
 type SocketContext = { sessionId: string };
 const sockets: Set<Socket<SocketContext>> = new Set();

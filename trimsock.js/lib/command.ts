@@ -61,9 +61,12 @@ export class Command implements CommandSpec {
 
   requireParams(amount?: number): Array<string> {
     if (amount === undefined)
-      assert(this.params !== undefined, `This command requires params!`);
+      assert(this.params !== undefined, "This command requires params!");
     else
-      assert(this.params !== undefined && this.params.length == amount, `This command requires ${amount} params!`);
+      assert(
+        this.params !== undefined && this.params.length === amount,
+        `This command requires ${amount} params!`,
+      );
 
     return this.params;
   }

@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import type { SocketHandler } from "bun";
-import { type CommandSpec, Command } from "./command";
+import { Command, type CommandSpec } from "./command";
 import { Trimsock, isCommand } from "./trimsock";
 
 export type CommandHandler<T> = (
@@ -132,7 +132,7 @@ export class TrimsockExchange<T> {
   }
 
   finishStream(): void {
-    this.requireRepliable()
+    this.requireRepliable();
     this.write(
       {
         name: "",
@@ -211,7 +211,8 @@ export abstract class Reactor<T> {
   public ingest(data: Buffer, source: T) {
     for (const item of this.trimsock.ingest(data)) {
       try {
-        if (isCommand(item)) this.handle(new Command(item as CommandSpec), source);
+        if (isCommand(item))
+          this.handle(new Command(item as CommandSpec), source);
       } catch (err) {
         console.log(err);
         throw err;

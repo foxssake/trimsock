@@ -1,7 +1,4 @@
-import {
-  type CommandSpec,
-  Command
-} from "./command";
+import { Command, type CommandSpec } from "./command";
 import {
   type Convention,
   MultiparamConvention,
