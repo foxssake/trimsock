@@ -167,7 +167,6 @@ export class ReactorExchange<T> implements Exchange<T> {
   }
 
   onReply(): Promise<CommandSpec> {
-    // TODO: Test what happens if the exchange is already closed
     return new Promise((resolve, reject) => {
       this.replyResolvers.push(resolve);
       this.replyRejectors.push(reject);
@@ -175,7 +174,6 @@ export class ReactorExchange<T> implements Exchange<T> {
   }
 
   onStream(): Promise<CommandSpec> {
-    // TODO: Test what happens if the exchange is already closed
     return new Promise((resolve, reject) => {
       this.streamResolvers.push(resolve);
       this.replyRejectors.push(reject);
@@ -183,7 +181,6 @@ export class ReactorExchange<T> implements Exchange<T> {
   }
 
   async *chunks(): AsyncGenerator<CommandSpec> {
-    // TODO: Test what happens if `onStream()` has been called before
     if (this.command !== undefined) yield this.command;
 
     while (true) {
