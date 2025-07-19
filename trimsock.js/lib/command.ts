@@ -1,14 +1,16 @@
-export interface BaseCommand {
+import assert from "node:assert";
+
+export interface BaseCommandSpec {
   name: string;
   data: Buffer;
   isRaw?: boolean;
 }
 
-interface MultiparamCommand extends BaseCommand {
+interface MultiparamCommandSpec extends BaseCommandSpec {
   params?: Array<string>;
 }
 
-interface RequestResponseCommand extends BaseCommand {
+interface RequestResponseCommandSpec extends BaseCommandSpec {
   requestId?: string;
 
   isRequest?: boolean;
@@ -16,74 +18,114 @@ interface RequestResponseCommand extends BaseCommand {
   isErrorResponse?: boolean;
 }
 
-interface StreamCommand extends BaseCommand {
+interface StreamCommandSpec extends BaseCommandSpec {
   streamId?: string;
 
   isStreamChunk?: boolean;
   isStreamEnd?: boolean;
 }
 
-export interface Command
-  extends BaseCommand,
-    MultiparamCommand,
-    RequestResponseCommand,
-    StreamCommand {}
+export interface CommandSpec
+  extends BaseCommandSpec,
+    MultiparamCommandSpec,
+    RequestResponseCommandSpec,
+    StreamCommandSpec {}
 
-export function serialize(command: Command): string {
-  let name = "";
+export class Command implements CommandSpec {
+  name: string;
+  data: Buffer<ArrayBufferLike>;
+  isRaw?: boolean | undefined;
+  params?: string[] | undefined;
+  requestId?: string | undefined;
+  isRequest?: boolean | undefined;
+  isSuccessResponse?: boolean | undefined;
+  isErrorResponse?: boolean | undefined;
+  streamId?: string | undefined;
+  isStreamChunk?: boolean | undefined;
+  isStreamEnd?: boolean | undefined;
 
-  // Figure out final command name
-  if (command.isStreamChunk || command.isStreamEnd)
-    name = `${command.name}|${command.streamId}`;
-  else if (command.isRequest) name = `${command.name}?${command.requestId}`;
-  else if (command.isSuccessResponse)
-    name = `${command.name}.${command.requestId}`;
-  else if (command.isErrorResponse)
-    name = `${command.name}!${command.requestId}`;
-  else name = command.name;
+  constructor(spec: CommandSpec) {
+    this.name = spec.name;
+    this.data = spec.data;
+    Object.assign(this, spec);
+  }
 
-  name = escapeCommandName(name);
+  get id(): string | undefined {
+    return this.streamId ?? this.requestId;
+  }
 
-  // Early return for raw commands
-  if (command.isRaw)
-    return command.data.byteLength !== 0
-      ? `\r${name} ${command.data.byteLength}\n${command.data.toString("ascii")}\n`
-      : `${name} \n`;
+  requireId(): string {
+    assert(this.id, "No request or stream ID is present!");
+    return this.id;
+  }
 
-  // Figure out data
-  let data = "";
-  if (command.params)
-    data = command.params.map((it) => escapeCommandData(it)).join(" ");
-  else data = escapeCommandData(command.data.toString("ascii"));
+  requireParams(amount?: number): Array<string> {
+    if (amount === undefined)
+      assert(this.params !== undefined, `This command requires params!`);
+    else
+      assert(this.params !== undefined && this.params.length == amount, `This command requires ${amount} params!`);
 
-  return `${name} ${data}\n`;
-}
+    return this.params;
+  }
 
-export function escapeCommandName(name: string): string {
-  return name
-    .replaceAll("\n", "\\n")
-    .replaceAll("\r", "\\r")
-    .replaceAll(" ", "\\s");
-}
+  requireParam(index: number): string {
+    return this.requireParams()[index];
+  }
 
-export function escapeCommandData(data: string): string {
-  return data
-    .replaceAll("\n", "\\n")
-    .replaceAll("\r", "\\r")
-    .replaceAll(" ", "\\s");
-}
+  serialize(): string {
+    return Command.serialize(this);
+  }
 
-export function unescapeCommandName(data: string): string {
-  return data
-    .replaceAll("\\s", " ")
-    .replaceAll("\\n", "\n")
-    .replaceAll("\\r", "\r");
-}
+  static serialize(spec: CommandSpec): string {
+    let name = "";
 
-export function unescapeCommandData(data: string): string {
-  return data.replaceAll("\\n", "\n").replaceAll("\\r", "\r");
-}
+    // Figure out final spec.name
+    if (spec.isStreamChunk || spec.isStreamEnd)
+      name = `${spec.name}|${spec.streamId}`;
+    else if (spec.isRequest) name = `${spec.name}?${spec.requestId}`;
+    else if (spec.isSuccessResponse) name = `${spec.name}.${spec.requestId}`;
+    else if (spec.isErrorResponse) name = `${spec.name}!${spec.requestId}`;
+    else name = spec.name;
 
-export function getExchangeId(command?: Command): string | undefined {
-  return command?.streamId ?? command?.requestId;
+    name = Command.escapeName(name);
+
+    // Early return for raw spec.
+    if (spec.isRaw)
+      return spec.data.byteLength !== 0
+        ? `\r${name} ${spec.data.byteLength}\n${spec.data.toString("ascii")}\n`
+        : `${name} \n`;
+
+    // Figure out data
+    let data = "";
+    if (spec.params)
+      data = spec.params.map((it) => Command.escapeData(it)).join(" ");
+    else data = Command.escapeData(spec.data.toString("ascii"));
+
+    return `${name} ${data}\n`;
+  }
+
+  static escapeName(name: string): string {
+    return name
+      .replaceAll("\n", "\\n")
+      .replaceAll("\r", "\\r")
+      .replaceAll(" ", "\\s");
+  }
+
+  static escapeData(data: string): string {
+    return data
+      .replaceAll("\n", "\\n")
+      .replaceAll("\r", "\\r")
+      .replaceAll(" ", "\\s");
+  }
+
+  static unescapeName(data: string): string {
+    return data
+      .replaceAll("\\s", " ")
+      .replaceAll("\\n", "\n")
+      .replaceAll("\\r", "\r");
+  }
+
+  static unescapeData(data: string): string {
+    return data.replaceAll("\\n", "\n").replaceAll("\\r", "\r");
+  }
 }

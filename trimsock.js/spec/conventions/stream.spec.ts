@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import type { Command } from "@lib/command";
+import type { CommandSpec } from "@lib/command";
 import { type ParserOutput, Trimsock } from "@lib/trimsock";
 
 describe("StreamConvention", () => {
   test("should parse stream chunk", () => {
     const trimsock = new Trimsock().withConventions();
     const input = "lobbies|0123 {foo}\n";
-    const expected: Command = {
+    const expected: CommandSpec = {
       name: "lobbies",
       data: Buffer.from("{foo}", "ascii"),
       isRaw: false,
@@ -40,7 +40,7 @@ describe("StreamConvention", () => {
   test("should parse stream end", () => {
     const trimsock = new Trimsock().withConventions();
     const input = "|0123 \n";
-    const expected: Command = {
+    const expected: CommandSpec = {
       name: "",
       data: Buffer.of(),
       isRaw: false,
@@ -52,7 +52,7 @@ describe("StreamConvention", () => {
   test("should passthrough params", () => {
     const trimsock = new Trimsock().withConventions();
     const input = "lobbies|0123 name=foo players=5/7\n";
-    const expected: Command = {
+    const expected: CommandSpec = {
       name: "lobbies",
       data: Buffer.from("name=foo players=5/7", "ascii"),
       isRaw: false,

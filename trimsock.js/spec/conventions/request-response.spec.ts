@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import type { Command } from "@lib/command";
+import type { CommandSpec } from "@lib/command";
 import { Trimsock } from "@lib/trimsock";
 
 describe("RequestResponseConvention", () => {
   test("should parse request", () => {
     const trimsock = new Trimsock().withConventions();
     const input = "get-logo?0123 \n";
-    const expected: Command = {
+    const expected: CommandSpec = {
       name: "get-logo",
       data: Buffer.of(),
       isRaw: false,
@@ -18,7 +18,7 @@ describe("RequestResponseConvention", () => {
   test("should parse response", () => {
     const trimsock = new Trimsock().withConventions();
     const input = ".0123 0xFD\n";
-    const expected: Command = {
+    const expected: CommandSpec = {
       name: "",
       data: Buffer.from("0xFD", "ascii"),
       isRaw: false,
@@ -30,7 +30,7 @@ describe("RequestResponseConvention", () => {
   test("should parse error", () => {
     const trimsock = new Trimsock().withConventions();
     const input = "!0123 not-found\n";
-    const expected: Command = {
+    const expected: CommandSpec = {
       name: "",
       data: Buffer.from("not-found", "ascii"),
       isRaw: false,
@@ -42,7 +42,7 @@ describe("RequestResponseConvention", () => {
   test("should passthrough params", () => {
     const trimsock = new Trimsock().withConventions();
     const input = ".0123 foo bar\n";
-    const expected: Command = {
+    const expected: CommandSpec = {
       name: "",
       data: Buffer.from("foo bar", "ascii"),
       isRaw: false,
@@ -55,7 +55,7 @@ describe("RequestResponseConvention", () => {
   test("should parse raw", () => {
     const trimsock = new Trimsock().withConventions();
     const input = "\r.0123 4\n0xFD\n";
-    const expected: Command = {
+    const expected: CommandSpec = {
       name: "",
       data: Buffer.from("0xFD", "ascii"),
       isRaw: true,

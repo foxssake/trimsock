@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { type Command, serialize } from "@lib/command";
+import { type CommandSpec, Command } from "@lib/command";
 
 describe("Commands", () => {
   describe("serialize()", () => {
-    const kases: Array<[string, Command, string]> = [
+    const kases: Array<[string, CommandSpec, string]> = [
       [
         "should stringify",
         { name: "command", data: Buffer.from("data", "ascii") },
@@ -107,9 +107,9 @@ describe("Commands", () => {
     ];
 
     for (const kase of kases) {
-      const [name, command, expected] = kase;
+      const [name, spec, expected] = kase;
       test(name, () => {
-        expect(serialize(command)).toBe(expected);
+        expect(Command.serialize(spec)).toBe(expected);
       });
     }
   });
