@@ -55,7 +55,7 @@ export class Command implements CommandSpec {
   }
 
   requireId(): string {
-    assert(this.id, "No request or stream ID is present!");
+    assert(this.id !== undefined, "No request or stream ID is present!");
     return this.id;
   }
 
