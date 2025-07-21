@@ -52,6 +52,8 @@ export class ReactorExchange<T> implements Exchange<T> {
   private replyRejectors: Array<(command: Command) => void> = [];
   private streamResolvers: Array<(command: Command) => void> = [];
 
+  private isOpen = true;
+
   constructor(
     public readonly source: T,
     private write: (what: CommandSpec, to: T) => void,
@@ -59,27 +61,22 @@ export class ReactorExchange<T> implements Exchange<T> {
       what: CommandSpec,
       source: T,
     ) => ThisType<ReactorExchange<T>>,
-    private close: () => void,
+    private free: () => void,
     private command?: Command,
   ) {}
 
   push(what: Command): void {
     if (what.isSuccessResponse) {
       for (const resolve of this.replyResolvers) resolve(what);
-      this.clearPromises();
       this.close();
     } else if (what.isErrorResponse) {
       for (const reject of this.replyRejectors) reject(what);
-      this.clearPromises();
       this.close();
     } else if (what.isStreamChunk || what.isStreamEnd) {
       for (const resolve of this.streamResolvers) resolve(what);
       this.streamResolvers = [];
 
-      if (what.isStreamEnd) {
-        this.clearPromises();
-        this.close();
-      }
+      if (what.isStreamEnd) this.close();
     }
   }
 
@@ -104,6 +101,8 @@ export class ReactorExchange<T> implements Exchange<T> {
 
   reply(what: Omit<CommandSpec, "name">): void {
     this.requireRepliable();
+    this.requireOpen();
+
     this.write(
       {
         ...what,
@@ -123,6 +122,8 @@ export class ReactorExchange<T> implements Exchange<T> {
 
   fail(what: Omit<CommandSpec, "name">): void {
     this.requireRepliable();
+    this.requireOpen();
+
     this.write(
       {
         ...what,
@@ -141,6 +142,8 @@ export class ReactorExchange<T> implements Exchange<T> {
 
   stream(what: Omit<CommandSpec, "name" | "streamId">): void {
     this.requireRepliable();
+    this.requireOpen();
+
     this.write(
       {
         ...what,
@@ -154,6 +157,8 @@ export class ReactorExchange<T> implements Exchange<T> {
 
   finishStream(): void {
     this.requireRepliable();
+    this.requireOpen();
+
     this.write(
       {
         name: "",
@@ -195,10 +200,20 @@ export class ReactorExchange<T> implements Exchange<T> {
     assert(this.canReply(), "No replies can be sent to this command!");
   }
 
+  private requireOpen() {
+    assert(this.isOpen, "Exchange is already closed!");
+  }
+
   private clearPromises(): void {
     this.replyResolvers = [];
     this.replyRejectors = [];
     this.streamResolvers = [];
+  }
+
+  private close(): void {
+    this.clearPromises();
+    this.free();
+    this.isOpen = false;
   }
 }
 
