@@ -65,11 +65,9 @@ export class ReactorExchange<T> implements Exchange<T> {
     private free: () => void,
     private command?: Command,
   ) {
-    if (this.command?.isStreamChunk)
-      this.queued.push(this.command);
+    if (this.command?.isStreamChunk) this.queued.push(this.command);
 
-    if (this.command?.isClosing)
-      this.isOpen = false;
+    if (this.command?.isClosing) this.isOpen = false;
   }
 
   push(what: Command): void {
@@ -83,9 +81,7 @@ export class ReactorExchange<T> implements Exchange<T> {
       if (this.streamResolvers.length > 0) {
         for (const resolve of this.streamResolvers) resolve(what);
         this.streamResolvers = [];
-      }
-      else
-        this.queued.push(what);
+      } else this.queued.push(what);
 
       if (what.isStreamEnd) this.close();
     }
@@ -191,9 +187,8 @@ export class ReactorExchange<T> implements Exchange<T> {
   }
 
   onStream(): Promise<CommandSpec> {
-    const queued = this.queued.shift()
-    if (queued)
-      return Promise.resolve(queued);
+    const queued = this.queued.shift();
+    if (queued) return Promise.resolve(queued);
     this.requireOpen();
 
     return new Promise((resolve, reject) => {

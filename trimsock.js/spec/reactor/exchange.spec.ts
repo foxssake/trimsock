@@ -148,8 +148,8 @@ describe("Exchange", () => {
           name: "stream",
           data: Buffer.of(),
           streamId: "1234",
-          isStreamChunk: true
-        })
+          isStreamChunk: true,
+        });
         expect(await exchange.onStream()).toEqual({
           name: "stream",
           data: Buffer.from("foo", "ascii"),
@@ -170,7 +170,8 @@ describe("Exchange", () => {
         );
         exchange.onStream(); // Discard initial message
 
-        exchange.onStream()
+        exchange
+          .onStream()
           .then(() => expect().fail("Promise should not resolve!"))
           .catch(() => expect().pass("Error was thrown"));
 
@@ -209,13 +210,37 @@ describe("Exchange", () => {
           }),
         );
 
-        exchange.push(new Command({ name: "", data: Buffer.from("bar", "ascii"), isStreamChunk: true, streamId: "1234"}))
-        exchange.push(new Command({ name: "", data: Buffer.of(), isStreamEnd: true, streamId: "1234"}))
+        exchange.push(
+          new Command({
+            name: "",
+            data: Buffer.from("bar", "ascii"),
+            isStreamChunk: true,
+            streamId: "1234",
+          }),
+        );
+        exchange.push(
+          new Command({
+            name: "",
+            data: Buffer.of(),
+            isStreamEnd: true,
+            streamId: "1234",
+          }),
+        );
 
         expect(await Array.fromAsync(exchange.chunks())).toEqual([
-          { name: "stream", data: Buffer.from("foo", "ascii"), streamId: "1234", isStreamChunk: true },
-          { name: "", data: Buffer.from("bar", "ascii"), streamId: "1234", isStreamChunk: true },
-        ])
+          {
+            name: "stream",
+            data: Buffer.from("foo", "ascii"),
+            streamId: "1234",
+            isStreamChunk: true,
+          },
+          {
+            name: "",
+            data: Buffer.from("bar", "ascii"),
+            streamId: "1234",
+            isStreamChunk: true,
+          },
+        ]);
       });
 
       test("should return remaining chunks", async () => {
@@ -229,13 +254,32 @@ describe("Exchange", () => {
           }),
         );
 
-        exchange.push(new Command({ name: "", data: Buffer.from("bar", "ascii"), isStreamChunk: true, streamId: "1234"}))
-        exchange.push(new Command({ name: "", data: Buffer.of(), isStreamEnd: true, streamId: "1234"}))
+        exchange.push(
+          new Command({
+            name: "",
+            data: Buffer.from("bar", "ascii"),
+            isStreamChunk: true,
+            streamId: "1234",
+          }),
+        );
+        exchange.push(
+          new Command({
+            name: "",
+            data: Buffer.of(),
+            isStreamEnd: true,
+            streamId: "1234",
+          }),
+        );
 
         exchange.onStream();
         expect(await Array.fromAsync(exchange.chunks())).toEqual([
-          { name: "", data: Buffer.from("bar", "ascii"), streamId: "1234", isStreamChunk: true },
-        ])
+          {
+            name: "",
+            data: Buffer.from("bar", "ascii"),
+            streamId: "1234",
+            isStreamChunk: true,
+          },
+        ]);
       });
       test("should throw on fail", () => {
         const exchange = new TestingExchange(
@@ -244,20 +288,22 @@ describe("Exchange", () => {
             name: "stream",
             data: Buffer.from("foo", "ascii"),
             streamId: "1234",
-            isStreamChunk: true
+            isStreamChunk: true,
           }),
         );
 
-        exchange.push(new Command({
-          name: "",
-          requestId: "1234",
-          data: Buffer.of(),
-          isErrorResponse: true
-        }))
+        exchange.push(
+          new Command({
+            name: "",
+            requestId: "1234",
+            data: Buffer.of(),
+            isErrorResponse: true,
+          }),
+        );
 
         Array.fromAsync(exchange.chunks())
           .then(() => expect().fail("Promise shouldn't resolve!"))
-          .catch(() => expect().pass("Error was thrown"))
+          .catch(() => expect().pass("Error was thrown"));
       });
       test("should throw if already closed", () => {
         const exchange = new TestingExchange(
@@ -266,20 +312,22 @@ describe("Exchange", () => {
             name: "stream",
             data: Buffer.from("foo", "ascii"),
             streamId: "1234",
-            isStreamChunk: true
+            isStreamChunk: true,
           }),
         );
 
-        exchange.push(new Command({
-          name: "",
-          streamId: "1234",
-          data: Buffer.of(),
-          isStreamEnd: true
-        }))
+        exchange.push(
+          new Command({
+            name: "",
+            streamId: "1234",
+            data: Buffer.of(),
+            isStreamEnd: true,
+          }),
+        );
 
         Array.fromAsync(exchange.chunks())
           .then(() => expect().fail("Promise shouldn't resolve!"))
-          .catch(() => expect().pass("Error was thrown"))
+          .catch(() => expect().pass("Error was thrown"));
       });
     });
   });
