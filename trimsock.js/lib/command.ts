@@ -54,6 +54,15 @@ export class Command implements CommandSpec {
     return this.streamId ?? this.requestId;
   }
 
+  get isClosing(): boolean {
+    return (
+      this.isSuccessResponse ||
+      this.isErrorResponse ||
+      this.isStreamEnd ||
+      false
+    );
+  }
+
   requireId(): string {
     assert(this.id !== undefined, "No request or stream ID is present!");
     return this.id;

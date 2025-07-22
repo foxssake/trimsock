@@ -5,12 +5,12 @@ import { Trimsock, isCommand } from "./trimsock";
 
 export type CommandHandler<T> = (
   command: Command,
-  exchange: TrimsockExchange<T>,
+  exchange: Exchange<T>,
 ) => void;
 
 export type CommandErrorHandler<T> = (
   command: Command,
-  exchange: TrimsockExchange<T>,
+  exchange: Exchange<T>,
   error: unknown,
 ) => void;
 
@@ -26,10 +26,34 @@ function generateExchangeId(length: number): string {
     .join("");
 }
 
-export class TrimsockExchange<T> {
+export interface ReadableExchange {
+  onReply(): Promise<CommandSpec>;
+  onStream(): Promise<CommandSpec>;
+  chunks(): AsyncGenerator<CommandSpec>;
+}
+
+export interface WritableExchange<T> {
+  send(what: CommandSpec, to?: T): this;
+  request(what: CommandSpec): this;
+  reply(what: Omit<CommandSpec, "name">): void;
+  fail(what: Omit<CommandSpec, "name">): void;
+  stream(what: Omit<CommandSpec, "name" | "streamId">): void;
+  finishStream(): void;
+
+  canReply(): boolean;
+  replyOrSend(what: CommandSpec): void;
+  failOrSend(what: CommandSpec): void;
+}
+
+export interface Exchange<T> extends ReadableExchange, WritableExchange<T> {}
+
+export class ReactorExchange<T> implements Exchange<T> {
   private replyResolvers: Array<(command: Command) => void> = [];
   private replyRejectors: Array<(command: Command) => void> = [];
   private streamResolvers: Array<(command: Command) => void> = [];
+  private queued: Array<Command> = [];
+
+  private isOpen = true;
 
   constructor(
     public readonly source: T,
@@ -37,37 +61,42 @@ export class TrimsockExchange<T> {
     private requestExchange: (
       what: CommandSpec,
       source: T,
-    ) => TrimsockExchange<T>,
-    private close: () => void,
+    ) => ThisType<ReactorExchange<T>>,
+    private free: () => void,
     private command?: Command,
-  ) {}
+  ) {
+    if (this.command) this.push(this.command);
+  }
 
   push(what: Command): void {
     if (what.isSuccessResponse) {
-      for (const resolve of this.replyResolvers) resolve(what);
-      this.clearPromises();
+      if (this.replyResolvers.length > 0)
+        for (const resolve of this.replyResolvers) resolve(what);
+      else this.queued.push(what);
+
       this.close();
     } else if (what.isErrorResponse) {
-      for (const reject of this.replyRejectors) reject(what);
-      this.clearPromises();
+      if (this.replyRejectors.length > 0)
+        for (const reject of this.replyRejectors) reject(what);
+      else this.queued.push(what);
+
       this.close();
     } else if (what.isStreamChunk || what.isStreamEnd) {
-      for (const resolve of this.streamResolvers) resolve(what);
-      this.streamResolvers = [];
+      if (this.streamResolvers.length > 0) {
+        for (const resolve of this.streamResolvers) resolve(what);
+        this.streamResolvers = [];
+      } else this.queued.push(what);
 
-      if (what.isStreamEnd) {
-        this.clearPromises();
-        this.close();
-      }
+      if (what.isStreamEnd) this.close();
     }
   }
 
-  send(what: CommandSpec, to: T = this.source): TrimsockExchange<T> {
-    this.write(what, to);
-    return this.requestExchange(what, to);
+  send(what: CommandSpec, to?: T): this {
+    this.write(what, to ?? this.source);
+    return this.requestExchange(what, to ?? this.source) as this;
   }
 
-  request(what: CommandSpec): TrimsockExchange<T> {
+  request(what: CommandSpec): this {
     const req: CommandSpec = {
       ...what,
       isRequest: true,
@@ -83,6 +112,8 @@ export class TrimsockExchange<T> {
 
   reply(what: Omit<CommandSpec, "name">): void {
     this.requireRepliable();
+    this.requireOpen();
+
     this.write(
       {
         ...what,
@@ -102,6 +133,8 @@ export class TrimsockExchange<T> {
 
   fail(what: Omit<CommandSpec, "name">): void {
     this.requireRepliable();
+    this.requireOpen();
+
     this.write(
       {
         ...what,
@@ -120,6 +153,8 @@ export class TrimsockExchange<T> {
 
   stream(what: Omit<CommandSpec, "name" | "streamId">): void {
     this.requireRepliable();
+    this.requireOpen();
+
     this.write(
       {
         ...what,
@@ -133,6 +168,8 @@ export class TrimsockExchange<T> {
 
   finishStream(): void {
     this.requireRepliable();
+    this.requireOpen();
+
     this.write(
       {
         name: "",
@@ -146,7 +183,15 @@ export class TrimsockExchange<T> {
   }
 
   onReply(): Promise<CommandSpec> {
-    // TODO: Test what happens if the exchange is already closed
+    const queued = this.queued.find(
+      (cmd) => cmd.isSuccessResponse || cmd.isErrorResponse,
+    );
+    this.queued = this.queued.filter((cmd) => cmd !== queued);
+
+    if (queued?.isSuccessResponse === true) return Promise.resolve(queued);
+    if (queued?.isErrorResponse === true) return Promise.reject(queued);
+
+    this.requireOpen();
     return new Promise((resolve, reject) => {
       this.replyResolvers.push(resolve);
       this.replyRejectors.push(reject);
@@ -154,7 +199,16 @@ export class TrimsockExchange<T> {
   }
 
   onStream(): Promise<CommandSpec> {
-    // TODO: Test what happens if the exchange is already closed
+    const queued = this.queued.find(
+      (cmd) => cmd.isStreamChunk || cmd.isStreamEnd || cmd.isErrorResponse,
+    );
+    this.queued = this.queued.filter((cmd) => cmd !== queued);
+
+    if (queued?.isErrorResponse === true) return Promise.reject(queued);
+    if (queued) return Promise.resolve(queued);
+
+    this.requireOpen();
+
     return new Promise((resolve, reject) => {
       this.streamResolvers.push(resolve);
       this.replyRejectors.push(reject);
@@ -162,9 +216,6 @@ export class TrimsockExchange<T> {
   }
 
   async *chunks(): AsyncGenerator<CommandSpec> {
-    // TODO: Test what happens if `onStream()` has been called before
-    if (this.command !== undefined) yield this.command;
-
     while (true) {
       const chunk = await this.onStream();
       if (chunk.isStreamEnd) break;
@@ -177,10 +228,20 @@ export class TrimsockExchange<T> {
     assert(this.canReply(), "No replies can be sent to this command!");
   }
 
+  private requireOpen() {
+    assert(this.isOpen, "Exchange is already closed!");
+  }
+
   private clearPromises(): void {
     this.replyResolvers = [];
     this.replyRejectors = [];
     this.streamResolvers = [];
+  }
+
+  private close(): void {
+    this.clearPromises();
+    this.free();
+    this.isOpen = false;
   }
 }
 
@@ -189,7 +250,7 @@ export abstract class Reactor<T> {
   private defaultHandler: CommandHandler<T> = () => {};
   private errorHandler: CommandErrorHandler<T> = () => {};
 
-  private exchanges: Map<string, TrimsockExchange<T>> = new Map();
+  private exchanges: Map<string, ReactorExchange<T>> = new Map();
 
   constructor(private trimsock: Trimsock = new Trimsock().withConventions()) {}
 
@@ -208,7 +269,7 @@ export abstract class Reactor<T> {
     return this;
   }
 
-  public ingest(data: Buffer, source: T) {
+  public ingest(data: Buffer, source: T): void {
     for (const item of this.trimsock.ingest(data)) {
       try {
         if (isCommand(item))
@@ -220,7 +281,7 @@ export abstract class Reactor<T> {
     }
   }
 
-  public send(target: T, spec: CommandSpec): TrimsockExchange<T> {
+  public send(target: T, spec: CommandSpec): Exchange<T> {
     const command = new Command(spec);
     this.write(command.serialize(), target);
     return this.ensureExchange(command, target);
@@ -277,12 +338,12 @@ export abstract class Reactor<T> {
     return true;
   }
 
-  private findExchange(command: Command): TrimsockExchange<T> | undefined {
+  private findExchange(command: Command): ReactorExchange<T> | undefined {
     const id = command.requestId ?? command.streamId;
     return id !== undefined ? this.exchanges.get(id) : undefined;
   }
 
-  private ensureExchange(command: Command, source: T): TrimsockExchange<T> {
+  private ensureExchange(command: Command, source: T): ReactorExchange<T> {
     const id = command.requestId ?? command.streamId;
 
     if (id === undefined) return this.makeExchange(command, source);
@@ -296,8 +357,8 @@ export abstract class Reactor<T> {
   private makeExchange(
     command: Command | undefined,
     source: T,
-  ): TrimsockExchange<T> {
-    return new TrimsockExchange(
+  ): ReactorExchange<T> {
+    return new ReactorExchange(
       source,
       (cmd, to) => this.write(Command.serialize(cmd), to),
       (cmd, to) => this.ensureExchange(new Command(cmd), to),
