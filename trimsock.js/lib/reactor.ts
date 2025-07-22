@@ -51,6 +51,7 @@ export class ReactorExchange<T> implements Exchange<T> {
   private replyResolvers: Array<(command: Command) => void> = [];
   private replyRejectors: Array<(command: Command) => void> = [];
   private streamResolvers: Array<(command: Command) => void> = [];
+  private queued: Array<Command> = [];
 
   private isOpen = true;
 
@@ -63,7 +64,13 @@ export class ReactorExchange<T> implements Exchange<T> {
     ) => ThisType<ReactorExchange<T>>,
     private free: () => void,
     private command?: Command,
-  ) {}
+  ) {
+    if (this.command?.isStreamChunk)
+      this.queued.push(this.command);
+
+    if (this.command?.isClosing)
+      this.isOpen = false;
+  }
 
   push(what: Command): void {
     if (what.isSuccessResponse) {
@@ -73,8 +80,12 @@ export class ReactorExchange<T> implements Exchange<T> {
       for (const reject of this.replyRejectors) reject(what);
       this.close();
     } else if (what.isStreamChunk || what.isStreamEnd) {
-      for (const resolve of this.streamResolvers) resolve(what);
-      this.streamResolvers = [];
+      if (this.streamResolvers.length > 0) {
+        for (const resolve of this.streamResolvers) resolve(what);
+        this.streamResolvers = [];
+      }
+      else
+        this.queued.push(what);
 
       if (what.isStreamEnd) this.close();
     }
@@ -180,7 +191,11 @@ export class ReactorExchange<T> implements Exchange<T> {
   }
 
   onStream(): Promise<CommandSpec> {
+    const queued = this.queued.shift()
+    if (queued)
+      return Promise.resolve(queued);
     this.requireOpen();
+
     return new Promise((resolve, reject) => {
       this.streamResolvers.push(resolve);
       this.replyRejectors.push(reject);
@@ -188,9 +203,6 @@ export class ReactorExchange<T> implements Exchange<T> {
   }
 
   async *chunks(): AsyncGenerator<CommandSpec> {
-    this.requireOpen();
-    if (this.command !== undefined) yield this.command;
-
     while (true) {
       const chunk = await this.onStream();
       if (chunk.isStreamEnd) break;
