@@ -65,17 +65,21 @@ export class ReactorExchange<T> implements Exchange<T> {
     private free: () => void,
     private command?: Command,
   ) {
-    if (this.command?.isStreamChunk) this.queued.push(this.command);
-
-    if (this.command?.isClosing) this.isOpen = false;
+    if (this.command) this.push(this.command);
   }
 
   push(what: Command): void {
     if (what.isSuccessResponse) {
-      for (const resolve of this.replyResolvers) resolve(what);
+      if (this.replyResolvers.length > 0)
+        for (const resolve of this.replyResolvers) resolve(what);
+      else this.queued.push(what);
+
       this.close();
     } else if (what.isErrorResponse) {
-      for (const reject of this.replyRejectors) reject(what);
+      if (this.replyRejectors.length > 0)
+        for (const reject of this.replyRejectors) reject(what);
+      else this.queued.push(what);
+
       this.close();
     } else if (what.isStreamChunk || what.isStreamEnd) {
       if (this.streamResolvers.length > 0) {
@@ -179,6 +183,14 @@ export class ReactorExchange<T> implements Exchange<T> {
   }
 
   onReply(): Promise<CommandSpec> {
+    const queued = this.queued.find(
+      (cmd) => cmd.isSuccessResponse || cmd.isErrorResponse,
+    );
+    this.queued = this.queued.filter((cmd) => cmd !== queued);
+
+    if (queued?.isSuccessResponse === true) return Promise.resolve(queued);
+    if (queued?.isErrorResponse === true) return Promise.reject(queued);
+
     this.requireOpen();
     return new Promise((resolve, reject) => {
       this.replyResolvers.push(resolve);
@@ -187,8 +199,14 @@ export class ReactorExchange<T> implements Exchange<T> {
   }
 
   onStream(): Promise<CommandSpec> {
-    const queued = this.queued.shift();
+    const queued = this.queued.find(
+      (cmd) => cmd.isStreamChunk || cmd.isStreamEnd || cmd.isErrorResponse,
+    );
+    this.queued = this.queued.filter((cmd) => cmd !== queued);
+
+    if (queued?.isErrorResponse === true) return Promise.reject(queued);
     if (queued) return Promise.resolve(queued);
+
     this.requireOpen();
 
     return new Promise((resolve, reject) => {

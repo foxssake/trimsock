@@ -8,7 +8,10 @@ export class TestingExchange extends ReactorExchange<string> {
   constructor(source = "", command?: Command) {
     super(
       source,
-      (what, to) => this.outbox.push([to, what]),
+      (what, to) => {
+        this.outbox ??= [];
+        this.outbox.push([to, what]);
+      },
       (what, source) => new TestingExchange(source, new Command(what)),
       () => {},
       command,
@@ -16,6 +19,7 @@ export class TestingExchange extends ReactorExchange<string> {
   }
 
   push(what: Command): void {
+    this.inbox ??= [];
     this.inbox.push(what);
     super.push(what);
   }

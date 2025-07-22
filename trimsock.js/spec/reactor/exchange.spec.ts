@@ -15,7 +15,6 @@ describe("Exchange", () => {
             isRequest: true,
           }),
         );
-        const replyPromise = exchange.onReply();
 
         exchange.push(
           new Command({
@@ -25,7 +24,7 @@ describe("Exchange", () => {
             isSuccessResponse: true,
           }),
         );
-        expect(await replyPromise).toEqual({
+        expect(await exchange.onReply()).toEqual({
           name: "",
           data: Buffer.from("foo", "ascii"),
           requestId: "1234",
@@ -81,7 +80,6 @@ describe("Exchange", () => {
         );
         exchange.onStream(); // Discard initial message
 
-        const chunkPromise = exchange.onStream();
         exchange.push(
           new Command({
             name: "stream",
@@ -90,7 +88,7 @@ describe("Exchange", () => {
             isStreamChunk: true,
           }),
         );
-        expect(await chunkPromise).toEqual({
+        expect(await exchange.onStream()).toEqual({
           name: "stream",
           data: Buffer.from("foo", "ascii"),
           streamId: "1234",
@@ -109,7 +107,6 @@ describe("Exchange", () => {
         );
         exchange.onStream(); // Discard initial message
 
-        const endPromise = exchange.onStream();
         exchange.push(
           new Command({
             name: "stream",
@@ -118,7 +115,7 @@ describe("Exchange", () => {
             isStreamEnd: true,
           }),
         );
-        expect(await endPromise).toEqual({
+        expect(await exchange.onStream()).toEqual({
           name: "stream",
           data: Buffer.of(),
           streamId: "1234",
@@ -158,7 +155,6 @@ describe("Exchange", () => {
         });
       });
       test("should throw on fail", async () => {
-        // TODO: ???
         const exchange = new TestingExchange(
           "1",
           new Command({
@@ -194,7 +190,11 @@ describe("Exchange", () => {
             isStreamEnd: true,
           }),
         );
-        expect(async () => await exchange.onStream()).toThrow();
+
+        exchange
+          .onStream()
+          .then(() => expect().fail("Promise shouldn't resolve!"))
+          .catch(() => expect().pass("Error was thrown"));
       });
     });
 
