@@ -172,6 +172,7 @@ export class ReactorExchange<T> implements Exchange<T> {
   }
 
   onReply(): Promise<CommandSpec> {
+    this.requireOpen();
     return new Promise((resolve, reject) => {
       this.replyResolvers.push(resolve);
       this.replyRejectors.push(reject);
@@ -179,6 +180,7 @@ export class ReactorExchange<T> implements Exchange<T> {
   }
 
   onStream(): Promise<CommandSpec> {
+    this.requireOpen();
     return new Promise((resolve, reject) => {
       this.streamResolvers.push(resolve);
       this.replyRejectors.push(reject);
@@ -186,6 +188,7 @@ export class ReactorExchange<T> implements Exchange<T> {
   }
 
   async *chunks(): AsyncGenerator<CommandSpec> {
+    this.requireOpen();
     if (this.command !== undefined) yield this.command;
 
     while (true) {
