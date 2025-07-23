@@ -56,11 +56,22 @@ export class Command implements CommandSpec {
 
   get isClosing(): boolean {
     return (
-      this.isSuccessResponse ||
-      this.isErrorResponse ||
+      this.isResponse ||
       this.isStreamEnd ||
       false
     );
+  }
+
+  get isResponse(): boolean {
+    return this.isSuccessResponse || this.isErrorResponse || false;
+  }
+
+  get isStream(): boolean {
+    return this.isStreamChunk || this.isStreamEnd || false;
+  }
+
+  get isSimple(): boolean {
+    return !this.isRequest && !this.isResponse && !this.isStream
   }
 
   requireId(): string {
