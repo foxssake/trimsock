@@ -27,6 +27,7 @@ function generateExchangeId(length: number): string {
 }
 
 export interface ReadableExchange {
+  onCommand(): Promise<CommandSpec>;
   onReply(): Promise<CommandSpec>;
   onStream(): Promise<CommandSpec>;
   chunks(): AsyncGenerator<CommandSpec>;
@@ -45,9 +46,12 @@ export interface WritableExchange<T> {
   failOrSend(what: CommandSpec): void;
 }
 
-export interface Exchange<T> extends ReadableExchange, WritableExchange<T> {}
+export interface Exchange<T> extends ReadableExchange, WritableExchange<T> {
+  readonly source: T;
+}
 
 export class ReactorExchange<T> implements Exchange<T> {
+  private commandResolvers: Array<(command: Command) => void> = [];
   private replyResolvers: Array<(command: Command) => void> = [];
   private replyRejectors: Array<(command: Command) => void> = [];
   private streamResolvers: Array<(command: Command) => void> = [];
@@ -65,7 +69,11 @@ export class ReactorExchange<T> implements Exchange<T> {
     private free: () => void,
     private command?: Command,
   ) {
+    // Process originating command
     if (this.command) this.push(this.command);
+
+    // Don't queue simple commands for promises
+    if (this.command?.isSimple) this.queued = [];
   }
 
   push(what: Command): void {
@@ -88,6 +96,11 @@ export class ReactorExchange<T> implements Exchange<T> {
       } else this.queued.push(what);
 
       if (what.isStreamEnd) this.close();
+    } else {
+      if (this.commandResolvers.length > 0) {
+        for (const resolve of this.commandResolvers) resolve(what);
+        this.commandResolvers = [];
+      } else this.queued.push(what);
     }
   }
 
@@ -180,6 +193,25 @@ export class ReactorExchange<T> implements Exchange<T> {
       this.source,
     );
     this.close();
+  }
+
+  onCommand(): Promise<CommandSpec> {
+    const queued = this.queued.find(
+      (cmd) =>
+        !cmd.isRequest &&
+        !cmd.isSuccessResponse &&
+        !cmd.isErrorResponse &&
+        !cmd.isStreamChunk &&
+        !cmd.isStreamEnd,
+    );
+    this.queued = this.queued.filter((cmd) => cmd !== queued);
+
+    if (queued) return Promise.resolve(queued);
+
+    this.requireOpen();
+    return new Promise((resolve) => {
+      this.commandResolvers.push(resolve);
+    });
   }
 
   onReply(): Promise<CommandSpec> {
