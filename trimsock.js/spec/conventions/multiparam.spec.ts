@@ -5,17 +5,17 @@ describe("MultiparamConvention", () => {
   test("should passthrough raw data", () => {
     const trimsock = new Trimsock().withConventions();
     expect(
-      trimsock.ingest(Buffer.from("\rcommand 4\nquix\n", "ascii")),
+      trimsock.ingest(Buffer.from("\rcommand 4\nquix\n", "utf8")),
     ).toEqual([
       {
         name: "command",
-        raw: Buffer.from("quix", "ascii"),
+        raw: Buffer.from("quix", "utf8"),
       },
     ]);
   });
   test("should parse multiple params", () => {
     const trimsock = new Trimsock().withConventions();
-    expect(trimsock.ingest(Buffer.from("command foo bar\n", "ascii"))).toEqual([
+    expect(trimsock.ingest(Buffer.from("command foo bar\n", "utf8"))).toEqual([
       {
         name: "command",
         data: "foo bar",
@@ -25,7 +25,7 @@ describe("MultiparamConvention", () => {
   });
   test("should skip single param", () => {
     const trimsock = new Trimsock().withConventions();
-    expect(trimsock.ingest(Buffer.from("command foo\n", "ascii"))).toEqual([
+    expect(trimsock.ingest(Buffer.from("command foo\n", "utf8"))).toEqual([
       {
         name: "command",
         data: "foo",
@@ -35,7 +35,7 @@ describe("MultiparamConvention", () => {
   test("should unescape spaces", () => {
     const trimsock = new Trimsock().withConventions();
     expect(
-      trimsock.ingest(Buffer.from("command foo bar\\squix\n", "ascii")),
+      trimsock.ingest(Buffer.from("command foo bar\\squix\n", "utf8")),
     ).toEqual([
       {
         name: "command",

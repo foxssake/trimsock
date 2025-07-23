@@ -12,7 +12,7 @@ describe("StreamConvention", () => {
       streamId: "0123",
       isStreamChunk: true,
     };
-    expect(trimsock.ingest(Buffer.from(input, "ascii"))).toEqual([expected]);
+    expect(trimsock.ingest(Buffer.from(input, "utf8"))).toEqual([expected]);
   });
   test("should parse from parts", () => {
     const trimsock = new Trimsock().withConventions();
@@ -30,7 +30,7 @@ describe("StreamConvention", () => {
       ],
     ];
     const actual = inputs.map((input) =>
-      trimsock.ingest(Buffer.from(input, "ascii")),
+      trimsock.ingest(Buffer.from(input, "utf8")),
     );
 
     expect(actual).toEqual(expected);
@@ -44,7 +44,7 @@ describe("StreamConvention", () => {
       streamId: "0123",
       isStreamEnd: true,
     };
-    expect(trimsock.ingest(Buffer.from(input, "ascii"))).toEqual([expected]);
+    expect(trimsock.ingest(Buffer.from(input, "utf8"))).toEqual([expected]);
   });
   test("should passthrough params", () => {
     const trimsock = new Trimsock().withConventions();
@@ -56,7 +56,7 @@ describe("StreamConvention", () => {
       isStreamChunk: true,
       params: ["name=foo", "players=5/7"],
     };
-    expect(trimsock.ingest(Buffer.from(input, "ascii"))).toEqual([expected]);
+    expect(trimsock.ingest(Buffer.from(input, "utf8"))).toEqual([expected]);
   });
   test("should passthrough raw", () => {
     const trimsock = new Trimsock().withConventions();
@@ -67,6 +67,6 @@ describe("StreamConvention", () => {
       streamId: "0123",
       isStreamChunk: true,
     };
-    expect(trimsock.ingest(Buffer.from(input, "ascii"))).toEqual([expected]);
+    expect(trimsock.ingest(Buffer.from(input, "utf8"))).toEqual([expected]);
   });
 });

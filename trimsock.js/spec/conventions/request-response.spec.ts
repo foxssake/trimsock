@@ -12,7 +12,7 @@ describe("RequestResponseConvention", () => {
       requestId: "0123",
       isRequest: true,
     };
-    expect(trimsock.ingest(Buffer.from(input, "ascii"))).toEqual([expected]);
+    expect(trimsock.ingest(Buffer.from(input, "utf8"))).toEqual([expected]);
   });
   test("should parse response", () => {
     const trimsock = new Trimsock().withConventions();
@@ -23,7 +23,7 @@ describe("RequestResponseConvention", () => {
       requestId: "0123",
       isSuccessResponse: true,
     };
-    expect(trimsock.ingest(Buffer.from(input, "ascii"))).toEqual([expected]);
+    expect(trimsock.ingest(Buffer.from(input, "utf8"))).toEqual([expected]);
   });
   test("should parse error", () => {
     const trimsock = new Trimsock().withConventions();
@@ -34,7 +34,7 @@ describe("RequestResponseConvention", () => {
       requestId: "0123",
       isErrorResponse: true,
     };
-    expect(trimsock.ingest(Buffer.from(input, "ascii"))).toEqual([expected]);
+    expect(trimsock.ingest(Buffer.from(input, "utf8"))).toEqual([expected]);
   });
   test("should passthrough params", () => {
     const trimsock = new Trimsock().withConventions();
@@ -46,17 +46,17 @@ describe("RequestResponseConvention", () => {
       isSuccessResponse: true,
       params: ["foo", "bar"],
     };
-    expect(trimsock.ingest(Buffer.from(input, "ascii"))).toEqual([expected]);
+    expect(trimsock.ingest(Buffer.from(input, "utf8"))).toEqual([expected]);
   });
   test("should parse raw", () => {
     const trimsock = new Trimsock().withConventions();
     const input = "\r.0123 4\n0xFD\n";
     const expected: CommandSpec = {
       name: "",
-      raw: Buffer.from("0xFD", "ascii"),
+      raw: Buffer.from("0xFD", "utf8"),
       requestId: "0123",
       isSuccessResponse: true,
     };
-    expect(trimsock.ingest(Buffer.from(input, "ascii"))).toEqual([expected]);
+    expect(trimsock.ingest(Buffer.from(input, "utf8"))).toEqual([expected]);
   });
 });

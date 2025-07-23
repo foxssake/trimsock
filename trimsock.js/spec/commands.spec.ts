@@ -27,7 +27,7 @@ describe("Commands", () => {
       ],
       [
         "should serialize raw",
-        { name: "command", raw: Buffer.from("f\x00o", "ascii") },
+        { name: "command", raw: Buffer.from([102, 0, 111]) },
         "\rcommand 3\nf\x00o\n",
       ],
       [

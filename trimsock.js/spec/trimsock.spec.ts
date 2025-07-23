@@ -1,26 +1,27 @@
 import { describe, expect, test } from "bun:test";
 import { Trimsock } from "@lib/trimsock";
+import type { CommandSpec } from "@lib/command";
 
 describe("Trimsock", () => {
   describe("ingest()", () => {
     describe("well-formed commands", () => {
       test("should parse command with data", () => {
         const trimsock = new Trimsock();
-        const input = Buffer.from("command data\n", "ascii");
+        const input = Buffer.from("command data\n", "utf8");
         const expected = [{ name: "command", data: "data" }];
         expect(trimsock.ingest(input)).toEqual(expected);
       });
 
       test("should parse command without data", () => {
         const trimsock = new Trimsock();
-        const input = Buffer.from("command \n", "ascii");
+        const input = Buffer.from("command \n", "utf8");
         const expected = [{ name: "command", data: "" }];
         expect(trimsock.ingest(input)).toEqual(expected);
       });
 
       test("should parse command with binary data", () => {
         const trimsock = new Trimsock();
-        const input = Buffer.from("command foo\x00\n", "ascii");
+        const input = Buffer.from("command foo\x00\n", "utf8");
         const expected = [
           {
             name: "command",
@@ -35,7 +36,7 @@ describe("Trimsock", () => {
         const inputs = ["comma", "nd dat", "a\n"];
 
         const results = inputs
-          .map((input) => Buffer.from(input, "ascii"))
+          .map((input) => Buffer.from(input, "utf8"))
           .map((input) => trimsock.ingest(input));
 
         expect(results).toEqual([
@@ -52,7 +53,7 @@ describe("Trimsock", () => {
 
       test("should unescape command name", () => {
         const trimsock = new Trimsock();
-        const input = Buffer.from("\\rco\\smm\\nand data\n", "ascii");
+        const input = Buffer.from("\\rco\\smm\\nand data\n", "utf8");
         const expected = [
           {
             name: "\rco mm\nand",
@@ -64,7 +65,7 @@ describe("Trimsock", () => {
 
       test("should unescape command data", () => {
         const trimsock = new Trimsock();
-        const input = Buffer.from("command data \\n\\s\n", "ascii");
+        const input = Buffer.from("command data \\n\\s\n", "utf8");
         const expected = [
           {
             name: "command",
@@ -76,11 +77,11 @@ describe("Trimsock", () => {
 
       test("should parse raw data", () => {
         const trimsock = new Trimsock();
-        const input = Buffer.from("\rcommand 4\n\n\n\n \n");
+        const input = Buffer.concat([Buffer.from("\rcommand 4\n"), Buffer.from([10, 10, 10, 240])]);
         const expected = [
           {
             name: "command",
-            raw: Buffer.from("\n\n\n ", "ascii"),
+            raw: Buffer.from([10, 10, 10, 240]),
           },
         ];
         expect(trimsock.ingest(input)).toEqual(expected);
@@ -91,7 +92,7 @@ describe("Trimsock", () => {
         const inputs = ["\rcomma", "nd 1", "0\n0123", "45678", "9\n"];
 
         const results = inputs
-          .map((input) => Buffer.from(input, "ascii"))
+          .map((input) => Buffer.from(input, "utf8"))
           .map((input) => trimsock.ingest(input));
 
         expect(results).toEqual([
@@ -102,11 +103,21 @@ describe("Trimsock", () => {
           [
             {
               name: "command",
-              raw: Buffer.from("0123456789", "ascii"),
+              raw: Buffer.from("0123456789", "utf8"),
             },
           ],
         ]);
       });
+
+      test("should parse unicode", () => {
+        const trimsock = new Trimsock()
+        const expected: CommandSpec = {
+          name: "commánd",
+          data: "föő"
+        }
+
+        expect(trimsock.ingest(Buffer.from("commánd föő\n", "utf8"))).toEqual([expected])
+      })
     });
 
     describe("commands exceeding size limit", () => {
@@ -116,7 +127,7 @@ describe("Trimsock", () => {
         const inputs = ["com", "mand ", "fo", "o\ncmd \n"];
 
         const results = inputs
-          .map((input) => Buffer.from(input, "ascii"))
+          .map((input) => Buffer.from(input, "utf8"))
           .map((input) => trimsock.ingest(input));
 
         expect(results).toEqual([
@@ -137,7 +148,7 @@ describe("Trimsock", () => {
         const inputs = ["com", "mand ", "fo", "o\ncmd \n"];
 
         const results = inputs
-          .map((input) => Buffer.from(input, "ascii"))
+          .map((input) => Buffer.from(input, "utf8"))
           .map((input) => trimsock.ingest(input));
 
         expect(results).toEqual([
@@ -165,7 +176,7 @@ describe("Trimsock", () => {
         ];
 
         const results = inputs
-          .map((input) => Buffer.from(input, "ascii"))
+          .map((input) => Buffer.from(input, "utf8"))
           .map((input) => trimsock.ingest(input));
 
         expect(results).toEqual([
