@@ -1,11 +1,12 @@
 {
   "name": "trimsock",
   "private": true,
-  "version": "0.10.3",
+  "version": "0.10.4",
   "scripts": {
     "format": "biome format",
     "lint": "biome lint",
-    "check": "biome check"
+    "check": "biome check",
+    "version": "bun scripts/version.ts"
   },
   "dependencies": {
     "@foxssake/trimsock.js": "workspace:*",
@@ -18,5 +19,7 @@
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
-  "workspaces": ["packages/*"]
+  "workspaces": [
+    "packages/*"
+  ]
 }
