@@ -196,7 +196,6 @@ export class ReactorExchange<T> implements Exchange<T> {
   }
 
   onCommand(): Promise<CommandSpec> {
-    console.log("Queue", this.queued);
     const queued = this.queued.find(
       (cmd) =>
         !cmd.isRequest &&
@@ -205,7 +204,6 @@ export class ReactorExchange<T> implements Exchange<T> {
         !cmd.isStreamChunk &&
         !cmd.isStreamEnd,
     );
-    console.log("Hit", queued);
     this.queued = this.queued.filter((cmd) => cmd !== queued);
 
     if (queued) return Promise.resolve(queued);

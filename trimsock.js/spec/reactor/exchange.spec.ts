@@ -17,7 +17,19 @@ describe("Exchange", () => {
           data: Buffer.of(),
         });
       });
-      test("should throw if closed", async () => {});
+      test("should throw if closed", async () => {
+        const exchange = new TestingExchange(
+          "1",
+          new Command({
+            name: "command",
+            data: Buffer.of(),
+            streamId: "1234",
+            isStreamEnd: true,
+          }),
+        );
+
+        expect(async () => await exchange.onCommand()).toThrow();
+      });
     });
     describe("onReply", () => {
       test("should return response", async () => {
