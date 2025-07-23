@@ -1,6 +1,6 @@
-import assert from "@lib/assert";
-import { Command } from "@lib/command";
-import { SocketReactor } from "@lib/reactor";
+import { SocketReactor } from "@foxssake/trimsock.bun";
+import { Command } from "@foxssake/trimsock.js";
+import assert from "@foxssake/trimsock.js/lib/assert";
 import type { Socket } from "bun";
 
 type SocketContext = { sessionId: string };
