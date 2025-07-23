@@ -48,10 +48,7 @@ const reactor = new SocketReactor<SocketContext>()
     const target = sockets.values().find((it) => it.data.sessionId === peerId);
     assert(target, `Unknown peer: ${peerId}`);
 
-    exchange.send(
-      { name: "proxy-data", data },
-      target,
-    );
+    exchange.send({ name: "proxy-data", data }, target);
   })
   .on("sessions", (_, exchange) => {
     for (const socket of sockets)
@@ -68,8 +65,7 @@ const reactor = new SocketReactor<SocketContext>()
     const message = (error as Error).message ?? error;
     exchange.failOrSend({
       name: cmd.name,
-      data: 
-        `Failed to process command: ${Command.serialize(cmd)}\nError: ${message}`
+      data: `Failed to process command: ${Command.serialize(cmd)}\nError: ${message}`,
     });
   });
 
@@ -87,7 +83,7 @@ reactor.listen({
       reactor
         .send(socket, {
           name: "greet",
-          data: sessionId
+          data: sessionId,
         })
         .send({
           name: "stats",

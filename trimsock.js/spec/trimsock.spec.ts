@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { Trimsock } from "@lib/trimsock";
 import type { CommandSpec } from "@lib/command";
+import { Trimsock } from "@lib/trimsock";
 
 describe("Trimsock", () => {
   describe("ingest()", () => {
@@ -77,7 +77,10 @@ describe("Trimsock", () => {
 
       test("should parse raw data", () => {
         const trimsock = new Trimsock();
-        const input = Buffer.concat([Buffer.from("\rcommand 4\n"), Buffer.from([10, 10, 10, 240])]);
+        const input = Buffer.concat([
+          Buffer.from("\rcommand 4\n"),
+          Buffer.from([10, 10, 10, 240]),
+        ]);
         const expected = [
           {
             name: "command",
@@ -110,14 +113,16 @@ describe("Trimsock", () => {
       });
 
       test("should parse unicode", () => {
-        const trimsock = new Trimsock()
+        const trimsock = new Trimsock();
         const expected: CommandSpec = {
           name: "commánd",
-          data: "föő"
-        }
+          data: "föő",
+        };
 
-        expect(trimsock.ingest(Buffer.from("commánd föő\n", "utf8"))).toEqual([expected])
-      })
+        expect(trimsock.ingest(Buffer.from("commánd föő\n", "utf8"))).toEqual([
+          expected,
+        ]);
+      });
     });
 
     describe("commands exceeding size limit", () => {

@@ -4,14 +4,14 @@ import { Trimsock } from "@lib/trimsock";
 describe("MultiparamConvention", () => {
   test("should passthrough raw data", () => {
     const trimsock = new Trimsock().withConventions();
-    expect(
-      trimsock.ingest(Buffer.from("\rcommand 4\nquix\n", "utf8")),
-    ).toEqual([
-      {
-        name: "command",
-        raw: Buffer.from("quix", "utf8"),
-      },
-    ]);
+    expect(trimsock.ingest(Buffer.from("\rcommand 4\nquix\n", "utf8"))).toEqual(
+      [
+        {
+          name: "command",
+          raw: Buffer.from("quix", "utf8"),
+        },
+      ],
+    );
   });
   test("should parse multiple params", () => {
     const trimsock = new Trimsock().withConventions();

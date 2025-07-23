@@ -191,10 +191,7 @@ export class Trimsock {
     return at + bytesAvailable;
   }
 
-  private ingestSkipToNl(
-    buffer: Buffer,
-    at: number,
-  ): number {
+  private ingestSkipToNl(buffer: Buffer, at: number): number {
     const nlPos = buffer.indexOf(NL, at);
     if (nlPos >= 0) {
       this.state = ParserState.COMMAND_NAME;
