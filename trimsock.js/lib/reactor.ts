@@ -335,7 +335,8 @@ export abstract class Reactor<T> {
         this.errorHandler(command, exchange, error);
       }
     } else {
-      const exchange = exchangeId && this.exchanges.get(exchangeId);
+      const exchange =
+        exchangeId !== undefined && this.exchanges.get(exchangeId);
       assert(exchange, `Unknown exchange id: ${exchangeId}!`);
       exchange.push(command);
     }
