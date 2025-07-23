@@ -6,9 +6,10 @@ export interface Convention {
 
 export class MultiparamConvention implements Convention {
   public process(command: CommandSpec): CommandSpec {
+    if (command.data === undefined) return command;
     if (!command.data.includes(" ")) return command;
 
-    const text = command.data.toString("ascii");
+    const text = command.data;
     const params = text.split(" ").map((param) => param.replaceAll("\\s", " "));
 
     return { ...command, params };
@@ -45,13 +46,15 @@ export class StreamConvention implements Convention {
     if (!name.includes("|")) return command; // not a stream command
 
     const parts = parseName(name, "|");
+    // NOTE: Last `?? 0` should never run, command has either `data` or `raw`
+    const dataSize = command.data?.length ?? command.raw?.byteLength ?? 0;
 
     return {
       ...command,
       name: parts.name,
       streamId: parts.requestId,
-      isStreamChunk: command.data.byteLength > 0 ? true : undefined,
-      isStreamEnd: command.data.byteLength <= 0 ? true : undefined,
+      isStreamChunk: dataSize > 0 ? true : undefined,
+      isStreamEnd: dataSize <= 0 ? true : undefined,
     };
   }
 }

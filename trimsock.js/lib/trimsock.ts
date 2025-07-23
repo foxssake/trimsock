@@ -237,8 +237,7 @@ export class Trimsock {
 
     const result = {
       name: Command.unescapeName(this.commandName),
-      data: Buffer.from(Command.unescapeData(data)),
-      isRaw: false,
+      data: Command.unescapeData(data),
     };
 
     this.clearCommand();
@@ -251,7 +250,7 @@ export class Trimsock {
 
     this.clearCommand();
 
-    return { name, data, isRaw: true };
+    return { name, raw: data };
   }
 
   private clearCommand(): void {

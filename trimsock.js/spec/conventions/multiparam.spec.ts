@@ -9,8 +9,7 @@ describe("MultiparamConvention", () => {
     ).toEqual([
       {
         name: "command",
-        data: Buffer.from("quix", "ascii"),
-        isRaw: true,
+        raw: Buffer.from("quix", "ascii"),
       },
     ]);
   });
@@ -19,8 +18,7 @@ describe("MultiparamConvention", () => {
     expect(trimsock.ingest(Buffer.from("command foo bar\n", "ascii"))).toEqual([
       {
         name: "command",
-        data: Buffer.from("foo bar", "ascii"),
-        isRaw: false,
+        data: "foo bar",
         params: ["foo", "bar"],
       },
     ]);
@@ -30,8 +28,7 @@ describe("MultiparamConvention", () => {
     expect(trimsock.ingest(Buffer.from("command foo\n", "ascii"))).toEqual([
       {
         name: "command",
-        data: Buffer.from("foo", "ascii"),
-        isRaw: false,
+        data: "foo",
       },
     ]);
   });
@@ -42,8 +39,7 @@ describe("MultiparamConvention", () => {
     ).toEqual([
       {
         name: "command",
-        data: Buffer.from("foo bar\\squix", "ascii"),
-        isRaw: false,
+        data: "foo bar\\squix",
         params: ["foo", "bar quix"],
       },
     ]);

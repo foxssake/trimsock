@@ -8,8 +8,7 @@ describe("RequestResponseConvention", () => {
     const input = "get-logo?0123 \n";
     const expected: CommandSpec = {
       name: "get-logo",
-      data: Buffer.of(),
-      isRaw: false,
+      data: "",
       requestId: "0123",
       isRequest: true,
     };
@@ -20,8 +19,7 @@ describe("RequestResponseConvention", () => {
     const input = ".0123 0xFD\n";
     const expected: CommandSpec = {
       name: "",
-      data: Buffer.from("0xFD", "ascii"),
-      isRaw: false,
+      data: "0xFD",
       requestId: "0123",
       isSuccessResponse: true,
     };
@@ -32,8 +30,7 @@ describe("RequestResponseConvention", () => {
     const input = "!0123 not-found\n";
     const expected: CommandSpec = {
       name: "",
-      data: Buffer.from("not-found", "ascii"),
-      isRaw: false,
+      data: "not-found",
       requestId: "0123",
       isErrorResponse: true,
     };
@@ -44,8 +41,7 @@ describe("RequestResponseConvention", () => {
     const input = ".0123 foo bar\n";
     const expected: CommandSpec = {
       name: "",
-      data: Buffer.from("foo bar", "ascii"),
-      isRaw: false,
+      data: "foo bar",
       requestId: "0123",
       isSuccessResponse: true,
       params: ["foo", "bar"],
@@ -57,8 +53,7 @@ describe("RequestResponseConvention", () => {
     const input = "\r.0123 4\n0xFD\n";
     const expected: CommandSpec = {
       name: "",
-      data: Buffer.from("0xFD", "ascii"),
-      isRaw: true,
+      raw: Buffer.from("0xFD", "ascii"),
       requestId: "0123",
       isSuccessResponse: true,
     };

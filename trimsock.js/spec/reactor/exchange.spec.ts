@@ -8,13 +8,13 @@ describe("Exchange", () => {
       test("should return command", async () => {
         const exchange = new TestingExchange(
           "1",
-          new Command({ name: "command", data: Buffer.of() }),
+          new Command({ name: "command", data: "" }),
         );
-        exchange.push(new Command({ name: "else", data: Buffer.of() }));
+        exchange.push(new Command({ name: "else", data: "" }));
 
         expect(await exchange.onCommand()).toEqual({
           name: "else",
-          data: Buffer.of(),
+          data: "",
         });
       });
       test("should throw if closed", async () => {
@@ -22,7 +22,7 @@ describe("Exchange", () => {
           "1",
           new Command({
             name: "command",
-            data: Buffer.of(),
+            data: "",
             streamId: "1234",
             isStreamEnd: true,
           }),
@@ -37,7 +37,7 @@ describe("Exchange", () => {
           "1",
           new Command({
             name: "command",
-            data: Buffer.of(),
+            data: "",
             requestId: "1234",
             isRequest: true,
           }),
@@ -46,14 +46,14 @@ describe("Exchange", () => {
         exchange.push(
           new Command({
             name: "",
-            data: Buffer.from("foo", "ascii"),
+            data: "foo",
             requestId: "1234",
             isSuccessResponse: true,
           }),
         );
         expect(await exchange.onReply()).toEqual({
           name: "",
-          data: Buffer.from("foo", "ascii"),
+          data: "foo",
           requestId: "1234",
           isSuccessResponse: true,
         });
@@ -63,7 +63,7 @@ describe("Exchange", () => {
           "1",
           new Command({
             name: "command",
-            data: Buffer.of(),
+            data: "",
             requestId: "1234",
             isRequest: true,
           }),
@@ -72,7 +72,7 @@ describe("Exchange", () => {
         exchange.push(
           new Command({
             name: "",
-            data: Buffer.from("error", "ascii"),
+            data: "error",
             requestId: "1234",
             isErrorResponse: true,
           }),
@@ -84,12 +84,12 @@ describe("Exchange", () => {
           "1",
           new Command({
             name: "command",
-            data: Buffer.of(),
+            data: "",
             requestId: "1234",
             isRequest: true,
           }),
         );
-        exchange.reply({ data: Buffer.from("bye", "ascii") });
+        exchange.reply({ data: "bye" });
         expect(async () => await exchange.onReply()).toThrow();
       });
     });
@@ -100,7 +100,7 @@ describe("Exchange", () => {
           "1",
           new Command({
             name: "stream",
-            data: Buffer.of(),
+            data: "",
             streamId: "1234",
             isStreamChunk: true,
           }),
@@ -110,14 +110,14 @@ describe("Exchange", () => {
         exchange.push(
           new Command({
             name: "stream",
-            data: Buffer.from("foo", "ascii"),
+            data: "foo",
             streamId: "1234",
             isStreamChunk: true,
           }),
         );
         expect(await exchange.onStream()).toEqual({
           name: "stream",
-          data: Buffer.from("foo", "ascii"),
+          data: "foo",
           streamId: "1234",
           isStreamChunk: true,
         });
@@ -127,7 +127,7 @@ describe("Exchange", () => {
           "1",
           new Command({
             name: "stream",
-            data: Buffer.of(),
+            data: "",
             streamId: "1234",
             isStreamChunk: true,
           }),
@@ -137,14 +137,14 @@ describe("Exchange", () => {
         exchange.push(
           new Command({
             name: "stream",
-            data: Buffer.of(),
+            data: "",
             streamId: "1234",
             isStreamEnd: true,
           }),
         );
         expect(await exchange.onStream()).toEqual({
           name: "stream",
-          data: Buffer.of(),
+          data: "",
           streamId: "1234",
           isStreamEnd: true,
         });
@@ -154,7 +154,7 @@ describe("Exchange", () => {
           "1",
           new Command({
             name: "stream",
-            data: Buffer.of(),
+            data: "",
             streamId: "1234",
             isStreamChunk: true,
           }),
@@ -162,7 +162,7 @@ describe("Exchange", () => {
         exchange.push(
           new Command({
             name: "stream",
-            data: Buffer.from("foo", "ascii"),
+            data: "foo",
             streamId: "1234",
             isStreamChunk: true,
           }),
@@ -170,13 +170,13 @@ describe("Exchange", () => {
 
         expect(await exchange.onStream()).toEqual({
           name: "stream",
-          data: Buffer.of(),
+          data: "",
           streamId: "1234",
           isStreamChunk: true,
         });
         expect(await exchange.onStream()).toEqual({
           name: "stream",
-          data: Buffer.from("foo", "ascii"),
+          data: "foo",
           streamId: "1234",
           isStreamChunk: true,
         });
@@ -186,7 +186,7 @@ describe("Exchange", () => {
           "1",
           new Command({
             name: "stream",
-            data: Buffer.of(),
+            data: "",
             streamId: "1234",
             isStreamChunk: true,
           }),
@@ -201,7 +201,7 @@ describe("Exchange", () => {
         exchange.push(
           new Command({
             name: "stream",
-            data: Buffer.from("error", "ascii"),
+            data: "error",
             requestId: "1234",
             isErrorResponse: true,
           }),
@@ -212,7 +212,7 @@ describe("Exchange", () => {
           "1",
           new Command({
             name: "stream",
-            data: Buffer.of(),
+            data: "",
             streamId: "1234",
             isStreamEnd: true,
           }),
@@ -231,7 +231,7 @@ describe("Exchange", () => {
           "1",
           new Command({
             name: "stream",
-            data: Buffer.from("foo", "ascii"),
+            data: "foo",
             streamId: "1234",
             isStreamChunk: true,
           }),
@@ -240,7 +240,7 @@ describe("Exchange", () => {
         exchange.push(
           new Command({
             name: "",
-            data: Buffer.from("bar", "ascii"),
+            data: "bar",
             isStreamChunk: true,
             streamId: "1234",
           }),
@@ -248,7 +248,7 @@ describe("Exchange", () => {
         exchange.push(
           new Command({
             name: "",
-            data: Buffer.of(),
+            data: "",
             isStreamEnd: true,
             streamId: "1234",
           }),
@@ -257,13 +257,13 @@ describe("Exchange", () => {
         expect(await Array.fromAsync(exchange.chunks())).toEqual([
           {
             name: "stream",
-            data: Buffer.from("foo", "ascii"),
+            data: "foo",
             streamId: "1234",
             isStreamChunk: true,
           },
           {
             name: "",
-            data: Buffer.from("bar", "ascii"),
+            data: "bar",
             streamId: "1234",
             isStreamChunk: true,
           },
@@ -275,7 +275,7 @@ describe("Exchange", () => {
           "1",
           new Command({
             name: "stream",
-            data: Buffer.from("foo", "ascii"),
+            data: "foo",
             streamId: "1234",
             isStreamChunk: true,
           }),
@@ -284,7 +284,7 @@ describe("Exchange", () => {
         exchange.push(
           new Command({
             name: "",
-            data: Buffer.from("bar", "ascii"),
+            data: "bar",
             isStreamChunk: true,
             streamId: "1234",
           }),
@@ -292,7 +292,7 @@ describe("Exchange", () => {
         exchange.push(
           new Command({
             name: "",
-            data: Buffer.of(),
+            data: "",
             isStreamEnd: true,
             streamId: "1234",
           }),
@@ -302,7 +302,7 @@ describe("Exchange", () => {
         expect(await Array.fromAsync(exchange.chunks())).toEqual([
           {
             name: "",
-            data: Buffer.from("bar", "ascii"),
+            data: "bar",
             streamId: "1234",
             isStreamChunk: true,
           },
@@ -313,7 +313,7 @@ describe("Exchange", () => {
           "1",
           new Command({
             name: "stream",
-            data: Buffer.from("foo", "ascii"),
+            data: "foo",
             streamId: "1234",
             isStreamChunk: true,
           }),
@@ -323,7 +323,7 @@ describe("Exchange", () => {
           new Command({
             name: "",
             requestId: "1234",
-            data: Buffer.of(),
+            data: "",
             isErrorResponse: true,
           }),
         );
@@ -337,7 +337,7 @@ describe("Exchange", () => {
           "1",
           new Command({
             name: "stream",
-            data: Buffer.from("foo", "ascii"),
+            data: "foo",
             streamId: "1234",
             isStreamChunk: true,
           }),
@@ -347,7 +347,7 @@ describe("Exchange", () => {
           new Command({
             name: "",
             streamId: "1234",
-            data: Buffer.of(),
+            data: "",
             isStreamEnd: true,
           }),
         );
@@ -363,9 +363,9 @@ describe("Exchange", () => {
     describe("send", () => {
       test("should send data", () => {
         const exchange = new TestingExchange();
-        exchange.send({ name: "command", data: Buffer.from("data", "ascii") });
+        exchange.send({ name: "command", data: "data" });
         expect(exchange.outbox).toEqual([
-          ["", { name: "command", data: Buffer.from("data", "ascii") }],
+          ["", { name: "command", data: "data" }],
         ]);
       });
     });
@@ -375,12 +375,12 @@ describe("Exchange", () => {
         const exchange = new TestingExchange();
         exchange.request({
           name: "command",
-          data: Buffer.from("data", "ascii"),
+          data: "data",
         });
 
         const sent = exchange.outbox[0][1];
         expect(sent.name).toEqual("command");
-        expect(sent.data).toEqual(Buffer.from("data", "ascii"));
+        expect(sent.data).toEqual("data");
         expect(sent.isRequest).toBeTrue();
         expect(sent.requestId).not.toBeNull();
       });
@@ -392,12 +392,12 @@ describe("Exchange", () => {
           "1",
           new Command({
             name: "request",
-            data: Buffer.of(),
+            data: "",
             requestId: "1234",
             isRequest: true,
           }),
         );
-        exchange.reply({ data: Buffer.from("foo", "ascii") });
+        exchange.reply({ data: "foo" });
 
         expect(exchange.outbox).toEqual([
           [
@@ -405,7 +405,7 @@ describe("Exchange", () => {
             {
               name: "",
               requestId: "1234",
-              data: Buffer.from("foo", "ascii"),
+              data: "foo",
               isSuccessResponse: true,
             },
           ],
@@ -416,12 +416,12 @@ describe("Exchange", () => {
           "1",
           new Command({
             name: "stream",
-            data: Buffer.of(),
+            data: "",
             streamId: "1234",
             isStreamChunk: true,
           }),
         );
-        exchange.reply({ data: Buffer.from("foo", "ascii") });
+        exchange.reply({ data: "foo" });
 
         expect(exchange.outbox).toEqual([
           [
@@ -429,7 +429,7 @@ describe("Exchange", () => {
             {
               name: "",
               requestId: "1234",
-              data: Buffer.from("foo", "ascii"),
+              data: "foo",
               isSuccessResponse: true,
             },
           ],
@@ -438,28 +438,24 @@ describe("Exchange", () => {
       test("should throw without id", () => {
         const exchange = new TestingExchange(
           "1",
-          new Command({ name: "command", data: Buffer.of() }),
+          new Command({ name: "command", data: "" }),
         );
 
-        expect(() =>
-          exchange.reply({ data: Buffer.from("foo", "ascii") }),
-        ).toThrow();
+        expect(() => exchange.reply({ data: "foo" })).toThrow();
       });
       test("should throw if closed", () => {
         const exchange = new TestingExchange(
           "1",
           new Command({
             name: "stream",
-            data: Buffer.of(),
+            data: "",
             streamId: "1234",
             isStreamChunk: true,
           }),
         );
-        exchange.reply({ data: Buffer.from("foo", "ascii") });
+        exchange.reply({ data: "foo" });
 
-        expect(() =>
-          exchange.reply({ data: Buffer.from("bar", "ascii") }),
-        ).toThrow();
+        expect(() => exchange.reply({ data: "bar" })).toThrow();
       });
     });
 
@@ -469,12 +465,12 @@ describe("Exchange", () => {
           "1",
           new Command({
             name: "request",
-            data: Buffer.of(),
+            data: "",
             requestId: "1234",
             isRequest: true,
           }),
         );
-        exchange.fail({ data: Buffer.from("error", "ascii") });
+        exchange.fail({ data: "error" });
 
         expect(exchange.outbox).toEqual([
           [
@@ -482,7 +478,7 @@ describe("Exchange", () => {
             {
               name: "",
               requestId: "1234",
-              data: Buffer.from("error", "ascii"),
+              data: "error",
               isErrorResponse: true,
             },
           ],
@@ -493,12 +489,12 @@ describe("Exchange", () => {
           "1",
           new Command({
             name: "request",
-            data: Buffer.of(),
+            data: "",
             streamId: "1234",
             isStreamChunk: true,
           }),
         );
-        exchange.fail({ data: Buffer.from("error", "ascii") });
+        exchange.fail({ data: "error" });
 
         expect(exchange.outbox).toEqual([
           [
@@ -506,7 +502,7 @@ describe("Exchange", () => {
             {
               name: "",
               requestId: "1234",
-              data: Buffer.from("error", "ascii"),
+              data: "error",
               isErrorResponse: true,
             },
           ],
@@ -515,28 +511,24 @@ describe("Exchange", () => {
       test("should throw without id", () => {
         const exchange = new TestingExchange(
           "1",
-          new Command({ name: "command", data: Buffer.of() }),
+          new Command({ name: "command", data: "" }),
         );
 
-        expect(() =>
-          exchange.fail({ data: Buffer.from("error", "ascii") }),
-        ).toThrow();
+        expect(() => exchange.fail({ data: "error" })).toThrow();
       });
       test("should throw if closed", () => {
         const exchange = new TestingExchange(
           "1",
           new Command({
             name: "stream",
-            data: Buffer.of(),
+            data: "",
             streamId: "1234",
             isStreamChunk: true,
           }),
         );
-        exchange.reply({ data: Buffer.from("foo", "ascii") });
+        exchange.reply({ data: "foo" });
 
-        expect(() =>
-          exchange.fail({ data: Buffer.from("bar", "ascii") }),
-        ).toThrow();
+        expect(() => exchange.fail({ data: "bar" })).toThrow();
       });
     });
 
@@ -546,19 +538,19 @@ describe("Exchange", () => {
           "1",
           new Command({
             name: "stream",
-            data: Buffer.of(),
+            data: "",
             streamId: "1234",
             isStreamChunk: true,
           }),
         );
-        exchange.stream({ data: Buffer.from("foo", "ascii") });
+        exchange.stream({ data: "foo" });
         expect(exchange.outbox).toEqual([
           [
             "1",
             {
               name: "",
               isStreamChunk: true,
-              data: Buffer.from("foo", "ascii"),
+              data: "foo",
               streamId: "1234",
             },
           ],
@@ -569,19 +561,19 @@ describe("Exchange", () => {
           "1",
           new Command({
             name: "stream-req",
-            data: Buffer.of(),
+            data: "",
             requestId: "1234",
             isRequest: true,
           }),
         );
-        exchange.stream({ data: Buffer.from("foo", "ascii") });
+        exchange.stream({ data: "foo" });
         expect(exchange.outbox).toEqual([
           [
             "1",
             {
               name: "",
               isStreamChunk: true,
-              data: Buffer.from("foo", "ascii"),
+              data: "foo",
               streamId: "1234",
             },
           ],
@@ -590,27 +582,23 @@ describe("Exchange", () => {
       test("should throw without id", () => {
         const exchange = new TestingExchange(
           "1",
-          new Command({ name: "stream", data: Buffer.of() }),
+          new Command({ name: "stream", data: "" }),
         );
-        expect(() =>
-          exchange.stream({ data: Buffer.from("foo", "ascii") }),
-        ).toThrow();
+        expect(() => exchange.stream({ data: "foo" })).toThrow();
       });
       test("should throw if closed", () => {
         const exchange = new TestingExchange(
           "1",
           new Command({
             name: "stream",
-            data: Buffer.of(),
+            data: "",
             streamId: "1234",
             isStreamChunk: true,
           }),
         );
         exchange.finishStream();
 
-        expect(() =>
-          exchange.stream({ data: Buffer.from("foo", "ascii") }),
-        ).toThrow();
+        expect(() => exchange.stream({ data: "foo" })).toThrow();
       });
     });
 
@@ -620,7 +608,7 @@ describe("Exchange", () => {
           "1",
           new Command({
             name: "stream",
-            data: Buffer.from("foo", "ascii"),
+            data: "foo",
             streamId: "1234",
             isStreamChunk: true,
           }),
@@ -633,7 +621,7 @@ describe("Exchange", () => {
             {
               name: "",
               streamId: "1234",
-              data: Buffer.of(),
+              data: "",
               isStreamEnd: true,
             },
           ],
@@ -644,7 +632,7 @@ describe("Exchange", () => {
           "1",
           new Command({
             name: "stream-req",
-            data: Buffer.of(),
+            data: "",
             requestId: "1234",
             isRequest: true,
           }),
@@ -657,7 +645,7 @@ describe("Exchange", () => {
             {
               name: "",
               streamId: "1234",
-              data: Buffer.of(),
+              data: "",
               isStreamEnd: true,
             },
           ],
@@ -666,7 +654,7 @@ describe("Exchange", () => {
       test("should throw without id", () => {
         const exchange = new TestingExchange(
           "1",
-          new Command({ name: "stream", data: Buffer.from("foo", "ascii") }),
+          new Command({ name: "stream", data: "foo" }),
         );
         expect(() => exchange.finishStream()).toThrow();
       });

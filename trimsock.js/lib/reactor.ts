@@ -186,7 +186,7 @@ export class ReactorExchange<T> implements Exchange<T> {
     this.write(
       {
         name: "",
-        data: Buffer.of(),
+        data: "",
         streamId: this.command?.requireId(),
         isStreamEnd: true,
       },

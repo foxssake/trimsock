@@ -7,18 +7,14 @@ describe("Trimsock", () => {
       test("should parse command with data", () => {
         const trimsock = new Trimsock();
         const input = Buffer.from("command data\n", "ascii");
-        const expected = [
-          { name: "command", data: Buffer.from("data", "ascii"), isRaw: false },
-        ];
+        const expected = [{ name: "command", data: "data" }];
         expect(trimsock.ingest(input)).toEqual(expected);
       });
 
       test("should parse command without data", () => {
         const trimsock = new Trimsock();
         const input = Buffer.from("command \n", "ascii");
-        const expected = [
-          { name: "command", data: Buffer.from("", "ascii"), isRaw: false },
-        ];
+        const expected = [{ name: "command", data: "" }];
         expect(trimsock.ingest(input)).toEqual(expected);
       });
 
@@ -28,8 +24,7 @@ describe("Trimsock", () => {
         const expected = [
           {
             name: "command",
-            data: Buffer.from("foo\x00", "ascii"),
-            isRaw: false,
+            data: "foo\x00",
           },
         ];
         expect(trimsock.ingest(input)).toEqual(expected);
@@ -49,8 +44,7 @@ describe("Trimsock", () => {
           [
             {
               name: "command",
-              data: Buffer.from("data", "ascii"),
-              isRaw: false,
+              data: "data",
             },
           ],
         ]);
@@ -62,8 +56,7 @@ describe("Trimsock", () => {
         const expected = [
           {
             name: "\rco mm\nand",
-            data: Buffer.from("data", "ascii"),
-            isRaw: false,
+            data: "data",
           },
         ];
         expect(trimsock.ingest(input)).toEqual(expected);
@@ -75,8 +68,7 @@ describe("Trimsock", () => {
         const expected = [
           {
             name: "command",
-            data: Buffer.from("data \n\\s", "ascii"),
-            isRaw: false,
+            data: "data \n\\s",
           },
         ];
         expect(trimsock.ingest(input)).toEqual(expected);
@@ -88,8 +80,7 @@ describe("Trimsock", () => {
         const expected = [
           {
             name: "command",
-            data: Buffer.from("\n\n\n ", "ascii"),
-            isRaw: true,
+            raw: Buffer.from("\n\n\n ", "ascii"),
           },
         ];
         expect(trimsock.ingest(input)).toEqual(expected);
@@ -111,8 +102,7 @@ describe("Trimsock", () => {
           [
             {
               name: "command",
-              data: Buffer.from("0123456789", "ascii"),
-              isRaw: true,
+              raw: Buffer.from("0123456789", "ascii"),
             },
           ],
         ]);
@@ -137,7 +127,7 @@ describe("Trimsock", () => {
             },
           ],
           [],
-          [{ name: "cmd", data: Buffer.of(), isRaw: false }],
+          [{ name: "cmd", data: "" }],
         ]);
       });
 
@@ -159,7 +149,7 @@ describe("Trimsock", () => {
                 "Expected command length 11 is above the allowed 10 bytes!",
             },
           ],
-          [{ name: "cmd", data: Buffer.of(), isRaw: false }],
+          [{ name: "cmd", data: "" }],
         ]);
       });
 
@@ -188,7 +178,7 @@ describe("Trimsock", () => {
                 "Queued raw data of 16 bytes is larger than max command size of 12 bytes",
             },
           ],
-          [{ name: "cmd", data: Buffer.of(), isRaw: false }],
+          [{ name: "cmd", data: "" }],
         ]);
       });
     });
