@@ -46,7 +46,9 @@ export interface WritableExchange<T> {
   failOrSend(what: CommandSpec): void;
 }
 
-export interface Exchange<T> extends ReadableExchange, WritableExchange<T> {}
+export interface Exchange<T> extends ReadableExchange, WritableExchange<T> {
+  readonly source: T;
+}
 
 export class ReactorExchange<T> implements Exchange<T> {
   private commandResolvers: Array<(command: Command) => void> = [];
@@ -98,7 +100,7 @@ export class ReactorExchange<T> implements Exchange<T> {
       if (this.commandResolvers.length > 0) {
         for (const resolve of this.commandResolvers) resolve(what);
         this.commandResolvers = [];
-      } else this.queued.push(what)
+      } else this.queued.push(what);
     }
   }
 
@@ -194,11 +196,16 @@ export class ReactorExchange<T> implements Exchange<T> {
   }
 
   onCommand(): Promise<CommandSpec> {
-    console.log("Queue", this.queued)
+    console.log("Queue", this.queued);
     const queued = this.queued.find(
-      (cmd) => !cmd.isRequest && !cmd.isSuccessResponse && !cmd.isErrorResponse && !cmd.isStreamChunk && !cmd.isStreamEnd,
+      (cmd) =>
+        !cmd.isRequest &&
+        !cmd.isSuccessResponse &&
+        !cmd.isErrorResponse &&
+        !cmd.isStreamChunk &&
+        !cmd.isStreamEnd,
     );
-    console.log("Hit", queued)
+    console.log("Hit", queued);
     this.queued = this.queued.filter((cmd) => cmd !== queued);
 
     if (queued) return Promise.resolve(queued);

@@ -55,11 +55,7 @@ export class Command implements CommandSpec {
   }
 
   get isClosing(): boolean {
-    return (
-      this.isResponse ||
-      this.isStreamEnd ||
-      false
-    );
+    return this.isResponse || this.isStreamEnd || false;
   }
 
   get isResponse(): boolean {
@@ -71,7 +67,7 @@ export class Command implements CommandSpec {
   }
 
   get isSimple(): boolean {
-    return !this.isRequest && !this.isResponse && !this.isStream
+    return !this.isRequest && !this.isResponse && !this.isStream;
   }
 
   requireId(): string {

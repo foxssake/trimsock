@@ -6,13 +6,19 @@ describe("Exchange", () => {
   describe("ReadableExchange", () => {
     describe("onCommand", () => {
       test("should return command", async () => {
-        const exchange = new TestingExchange("1", new Command({ name: "command", data: Buffer.of() }))
-        exchange.push(new Command({ name: "else", data: Buffer.of() }))
+        const exchange = new TestingExchange(
+          "1",
+          new Command({ name: "command", data: Buffer.of() }),
+        );
+        exchange.push(new Command({ name: "else", data: Buffer.of() }));
 
-        expect(await exchange.onCommand()).toEqual({ name: "else", data: Buffer.of() })
-      })
-      test("should throw if closed", async () => {})
-    })
+        expect(await exchange.onCommand()).toEqual({
+          name: "else",
+          data: Buffer.of(),
+        });
+      });
+      test("should throw if closed", async () => {});
+    });
     describe("onReply", () => {
       test("should return response", async () => {
         const exchange = new TestingExchange(
