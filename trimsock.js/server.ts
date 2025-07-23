@@ -1,4 +1,4 @@
-import assert from "node:assert";
+import assert from "@lib/assert";
 import { Command } from "@lib/command";
 import { SocketReactor } from "@lib/reactor";
 import type { Socket } from "bun";
