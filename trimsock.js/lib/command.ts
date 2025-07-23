@@ -2,8 +2,8 @@ import assert from "node:assert";
 
 export interface BaseCommandSpec {
   name: string;
-  data: Buffer;
-  isRaw?: boolean;
+  data?: string;
+  raw?: Buffer;
 }
 
 interface MultiparamCommandSpec extends BaseCommandSpec {
@@ -33,8 +33,8 @@ export interface CommandSpec
 
 export class Command implements CommandSpec {
   name: string;
-  data: Buffer<ArrayBufferLike>;
-  isRaw?: boolean | undefined;
+  data?: string | undefined;
+  raw?: Buffer | undefined;
   params?: string[] | undefined;
   requestId?: string | undefined;
   isRequest?: boolean | undefined;
@@ -70,6 +70,10 @@ export class Command implements CommandSpec {
     return !this.isRequest && !this.isResponse && !this.isStream;
   }
 
+  get isRaw(): boolean {
+    return this.raw !== undefined;
+  }
+
   requireId(): string {
     assert(this.id !== undefined, "No request or stream ID is present!");
     return this.id;
@@ -91,6 +95,16 @@ export class Command implements CommandSpec {
     return this.requireParams()[index];
   }
 
+  requireRaw(): Buffer {
+    assert(this.raw !== undefined, "Command has no raw data!");
+    return this.raw;
+  }
+
+  requireText(): string {
+    assert(this.data !== undefined, "Command has no text data!");
+    return this.data;
+  }
+
   serialize(): string {
     return Command.serialize(this);
   }
@@ -109,16 +123,16 @@ export class Command implements CommandSpec {
     name = Command.escapeName(name);
 
     // Early return for raw spec.
-    if (spec.isRaw)
-      return spec.data.byteLength !== 0
-        ? `\r${name} ${spec.data.byteLength}\n${spec.data.toString("ascii")}\n`
+    if (spec.raw)
+      return spec.raw.byteLength !== 0
+        ? `\r${name} ${spec.raw.byteLength}\n${spec.raw.toString("ascii")}\n`
         : `${name} \n`;
 
     // Figure out data
     let data = "";
     if (spec.params)
       data = spec.params.map((it) => Command.escapeData(it)).join(" ");
-    else data = Command.escapeData(spec.data.toString("ascii"));
+    else data = Command.escapeData(spec.data ?? "");
 
     return `${name} ${data}\n`;
   }

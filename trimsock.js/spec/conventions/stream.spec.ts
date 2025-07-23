@@ -8,12 +8,11 @@ describe("StreamConvention", () => {
     const input = "lobbies|0123 {foo}\n";
     const expected: CommandSpec = {
       name: "lobbies",
-      data: Buffer.from("{foo}", "ascii"),
-      isRaw: false,
+      data: "{foo}",
       streamId: "0123",
       isStreamChunk: true,
     };
-    expect(trimsock.ingest(Buffer.from(input, "ascii"))).toEqual([expected]);
+    expect(trimsock.ingest(Buffer.from(input, "utf8"))).toEqual([expected]);
   });
   test("should parse from parts", () => {
     const trimsock = new Trimsock().withConventions();
@@ -24,15 +23,14 @@ describe("StreamConvention", () => {
       [
         {
           name: "lobbies",
-          data: Buffer.from("{foo}", "ascii"),
-          isRaw: false,
+          data: "{foo}",
           streamId: "0123",
           isStreamChunk: true,
         },
       ],
     ];
     const actual = inputs.map((input) =>
-      trimsock.ingest(Buffer.from(input, "ascii")),
+      trimsock.ingest(Buffer.from(input, "utf8")),
     );
 
     expect(actual).toEqual(expected);
@@ -42,24 +40,33 @@ describe("StreamConvention", () => {
     const input = "|0123 \n";
     const expected: CommandSpec = {
       name: "",
-      data: Buffer.of(),
-      isRaw: false,
+      data: "",
       streamId: "0123",
       isStreamEnd: true,
     };
-    expect(trimsock.ingest(Buffer.from(input, "ascii"))).toEqual([expected]);
+    expect(trimsock.ingest(Buffer.from(input, "utf8"))).toEqual([expected]);
   });
   test("should passthrough params", () => {
     const trimsock = new Trimsock().withConventions();
     const input = "lobbies|0123 name=foo players=5/7\n";
     const expected: CommandSpec = {
       name: "lobbies",
-      data: Buffer.from("name=foo players=5/7", "ascii"),
-      isRaw: false,
+      data: "name=foo players=5/7",
       streamId: "0123",
       isStreamChunk: true,
       params: ["name=foo", "players=5/7"],
     };
-    expect(trimsock.ingest(Buffer.from(input, "ascii"))).toEqual([expected]);
+    expect(trimsock.ingest(Buffer.from(input, "utf8"))).toEqual([expected]);
+  });
+  test("should passthrough raw", () => {
+    const trimsock = new Trimsock().withConventions();
+    const input = "\rlobbies|0123 6\n\x03foo\x05\x07\n";
+    const expected: CommandSpec = {
+      name: "lobbies",
+      raw: Buffer.from([3, 102, 111, 111, 5, 7]),
+      streamId: "0123",
+      isStreamChunk: true,
+    };
+    expect(trimsock.ingest(Buffer.from(input, "utf8"))).toEqual([expected]);
   });
 });

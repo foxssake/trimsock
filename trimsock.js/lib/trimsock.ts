@@ -62,7 +62,7 @@ export class Trimsock {
           i = this.ingestRawBody(buffer, i, result);
           break;
         case ParserState.SKIP_TO_NL:
-          i = this.ingestSkipToNl(buffer, i, result);
+          i = this.ingestSkipToNl(buffer, i);
           break;
         case ParserState.SKIP_RAW:
           i = this.ingestSkipRaw(buffer, i, result);
@@ -101,7 +101,7 @@ export class Trimsock {
       this.state = ParserState.SKIP_TO_NL;
       this.clearCommand();
     } else {
-      this.commandName += buffer.toString("ascii", at, spPos);
+      this.commandName += buffer.toString("utf8", at, spPos);
     }
 
     return spPos + 1;
@@ -135,7 +135,7 @@ export class Trimsock {
       if (this.commandName.at(0) === "\r") {
         // Raw data
         const sizeString = Buffer.concat(this.commandDataChunks).toString(
-          "ascii",
+          "utf8",
         );
         this.rawBytesRemaining = Number.parseInt(sizeString);
 
@@ -191,11 +191,7 @@ export class Trimsock {
     return at + bytesAvailable;
   }
 
-  private ingestSkipToNl(
-    buffer: Buffer,
-    at: number,
-    output: Array<ParserOutput>,
-  ): number {
+  private ingestSkipToNl(buffer: Buffer, at: number): number {
     const nlPos = buffer.indexOf(NL, at);
     if (nlPos >= 0) {
       this.state = ParserState.COMMAND_NAME;
@@ -233,12 +229,11 @@ export class Trimsock {
   }
 
   private emitCommand(): CommandSpec {
-    const data = Buffer.concat(this.commandDataChunks).toString("ascii");
+    const data = Buffer.concat(this.commandDataChunks).toString("utf8");
 
     const result = {
       name: Command.unescapeName(this.commandName),
-      data: Buffer.from(Command.unescapeData(data)),
-      isRaw: false,
+      data: Command.unescapeData(data),
     };
 
     this.clearCommand();
@@ -251,7 +246,7 @@ export class Trimsock {
 
     this.clearCommand();
 
-    return { name, data, isRaw: true };
+    return { name, raw: data };
   }
 
   private clearCommand(): void {

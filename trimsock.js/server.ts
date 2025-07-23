@@ -21,7 +21,7 @@ const reactor = new SocketReactor<SocketContext>()
   .on("echo", (cmd, exchange) => exchange.send(cmd))
   .on("info", (_, exchange) =>
     exchange.reply({
-      data: Buffer.from("trimsock reactor", "ascii"),
+      data: "trimsock reactor",
     }),
   )
   .on("askme", async (_, exchange) => {
@@ -29,15 +29,15 @@ const reactor = new SocketReactor<SocketContext>()
     const result = await exchange
       .request({
         name: "answer",
-        data: Buffer.from("Give me a number pls", "ascii"),
+        data: "Give me a number pls",
       })
       .onReply();
-    console.log("Response is ", result.data.toString("ascii"));
+    console.log("Response is ", result.data);
   })
   .on("stream", async (_, exchange) => {
     console.log("Started stream");
     for await (const chunk of exchange.chunks())
-      console.log("Chunk", chunk.data.toString("ascii"), chunk.data);
+      console.log("Chunk", chunk.data, chunk.raw);
     console.log("Finished stream");
   })
   .on("proxy", (cmd, exchange) => {
@@ -48,30 +48,24 @@ const reactor = new SocketReactor<SocketContext>()
     const target = sockets.values().find((it) => it.data.sessionId === peerId);
     assert(target, `Unknown peer: ${peerId}`);
 
-    exchange.send(
-      { name: "proxy-data", data: Buffer.from(data, "ascii") },
-      target,
-    );
+    exchange.send({ name: "proxy-data", data }, target);
   })
   .on("sessions", (_, exchange) => {
     for (const socket of sockets)
-      exchange.stream({ data: Buffer.from(socket.data.sessionId, "ascii") });
+      exchange.stream({ data: socket.data.sessionId });
     exchange.finishStream();
   })
   .onUnknown((cmd, exchange) =>
     exchange.failOrSend({
       name: cmd.name,
-      data: Buffer.from(`Unknown command: ${cmd.name}`, "ascii"),
+      data: `Unknown command: ${cmd.name}`,
     }),
   )
   .onError((cmd, exchange, error) => {
     const message = (error as Error).message ?? error;
     exchange.failOrSend({
       name: cmd.name,
-      data: Buffer.from(
-        `Failed to process command: ${Command.serialize(cmd)}\nError: ${message}`,
-        "ascii",
-      ),
+      data: `Failed to process command: ${Command.serialize(cmd)}\nError: ${message}`,
     });
   });
 
@@ -89,11 +83,11 @@ reactor.listen({
       reactor
         .send(socket, {
           name: "greet",
-          data: Buffer.from(sessionId, "ascii"),
+          data: sessionId,
         })
         .send({
           name: "stats",
-          data: Buffer.from(`Active connections: ${sockets.size}`, "ascii"),
+          data: `Active connections: ${sockets.size}`,
         });
     },
     close(socket, error) {

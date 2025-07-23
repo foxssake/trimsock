@@ -100,6 +100,9 @@ Example:
 \xFF\xD8\xFF\xE1\x00\x18\x45\x78\x69\x66\x00\x00\x49\x49...\n
 ```
 
+Raw data MUST be interpreted as-is, without any kind of decoding algorithm (
+i.e. don't parse it as UTF-8 ).
+
 ### Conventions
 
 Conventions build on top of the base specifications. They do so in a way that
