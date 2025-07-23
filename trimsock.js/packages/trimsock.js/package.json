@@ -1,14 +1,12 @@
 {
-  "name": "trimsock",
+  "name": "@foxssake/trimsock.js",
   "version": "0.10.3",
+  "module": "index.ts",
+  "type": "module",
   "scripts": {
     "format": "biome format",
     "lint": "biome lint",
     "check": "biome check"
-  },
-  "dependencies": {
-    "@foxssake/trimsock.js": "workspace:*",
-    "@foxssake/trimsock.bun": "workspace:*"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
@@ -16,6 +14,6 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
-  },
-  "workspaces": ["packages/*"]
+  }
 }
+
