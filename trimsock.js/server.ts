@@ -1,7 +1,7 @@
-import type { Socket } from "bun";
-import assert from "@foxssake/trimsock.js/lib/assert";
-import { Command } from "@foxssake/trimsock.js";
 import { SocketReactor } from "@foxssake/trimsock.bun";
+import { Command } from "@foxssake/trimsock.js";
+import assert from "@foxssake/trimsock.js/lib/assert";
+import type { Socket } from "bun";
 
 type SocketContext = { sessionId: string };
 const sockets: Set<Socket<SocketContext>> = new Set();
