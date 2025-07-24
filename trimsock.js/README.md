@@ -10,3 +10,6 @@ This implementation provides multiple packages:
 
 An example server implementation can be found in [server.ts](./server.ts).
 
+## License
+
+All packages and source code are under the [MIT License](LICENSE).
