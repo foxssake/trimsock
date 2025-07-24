@@ -3,6 +3,8 @@
   "version": "0.10.4",
   "module": "index.ts",
   "type": "module",
+  "author": "Tamás Gálffy",
+  "license": "MIT",
   "scripts": {
     "format": "biome format",
     "lint": "biome lint",
