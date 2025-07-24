@@ -1,15 +1,12 @@
-# trimsock
+# trimsock.js
 
-To install dependencies:
+A reference implementation of the *trimsock* protocol, in TypeScript, running
+under Bun.
 
-```bash
-bun install
-```
+This implementation provides multiple packages:
 
-To run:
+- trimsock.js - The zero-dependency protocol implementation
+- trimsock.bun - An adapter package, providing support for Bun's sockets
 
-```bash
-bun run index.ts
-```
+An example server implementation can be found in [server.ts](./server.ts).
 
-This project was created using `bun init` in bun v1.1.34. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
