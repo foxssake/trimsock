@@ -1,8 +1,10 @@
 {
   "name": "@foxssake/trimsock.bun",
-  "version": "0.10.4",
+  "version": "0.10.5",
   "module": "lib/trimsock.ts",
   "type": "module",
+  "author": "Tamás Gálffy",
+  "license": "MIT",
   "scripts": {
     "format": "biome format",
     "lint": "biome lint",
