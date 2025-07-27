@@ -1,5 +1,5 @@
 {
-  "name": "@foxssake/trimsock.js",
+  "name": "@foxssake/trimsock-js",
   "version": "0.10.5",
   "module": "dist/index.js",
   "type": "module",
@@ -8,7 +8,8 @@
   "scripts": {
     "format": "biome format",
     "lint": "biome lint",
-    "check": "biome check"
+    "check": "biome check",
+    "build": "tsc -p tsconfig.build.json"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
