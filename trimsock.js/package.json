@@ -1,7 +1,7 @@
 {
   "name": "trimsock",
   "private": true,
-  "version": "0.10.5",
+  "version": "0.10.6",
   "scripts": {
     "format": "biome format",
     "lint": "biome lint",
