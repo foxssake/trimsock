@@ -1,7 +1,7 @@
 {
   "name": "@foxssake/trimsock.js",
   "version": "0.10.5",
-  "module": "index.ts",
+  "module": "dist/index.js",
   "type": "module",
   "author": "Tamás Gálffy",
   "license": "MIT",
@@ -16,5 +16,8 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
-  }
+  },
+  "files": [
+    "./dist/"
+  ]
 }
