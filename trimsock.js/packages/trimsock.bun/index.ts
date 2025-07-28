@@ -1,1 +1,1 @@
-export { SocketReactor } from "./lib/socket.reactor";
+export { SocketReactor } from "./lib/socket.reactor.js";

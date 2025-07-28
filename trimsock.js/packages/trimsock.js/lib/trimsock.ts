@@ -1,10 +1,10 @@
-import { Command, type CommandSpec } from "./command";
+import { Command, type CommandSpec } from "./command.js";
 import {
   type Convention,
   MultiparamConvention,
   RequestResponseConvention,
   StreamConvention,
-} from "./conventions";
+} from "./conventions.js";
 
 export interface ParseError {
   error: string;

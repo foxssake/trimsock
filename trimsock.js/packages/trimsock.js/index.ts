@@ -1,10 +1,10 @@
-export { type CommandSpec, Command } from "./lib/command";
+export { type CommandSpec, Command } from "./lib/command.js";
 export {
   type ParseError,
   type ParserOutput,
   isCommand,
   Trimsock,
-} from "./lib/trimsock";
+} from "./lib/trimsock.js";
 export {
   type CommandHandler,
   type CommandErrorHandler,
@@ -12,4 +12,4 @@ export {
   type WritableExchange,
   type Exchange,
   Reactor,
-} from "./lib/reactor";
+} from "./lib/reactor.js";

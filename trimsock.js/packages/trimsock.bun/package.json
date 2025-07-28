@@ -12,7 +12,7 @@
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@foxssake/trimsock.js": "workspace:*"
+    "@foxssake/trimsock-js": "workspace:*"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
@@ -23,5 +23,8 @@
   },
   "files": [
     "./dist/"
-  ]
+  ],
+  "engines": {
+    "bun": "1.1.34"
+  }
 }
