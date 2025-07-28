@@ -1,4 +1,4 @@
-import { Reactor } from "@foxssake/trimsock.js";
+import { Reactor } from "@foxssake/trimsock-js";
 import type { SocketHandler } from "bun";
 
 export class SocketReactor<SocketData = undefined> extends Reactor<

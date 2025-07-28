@@ -1,4 +1,4 @@
-import type { CommandSpec } from "./command";
+import type { CommandSpec } from "./command.js";
 
 export interface Convention {
   process(command: CommandSpec): CommandSpec;

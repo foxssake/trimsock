@@ -1,6 +1,6 @@
 {
-  "name": "@foxssake/trimsock.bun",
-  "version": "0.10.5",
+  "name": "@foxssake/trimsock-bun",
+  "version": "0.10.6",
   "module": "lib/trimsock.ts",
   "type": "module",
   "author": "Tamás Gálffy",
@@ -8,10 +8,11 @@
   "scripts": {
     "format": "biome format",
     "lint": "biome lint",
-    "check": "biome check"
+    "check": "biome check",
+    "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@foxssake/trimsock.js": "workspace:*"
+    "@foxssake/trimsock-js": "workspace:*"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
@@ -19,5 +20,11 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
+  },
+  "files": [
+    "./dist/"
+  ],
+  "engines": {
+    "bun": "1.1.34"
   }
 }

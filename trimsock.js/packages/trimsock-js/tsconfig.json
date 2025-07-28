@@ -1,16 +1,16 @@
 {
   "compilerOptions": {
     // Enable latest features
-    "lib": ["ESNext", "DOM"],
+    "lib": ["ESNext"],
     "target": "ESNext",
-    "module": "ESNext",
+    "module": "nodenext",
     "moduleDetection": "force",
-    "jsx": "react-jsx",
     "allowJs": true,
+    "declaration": true,
 
-    // Bundler mode
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
+    // Emit
+    "moduleResolution": "nodenext",
+    "allowImportingTsExtensions": false,
     "verbatimModuleSyntax": true,
     "noEmit": true,
 
@@ -27,6 +27,13 @@
     "baseUrl": "./",
     "paths": {
       "@lib/*": ["./lib/*"]
-    }
-  }
+    },
+    "outDir": "./dist/"
+  },
+
+  "include": [
+    "lib/**/*.ts",
+    "spec/**/*.ts",
+    "./index.ts"
+  ]
 }

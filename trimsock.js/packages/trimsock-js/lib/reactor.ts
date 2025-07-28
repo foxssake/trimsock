@@ -1,7 +1,7 @@
 import type { SocketHandler } from "bun";
-import assert from "./assert";
-import { Command, type CommandSpec } from "./command";
-import { Trimsock, isCommand } from "./trimsock";
+import assert from "./assert.js";
+import { Command, type CommandSpec } from "./command.js";
+import { Trimsock, isCommand } from "./trimsock.js";
 
 export type CommandHandler<T> = (
   command: Command,
