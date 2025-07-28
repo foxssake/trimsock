@@ -3,15 +3,16 @@
     // Enable latest features
     "lib": ["ESNext"],
     "target": "ESNext",
-    "module": "ESNext",
+    "module": "nodenext",
     "moduleDetection": "force",
     "allowJs": true,
     "declaration": true,
 
     // Bundler mode
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": false,
-    "verbatimModuleSyntax": true,
+    // "moduleResolution": "bundler",
+    // "allowImportingTsExtensions": false,
+    // "verbatimModuleSyntax": true,
+    "moduleResolution": "nodenext",
 
     // Best practices
     "strict": true,
@@ -26,8 +27,7 @@
     "baseUrl": "./",
     "paths": {
       "@lib/*": ["./lib/*"]
-    },
-    "outDir": "./dist"
+    }
   },
 
   "include": [
