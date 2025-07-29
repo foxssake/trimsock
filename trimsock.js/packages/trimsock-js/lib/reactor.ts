@@ -14,7 +14,9 @@ export type CommandErrorHandler<T> = (
   error: unknown,
 ) => void;
 
-function generateExchangeId(length: number): string {
+export type ExchangeIdGenerator = () => string;
+
+function generateCryptoId(length: number): string {
   const charset =
     "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
@@ -24,6 +26,10 @@ function generateExchangeId(length: number): string {
   return [...buffer]
     .map((idx) => charset.charAt(idx % charset.length))
     .join("");
+}
+
+export function makeDefaultIdGenerator(length = 16): ExchangeIdGenerator {
+  return () => generateCryptoId(length);
 }
 
 export interface ReadableExchange {
@@ -67,6 +73,7 @@ export class ReactorExchange<T> implements Exchange<T> {
       source: T,
     ) => ThisType<ReactorExchange<T>>,
     private free: () => void,
+    private generateExchangeId: ExchangeIdGenerator = makeDefaultIdGenerator(),
     private command?: Command,
   ) {
     // Process originating command
@@ -113,7 +120,7 @@ export class ReactorExchange<T> implements Exchange<T> {
     const req: CommandSpec = {
       ...what,
       isRequest: true,
-      requestId: generateExchangeId(4),
+      requestId: this.generateExchangeId(),
     };
 
     return this.send(req);
@@ -284,7 +291,10 @@ export abstract class Reactor<T> {
 
   private exchanges: Map<string, ReactorExchange<T>> = new Map();
 
-  constructor(private trimsock: Trimsock = new Trimsock().withConventions()) {}
+  constructor(
+    private trimsock: Trimsock = new Trimsock().withConventions(),
+    private generateExchangeId: ExchangeIdGenerator = makeDefaultIdGenerator(),
+  ) {}
 
   public on(commandName: string, handler: CommandHandler<T>): this {
     this.handlers.set(commandName, handler);
@@ -399,6 +409,7 @@ export abstract class Reactor<T> {
         const exchangeId = command?.requestId ?? command?.streamId;
         if (exchangeId !== undefined) this.exchanges.delete(exchangeId);
       },
+      this.generateExchangeId,
       command,
     );
   }

@@ -1,7 +1,7 @@
 {
   "name": "trimsock",
   "private": true,
-  "version": "0.10.6",
+  "version": "0.11.0",
   "type": "module",
   "scripts": {
     "format": "biome format",
@@ -20,7 +20,5 @@
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
-  "workspaces": [
-    "packages/*"
-  ]
+  "workspaces": ["packages/*"]
 }

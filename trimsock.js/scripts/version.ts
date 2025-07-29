@@ -1,3 +1,4 @@
+#!/bin/env bun
 import { join } from "node:path";
 import { Glob } from "bun";
 

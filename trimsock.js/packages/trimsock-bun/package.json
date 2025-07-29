@@ -1,6 +1,6 @@
 {
   "name": "@foxssake/trimsock-bun",
-  "version": "0.10.6",
+  "version": "0.11.0",
   "module": "lib/trimsock.ts",
   "type": "module",
   "author": "Tamás Gálffy",
@@ -21,9 +21,7 @@
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
-  "files": [
-    "./dist/"
-  ],
+  "files": ["./dist/"],
   "engines": {
     "bun": "1.1.34"
   }
