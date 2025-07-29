@@ -27,9 +27,9 @@ jobs:
       - name: Install
         run: cd trimsock.js && bun install
       - name: Build
-        run:
-          cd trimsock.js && \
-          bun --filter './packages/trimsock-js' build && \
+        run: >
+          cd trimsock.js &&
+          bun --filter './packages/trimsock-js' build &&
           bun --filter './packages/*' build
   test:
     runs-on: ubuntu-latest
