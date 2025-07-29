@@ -3,24 +3,6 @@
   "private": true,
   "version": "0.12.0",
   "type": "module",
-  "scripts": {
-    "format": "biome format",
-    "lint": "biome lint",
-    "check": "biome check",
-    "version": "bun scripts/version.ts"
-  },
-  "dependencies": {
-    "@foxssake/trimsock-js": "workspace:*",
-    "@foxssake/trimsock-bun": "workspace:*",
-    "@foxssake/trimsock-node": "workspace:*"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "1.9.4",
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
-  },
   "workspaces": [
     "packages/*",
     "examples/*"
