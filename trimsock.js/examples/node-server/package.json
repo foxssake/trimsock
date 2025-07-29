@@ -1,0 +1,32 @@
+{
+  "name": "trimsock-node-example",
+  "version": "0.0.0",
+  "main": "index.ts",
+  "private": true,
+  "type": "module",
+  "author": "Tamás Gálffy",
+  "license": "MIT",
+  "scripts": {
+    "format": "biome format",
+    "lint": "biome lint",
+    "check": "biome check",
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@foxssake/trimsock-js": "file:../../packages/trimsock-js",
+    "@foxssake/trimsock-node": "file:../../packages/trimsock-node"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@types/node": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=23.6.0"
+  },
+  "workspaces": [
+    "../../packages/"
+  ]
+}

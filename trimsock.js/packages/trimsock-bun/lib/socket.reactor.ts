@@ -1,7 +1,7 @@
 import { Reactor } from "@foxssake/trimsock-js";
 import type { SocketHandler } from "bun";
 
-export class SocketReactor<SocketData = undefined> extends Reactor<
+export class BunSocketReactor<SocketData = undefined> extends Reactor<
   Bun.Socket<SocketData>
 > {
   public listen(
