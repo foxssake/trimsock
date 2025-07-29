@@ -1,0 +1,39 @@
+name: trimsock.js CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    paths: ["trimsock.js/**/*"]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Install
+        run: cd trimsock.js && bun install
+      - name: Validate version
+        run: trimsock.js/scripts/version.ts
+      - name: Lint
+        run: cd trimsock.js && bun --filter '*' check
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Install
+        run: cd trimsock.js && bun install
+      - name: Build
+        run: cd trimsock.js && bun --filter '*' build
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Install
+        run: cd trimsock.js && bun install
+      - name: Test
+        run: cd trimsock.js && bun test
+
