@@ -1,28 +1,28 @@
 {
-  "name": "@foxssake/trimsock-bun",
-  "version": "0.12.0",
-  "module": "lib/trimsock.ts",
+  "name": "trimsock-node-example",
+  "version": "0.0.0",
+  "main": "index.ts",
+  "private": true,
   "type": "module",
   "author": "Tamás Gálffy",
   "license": "MIT",
   "scripts": {
     "format": "biome format",
     "lint": "biome lint",
-    "check": "biome check",
-    "build": "tsc -p tsconfig.build.json"
+    "check": "biome check"
   },
   "dependencies": {
-    "@foxssake/trimsock-js": "workspace:*"
+    "@foxssake/trimsock-js": "file:../../packages/trimsock-js",
+    "@foxssake/trimsock-node": "file:../../packages/trimsock-node"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
-    "@types/bun": "latest"
+    "@types/node": "latest"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
-  "files": ["./dist/"],
   "engines": {
-    "bun": "1.1.34"
+    "node": ">=23.6.0"
   }
 }
