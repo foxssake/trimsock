@@ -25,7 +25,5 @@
   "engines": {
     "node": ">=18.16.0"
   },
-  "exports": [
-    "./dist/index.js"
-  ]
+  "exports": ["./dist/index.js"]
 }
