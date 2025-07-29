@@ -1,8 +1,7 @@
 import assert from "node:assert";
 import { SocketReactor } from "@foxssake/trimsock-bun";
-import { Command } from "@foxssake/trimsock-js";
+import { Command, makeDefaultIdGenerator } from "@foxssake/trimsock-js";
 import type { Socket } from "bun";
-import { makeDefaultIdGenerator } from "./packages/trimsock-js/lib/reactor";
 
 type SocketContext = { sessionId: string };
 const sockets: Set<Socket<SocketContext>> = new Set();
