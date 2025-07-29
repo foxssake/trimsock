@@ -1,21 +1,12 @@
-import { SocketReactor } from "@foxssake/trimsock.bun";
-import { Command } from "@foxssake/trimsock.js";
-import assert from "@foxssake/trimsock.js/lib/assert";
+import assert from "node:assert";
+import { SocketReactor } from "@foxssake/trimsock-bun";
+import { Command, makeDefaultIdGenerator } from "@foxssake/trimsock-js";
 import type { Socket } from "bun";
 
 type SocketContext = { sessionId: string };
 const sockets: Set<Socket<SocketContext>> = new Set();
 
-function generateSessionId(length = 4): string {
-  const charset = "abcdefghijklmnopqrstuvwxyz";
-
-  const buffer = new Uint8Array(~~length);
-  crypto.getRandomValues(buffer);
-
-  return [...buffer]
-    .map((idx) => charset.charAt(idx % charset.length))
-    .join("");
-}
+const generateSessionId = makeDefaultIdGenerator(4);
 
 const reactor = new SocketReactor<SocketContext>()
   .on("echo", (cmd, exchange) => exchange.send(cmd))
