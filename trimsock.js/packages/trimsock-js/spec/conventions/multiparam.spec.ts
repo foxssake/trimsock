@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { Trimsock } from "@lib/trimsock";
+import { Trimsock } from "@lib/trimsock.js";
 
 describe("MultiparamConvention", () => {
   test("should passthrough raw data", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import type { CommandSpec } from "@lib/command";
-import { type ParserOutput, Trimsock } from "@lib/trimsock";
+import type { CommandSpec } from "@lib/command.js";
+import { type ParserOutput, Trimsock } from "@lib/trimsock.js";
 
 describe("StreamConvention", () => {
   test("should parse stream chunk", () => {

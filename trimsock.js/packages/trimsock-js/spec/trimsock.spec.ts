@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import type { CommandSpec } from "@lib/command";
-import { Trimsock } from "@lib/trimsock";
+import type { CommandSpec } from "@lib/command.js";
+import { Trimsock } from "@lib/trimsock.js";
 
 describe("Trimsock", () => {
   describe("ingest()", () => {

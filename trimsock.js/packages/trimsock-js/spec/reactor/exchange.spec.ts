@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { Command, type CommandSpec } from "@lib/command";
-import { TestingExchange } from "./testing.exchange";
+import { Command, type CommandSpec } from "@lib/command.js";
+import { TestingExchange } from "./testing.exchange.js";
 
 describe("Exchange", () => {
   describe("ReadableExchange", () => {
