@@ -9,8 +9,7 @@
   "scripts": {
     "format": "biome format",
     "lint": "biome lint",
-    "check": "biome check",
-    "build": "tsc -p tsconfig.build.json"
+    "check": "biome check"
   },
   "dependencies": {
     "@foxssake/trimsock-js": "file:../../packages/trimsock-js",
