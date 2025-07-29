@@ -1,5 +1,5 @@
-import { Command, type CommandSpec } from "@lib/command";
-import { ReactorExchange } from "@lib/reactor";
+import { Command, type CommandSpec } from "@lib/command.js";
+import { ReactorExchange, makeDefaultIdGenerator } from "@lib/reactor.js";
 
 export class TestingExchange extends ReactorExchange<string> {
   public outbox: Array<[string, CommandSpec]> = [];
@@ -14,6 +14,7 @@ export class TestingExchange extends ReactorExchange<string> {
       },
       (what, source) => new TestingExchange(source, new Command(what)),
       () => {},
+      makeDefaultIdGenerator(),
       command,
     );
   }

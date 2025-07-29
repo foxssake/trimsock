@@ -12,5 +12,5 @@ export {
   type WritableExchange,
   type Exchange,
   Reactor,
-  makeDefaultIdGenerator
+  makeDefaultIdGenerator,
 } from "./lib/reactor.js";
