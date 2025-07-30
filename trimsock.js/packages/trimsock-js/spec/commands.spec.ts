@@ -5,6 +5,8 @@ describe("Commands", () => {
   describe("serialize()", () => {
     const kases: Array<[string, CommandSpec, string]> = [
       ["should stringify", { name: "command", data: "data" }, "command data\n"],
+      ["should optimize without data", { name: "command" }, "command\n"],
+      ["should serialize empty", { name: "" }, "\n"],
       [
         "should escape newline in data",
         { name: "command", data: "da\nta" },
@@ -33,7 +35,7 @@ describe("Commands", () => {
       [
         "should optimize empty raw",
         { name: "command", data: "" },
-        "command \n",
+        "command\n",
       ],
       [
         "should keep spaces between params",
@@ -68,7 +70,7 @@ describe("Commands", () => {
           isStreamEnd: true,
           data: "",
         },
-        "command|0123 \n",
+        "command|0123\n",
       ],
       [
         "should serialize request",

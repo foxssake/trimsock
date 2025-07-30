@@ -51,6 +51,31 @@ describe("Trimsock", () => {
         ]);
       });
 
+      test("should parse mixed text and raw commands", () => {
+        const trimsock = new Trimsock();
+        const inputs = ["command dat", "a\n\rcommand 4\nqu", "ix\n"];
+
+        const results = inputs
+          .map((input) => Buffer.from(input, "utf8"))
+          .map((input) => trimsock.ingest(input));
+
+        expect(results).toEqual([
+          [],
+          [
+            {
+              name: "command",
+              data: "data",
+            },
+          ],
+          [
+            {
+              name: "command",
+              raw: Buffer.from([0x71, 0x75, 0x69, 0x78])
+            }
+          ]
+        ]);
+      })
+
       test("should unescape command name", () => {
         const trimsock = new Trimsock();
         const input = Buffer.from("\\rco\\smm\\nand data\n", "utf8");
