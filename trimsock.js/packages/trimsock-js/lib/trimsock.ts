@@ -13,9 +13,9 @@ export interface ParseError {
 export type ParserOutput = CommandSpec | ParseError;
 
 enum ParserState {
-  CONSUME_TEXT = 5,
-  CONSUME_RAW = 6,
-  CONSUME_NL = 7,
+  CONSUME_TEXT = 0,
+  CONSUME_RAW = 1,
+  CONSUME_NL = 2,
 }
 
 // TODO: Change ingest output so this is not needed
