@@ -1,4 +1,3 @@
-import type { SocketHandler } from "bun";
 import assert from "./assert.js";
 import { Command, type CommandSpec } from "./command.js";
 import { Trimsock, isCommand } from "./trimsock.js";
@@ -309,6 +308,11 @@ export abstract class Reactor<T> {
   public onError(handler: CommandErrorHandler<T>): this {
     this.errorHandler = handler;
     return this;
+  }
+
+  public configure(callback: (reactor: this) => void): this {
+    callback(this)
+    return this
   }
 
   public ingest(data: Buffer, source: T): void {
