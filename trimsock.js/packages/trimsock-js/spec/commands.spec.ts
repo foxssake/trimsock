@@ -32,11 +32,7 @@ describe("Commands", () => {
         { name: "command", raw: Buffer.from([102, 0, 111]) },
         "\rcommand 3\nf\x00o\n",
       ],
-      [
-        "should optimize empty raw",
-        { name: "command", data: "" },
-        "command\n",
-      ],
+      ["should optimize empty raw", { name: "command", data: "" }, "command\n"],
       [
         "should keep spaces between params",
         { name: "command", data: "", params: ["foo", "ba ar"] },

@@ -19,6 +19,13 @@ describe("Trimsock", () => {
         expect(trimsock.ingest(input)).toEqual(expected);
       });
 
+      test("should parse empty command", () => {
+        const trimsock = new Trimsock();
+        const input = Buffer.from("\n", "utf8");
+        const expected = [{ name: "", data: "" }];
+        expect(trimsock.ingest(input)).toEqual(expected);
+      });
+
       test("should parse command with binary data", () => {
         const trimsock = new Trimsock();
         const input = Buffer.from("command foo\x00\n", "utf8");
@@ -70,11 +77,11 @@ describe("Trimsock", () => {
           [
             {
               name: "command",
-              raw: Buffer.from([0x71, 0x75, 0x69, 0x78])
-            }
-          ]
+              raw: Buffer.from([0x71, 0x75, 0x69, 0x78]),
+            },
+          ],
         ]);
-      })
+      });
 
       test("should unescape command name", () => {
         const trimsock = new Trimsock();
