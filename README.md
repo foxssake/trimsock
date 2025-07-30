@@ -87,10 +87,14 @@ login tom@acme.com:ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e
 A *command* may omit the *command data*:
 
 ```
-[command name] \n
+[command name]\n
 ```
 
-Note that even without *command data*, the space character is required.
+Without *command data*, the space character is not needed.
+
+> [!NOTE]
+> Technically - while not useful - `\n` is a valid command, with both the
+> command name and data being an empty string.
 
 *Commands* MUST be parsed as UTF-8 strings.
 
