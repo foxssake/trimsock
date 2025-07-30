@@ -80,6 +80,7 @@ describe("Trimsock", () => {
         const input = Buffer.concat([
           Buffer.from("\rcommand 4\n"),
           Buffer.from([10, 10, 10, 240]),
+          Buffer.from("\n"),
         ]);
         const expected = [
           {
@@ -139,7 +140,7 @@ describe("Trimsock", () => {
           [],
           [
             {
-              error: "Expected command length 9 is above the allowed 6 bytes!",
+              error: "Expected command length 8 is above the allowed 6 bytes!",
             },
           ],
           [],
@@ -159,13 +160,14 @@ describe("Trimsock", () => {
         expect(results).toEqual([
           [],
           [],
+          [],
           [
             {
               error:
                 "Expected command length 11 is above the allowed 10 bytes!",
             },
+            { name: "cmd", data: "" },
           ],
-          [{ name: "cmd", data: "" }],
         ]);
       });
 
@@ -188,13 +190,14 @@ describe("Trimsock", () => {
           [],
           [],
           [],
+          [],
           [
             {
               error:
-                "Queued raw data of 16 bytes is larger than max command size of 12 bytes",
+                "Expected command length 16 is above the allowed 12 bytes!",
             },
+            { name: "cmd", data: "" },
           ],
-          [{ name: "cmd", data: "" }],
         ]);
       });
     });
