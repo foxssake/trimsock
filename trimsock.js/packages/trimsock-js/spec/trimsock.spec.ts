@@ -19,6 +19,13 @@ describe("Trimsock", () => {
         expect(trimsock.ingest(input)).toEqual(expected);
       });
 
+      test("should parse empty command", () => {
+        const trimsock = new Trimsock();
+        const input = Buffer.from("\n", "utf8");
+        const expected = [{ name: "", data: "" }];
+        expect(trimsock.ingest(input)).toEqual(expected);
+      });
+
       test("should parse command with binary data", () => {
         const trimsock = new Trimsock();
         const input = Buffer.from("command foo\x00\n", "utf8");
@@ -46,6 +53,31 @@ describe("Trimsock", () => {
             {
               name: "command",
               data: "data",
+            },
+          ],
+        ]);
+      });
+
+      test("should parse mixed text and raw commands", () => {
+        const trimsock = new Trimsock();
+        const inputs = ["command dat", "a\n\rcommand 4\nqu", "ix\n"];
+
+        const results = inputs
+          .map((input) => Buffer.from(input, "utf8"))
+          .map((input) => trimsock.ingest(input));
+
+        expect(results).toEqual([
+          [],
+          [
+            {
+              name: "command",
+              data: "data",
+            },
+          ],
+          [
+            {
+              name: "command",
+              raw: Buffer.from([0x71, 0x75, 0x69, 0x78]),
             },
           ],
         ]);
@@ -80,6 +112,7 @@ describe("Trimsock", () => {
         const input = Buffer.concat([
           Buffer.from("\rcommand 4\n"),
           Buffer.from([10, 10, 10, 240]),
+          Buffer.from("\n"),
         ]);
         const expected = [
           {
@@ -139,7 +172,7 @@ describe("Trimsock", () => {
           [],
           [
             {
-              error: "Expected command length 9 is above the allowed 6 bytes!",
+              error: "Expected command length 8 is above the allowed 6 bytes!",
             },
           ],
           [],
@@ -159,13 +192,14 @@ describe("Trimsock", () => {
         expect(results).toEqual([
           [],
           [],
+          [],
           [
             {
               error:
                 "Expected command length 11 is above the allowed 10 bytes!",
             },
+            { name: "cmd", data: "" },
           ],
-          [{ name: "cmd", data: "" }],
         ]);
       });
 
@@ -188,13 +222,14 @@ describe("Trimsock", () => {
           [],
           [],
           [],
+          [],
           [
             {
               error:
-                "Queued raw data of 16 bytes is larger than max command size of 12 bytes",
+                "Expected command length 16 is above the allowed 12 bytes!",
             },
+            { name: "cmd", data: "" },
           ],
-          [{ name: "cmd", data: "" }],
         ]);
       });
     });

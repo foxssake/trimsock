@@ -134,7 +134,7 @@ export class Command implements CommandSpec {
       data = spec.params.map((it) => Command.escapeData(it)).join(" ");
     else data = Command.escapeData(spec.data ?? "");
 
-    return `${name} ${data}\n`;
+    return data ? `${name} ${data}\n` : `${name}\n`;
   }
 
   static escapeName(name: string): string {
