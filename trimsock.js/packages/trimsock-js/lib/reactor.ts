@@ -311,8 +311,8 @@ export abstract class Reactor<T> {
   }
 
   public configure(callback: (reactor: this) => void): this {
-    callback(this)
-    return this
+    callback(this);
+    return this;
   }
 
   public ingest(data: Buffer, source: T): void {
