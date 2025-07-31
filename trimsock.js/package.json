@@ -3,8 +3,15 @@
   "private": true,
   "version": "0.13.1",
   "type": "module",
+  "scripts": {
+    "docs": "typedoc"
+  },
   "workspaces": [
     "packages/*",
     "examples/*"
-  ]
+  ],
+  "devDependencies": {
+    "typedoc": "^0.28.8",
+    "typedoc-plugin-markdown": "^4.8.0"
+  }
 }

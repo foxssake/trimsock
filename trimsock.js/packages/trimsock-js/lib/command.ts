@@ -2,6 +2,7 @@ import assert from "./assert.js";
 
 /**
 * Describes the core data fields of a command, without conventions
+* @public
 */
 export interface BaseCommandSpec {
   /**
@@ -88,14 +89,19 @@ interface StreamCommandSpec extends BaseCommandSpec {
 }
 
 /**
- * Describes all the data in a command, including conventions
- */
+* Describes all the data in a command, including conventions
+* @public
+*/
 export interface CommandSpec
   extends BaseCommandSpec,
     MultiparamCommandSpec,
     RequestResponseCommandSpec,
     StreamCommandSpec {}
 
+/**
+* Specifies a {@link CommandSpec}, while implementing utility methods
+* @public
+*/
 export class Command implements CommandSpec {
   name: string;
   data?: string | undefined;
@@ -115,10 +121,20 @@ export class Command implements CommandSpec {
     Object.assign(this, spec);
   }
 
+  /**
+  * Exchange ID - this can be either the stream or the request ID, or undefined
+  * if the command has no identifier
+  */
   get id(): string | undefined {
     return this.streamId ?? this.requestId;
   }
 
+  /**
+  * Whether the command closes an exchange or not
+  *
+  * If this is true, it means that no more commands should be expected with the
+  * same {@link id}.
+  */
   get isClosing(): boolean {
     return this.isResponse || this.isStreamEnd || false;
   }
