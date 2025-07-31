@@ -283,12 +283,48 @@ export class ReactorExchange<T> implements Exchange<T> {
   }
 }
 
+export class ExchangeMap<T, E extends Exchange<T> = Exchange<T>> {
+  private data: Map<string, Set<E>> = new Map();
+
+  has(exchangeId: string, source: T): boolean {
+    return this.get(exchangeId, source) !== undefined;
+  }
+
+  get(exchangeId: string, source: T): E | undefined {
+    return this.data
+      .get(exchangeId)
+      ?.values()
+      ?.find((it) => it.source === source);
+  }
+
+  set(exchangeId: string, exchange: E): void {
+    const source = exchange.source;
+
+    this.delete(exchangeId, source);
+
+    const exchanges = this.data.get(exchangeId) ?? new Set();
+    exchanges.add(exchange);
+    this.data.set(exchangeId, exchanges);
+  }
+
+  delete(exchangeId: string, source: T): void {
+    const exchanges = this.data.get(exchangeId);
+    if (!exchanges) return;
+
+    const item = exchanges.values().find((it) => it.source === source);
+    if (item === undefined) return;
+
+    exchanges.delete(item);
+    if (exchanges.size === 0) this.data.delete(exchangeId);
+  }
+}
+
 export abstract class Reactor<T> {
   private handlers: Map<string, CommandHandler<T>> = new Map();
   private defaultHandler: CommandHandler<T> = () => {};
   private errorHandler: CommandErrorHandler<T> = () => {};
 
-  private exchanges: Map<string, ReactorExchange<T>> = new Map();
+  private exchanges = new ExchangeMap<T, ReactorExchange<T>>();
 
   constructor(
     private trimsock: Trimsock = new Trimsock().withConventions(),
@@ -338,7 +374,7 @@ export abstract class Reactor<T> {
   private handle(command: Command, source: T) {
     const exchangeId = command.id;
 
-    if (this.isNewExchange(command)) {
+    if (this.isNewExchange(command, source)) {
       const handler = this.handlers.get(command.name);
       const exchange = this.ensureExchange(command, source);
 
@@ -350,16 +386,17 @@ export abstract class Reactor<T> {
       }
     } else {
       const exchange =
-        exchangeId !== undefined && this.exchanges.get(exchangeId);
+        exchangeId !== undefined && this.exchanges.get(exchangeId, source);
       assert(exchange, `Unknown exchange id: ${exchangeId}!`);
       exchange.push(command);
     }
   }
 
-  private isNewExchange(command: Command): boolean {
+  private isNewExchange(command: Command, source: T): boolean {
     const exchangeId = command.id;
     const hasExchangeId = exchangeId !== undefined;
-    const knownExchange = hasExchangeId && this.exchanges.get(exchangeId);
+    const knownExchange =
+      hasExchangeId && this.exchanges.get(exchangeId, source);
 
     // Request-response
     if (command.isRequest) {
@@ -385,9 +422,12 @@ export abstract class Reactor<T> {
     return true;
   }
 
-  private findExchange(command: Command): ReactorExchange<T> | undefined {
+  private findExchange(
+    command: Command,
+    source: T,
+  ): ReactorExchange<T> | undefined {
     const id = command.requestId ?? command.streamId;
-    return id !== undefined ? this.exchanges.get(id) : undefined;
+    return id !== undefined ? this.exchanges.get(id, source) : undefined;
   }
 
   private ensureExchange(command: Command, source: T): ReactorExchange<T> {
@@ -396,7 +436,7 @@ export abstract class Reactor<T> {
     if (id === undefined) return this.makeExchange(command, source);
 
     const exchange =
-      this.findExchange(command) ?? this.makeExchange(command, source);
+      this.findExchange(command, source) ?? this.makeExchange(command, source);
     this.exchanges.set(id, exchange);
     return exchange;
   }
@@ -411,7 +451,7 @@ export abstract class Reactor<T> {
       (cmd, to) => this.ensureExchange(new Command(cmd), to),
       () => {
         const exchangeId = command?.requestId ?? command?.streamId;
-        if (exchangeId !== undefined) this.exchanges.delete(exchangeId);
+        if (exchangeId !== undefined) this.exchanges.delete(exchangeId, source);
       },
       this.generateExchangeId,
       command,
