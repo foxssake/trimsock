@@ -1,30 +1,95 @@
 import assert from "./assert.js";
 
+/**
+* Describes the core data fields of a command, without conventions
+*/
 export interface BaseCommandSpec {
+  /**
+  * The command name
+  */
   name: string;
+
+  /**
+  * Command data
+  *
+  * For raw commands, `data` is undefined, and {@link raw} is used instead.
+  */
   data?: string;
+
+  /**
+  * Raw command data
+  *
+  * For regular commands, `raw` is undefined, and {@link data} is used.
+  */
   raw?: Buffer;
 }
 
 interface MultiparamCommandSpec extends BaseCommandSpec {
+  /**
+  * Command parameters parsed from {@link data}
+  *
+  * Undefined if the data does not contain multiple parameters.
+  */
   params?: Array<string>;
 }
 
 interface RequestResponseCommandSpec extends BaseCommandSpec {
+  /**
+  * Request ID, used to associate responses with requests
+  */
   requestId?: string;
 
+  /**
+  * Flag marking requests
+  *
+  * Exclusive with the other flags.
+  */
   isRequest?: boolean;
+
+  /**
+  * Flag marking success responses
+  *
+  * If this flag is true, the other peer has succesfully processed the request,
+  * and this command contains its response. Exclusive with the other flags.
+  */
   isSuccessResponse?: boolean;
+
+  /**
+  * Flag marking error responses
+  *
+  * If this flag is true, the other peer has failed to process the request, and
+  * this command signifies that, optionally carrying information about the
+  * error. Exclusive with the other flags.
+  */
   isErrorResponse?: boolean;
 }
 
 interface StreamCommandSpec extends BaseCommandSpec {
+  /**
+  * Stream ID, used to associate data chunks with streams
+  */
   streamId?: string;
 
+  /**
+  * Flag marking stream chunks
+  *
+  * If this flag is true, this command carries a chunk of data belonging to a
+  * stream. Exclusive with the other flags.
+  */
   isStreamChunk?: boolean;
+
+  /**
+  * Flag marking a stream's end
+  *
+  * If this flag is true, this command closes the stream, meaning no more data
+  * should be expected. Exclusive with the other flags.
+  */
   isStreamEnd?: boolean;
 }
 
+/**
+ * Describes all the data in a command, including conventions
+ */
 export interface CommandSpec
   extends BaseCommandSpec,
     MultiparamCommandSpec,
