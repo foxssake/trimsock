@@ -72,7 +72,7 @@ export class ReactorExchange<T> implements Exchange<T> {
       source: T,
     ) => ThisType<ReactorExchange<T>>,
     private free: () => void,
-    private generateExchangeId: ExchangeIdGenerator = makeDefaultIdGenerator(4),
+    private generateExchangeId: ExchangeIdGenerator = makeDefaultIdGenerator(),
     private command?: Command,
   ) {
     // Process originating command
@@ -328,7 +328,7 @@ export abstract class Reactor<T> {
 
   constructor(
     private trimsock: Trimsock = new Trimsock().withConventions(),
-    private generateExchangeId: ExchangeIdGenerator = makeDefaultIdGenerator(4),
+    private generateExchangeId: ExchangeIdGenerator = makeDefaultIdGenerator(),
   ) {}
 
   public on(commandName: string, handler: CommandHandler<T>): this {
@@ -385,10 +385,6 @@ export abstract class Reactor<T> {
         this.errorHandler(command, exchange, error);
       }
     } else {
-      console.log("Looking for exchange", {
-        exchangeId,
-        source: (source as any).data.sessionId,
-      });
       const exchange =
         exchangeId !== undefined && this.exchanges.get(exchangeId, source);
       assert(exchange, `Unknown exchange id: ${exchangeId}!`);
