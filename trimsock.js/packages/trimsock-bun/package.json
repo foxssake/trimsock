@@ -1,6 +1,6 @@
 {
   "name": "@foxssake/trimsock-bun",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "module": "lib/trimsock.ts",
   "type": "module",
   "author": "Tamás Gálffy",
