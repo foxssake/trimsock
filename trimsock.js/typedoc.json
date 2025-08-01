@@ -7,6 +7,10 @@
     {
       "name": "markdown",
       "path": "./docs.md"
+    },
+    {
+      "name": "html",
+      "path": "./docs"
     }
   ]
 }

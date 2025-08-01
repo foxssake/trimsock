@@ -132,34 +132,67 @@ export class Command implements CommandSpec {
   /**
   * Whether the command closes an exchange or not
   *
-  * If this is true, it means that no more commands should be expected with the
-  * same {@link id}.
+  * If this is true, no more commands should are expected with the same {@link
+  * id}.
   */
   get isClosing(): boolean {
     return this.isResponse || this.isStreamEnd || false;
   }
 
+  /**
+  * Whether the command is a response or not
+  *
+  * If this is true, the command is either a success or an error response, sent
+  * after the sender has processed a previous request.
+  */
   get isResponse(): boolean {
     return this.isSuccessResponse || this.isErrorResponse || false;
   }
 
+  /**
+  * Whether the command belongs to a stream or not
+  *
+  * If this is true, the command is either a stream chunk or a stream end
+  * marker.
+  */
   get isStream(): boolean {
     return this.isStreamChunk || this.isStreamEnd || false;
   }
 
+  /**
+  * Whether this command uses conventions or not
+  *
+  * If this is true, it means that no conventions are used, the command is in
+  * the form of `<command> <data>\n`. In other words, this command does not
+  * belong to a request, a stream, or other convention.
+  *
+  * Note that multiparam commands can still be considered simple.
+  */
   get isSimple(): boolean {
     return !this.isRequest && !this.isResponse && !this.isStream;
   }
 
+  /**
+  * Whether this command contains raw data or not
+  */
   get isRaw(): boolean {
     return this.raw !== undefined;
   }
 
+  /**
+  * Return the command's {@link id}, or throw if there's no id to return
+  */
   requireId(): string {
     assert(this.id !== undefined, "No request or stream ID is present!");
     return this.id;
   }
 
+  /**
+  * Return the command's {@link params}, or throw if they're not defined
+  *
+  * @param amount the number of required parameters; omit if no parameter count
+  * validation is needed
+  */
   requireParams(amount?: number): Array<string> {
     if (amount === undefined)
       assert(this.params !== undefined, "This command requires params!");
@@ -172,20 +205,34 @@ export class Command implements CommandSpec {
     return this.params;
   }
 
+  /**
+  * Return a parameter by index, or throw if it's not defined
+  *
+  * @param index parameter index
+  */
   requireParam(index: number): string {
     return this.requireParams()[index];
   }
 
+  /**
+  * Return the command's {@link raw} data, or throw if it's not present
+  */
   requireRaw(): Buffer {
     assert(this.raw !== undefined, "Command has no raw data!");
     return this.raw;
   }
 
+  /**
+  * Return the command's text {@link data}, or throw if it's not present
+  */
   requireText(): string {
     assert(this.data !== undefined, "Command has no text data!");
     return this.data;
   }
 
+  /**
+  * Serialize the command into a string, that can be transmitted over trimsock
+  */
   serialize(): string {
     return Command.serialize(this);
   }

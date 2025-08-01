@@ -6,10 +6,19 @@ import {
   StreamConvention,
 } from "./conventions.js";
 
+/**
+* Represents an error during command parsing
+*/
 export interface ParseError {
+  /**
+  * Perse error message
+  */
   error: string;
 }
 
+/**
+* Resulting item of parsing, either an error or a command
+*/
 export type ParserOutput = CommandSpec | ParseError;
 
 enum ParserState {
@@ -19,10 +28,28 @@ enum ParserState {
 }
 
 // TODO: Change ingest output so this is not needed
+/**
+* Return true if the input is a command, false otherwise
+*
+* Can be used when processing {@link Trimsock.ingest}'s output to decide how to handle each item.
+*
+* @param what item to inspect
+*/
 export function isCommand(what: ParserOutput): boolean {
   return (what as CommandSpec).name !== undefined;
 }
 
+/**
+* Parses incoming data as trimsock commands
+*
+* It can handle full or partial commands, making it suitable for ingesting data
+* streams as-is.
+*
+* If an error occurs during parsing ( e.g. an ill-formed command is encountered
+* ), it will attempt to ignore it and parse the next messages as usual.
+*
+* @see {@link Trimsock.ingest | ingest()} for parsing data
+*/
 export class Trimsock {
   private lineBuffer = "";
 
@@ -34,9 +61,26 @@ export class Trimsock {
 
   private conventions: Array<Convention> = [];
 
+  /**
+  * The largest allowed command size
+  *
+  * Used as an upper cap on memory usage for parsing a singular command. Commands
+  * that end up being larger than this value - either being more characters than
+  * allowed for text commands, or taking more bytes for raw commands - will be
+  * ignored, and result in a parser error.
+  */
   public maxCommandSize = 16384;
 
-  withConventions(): Trimsock {
+  /**
+  * Use conventions for parsing data
+  *
+  * By default, input is parsed as {@link Command.isSimple | simple} commands,
+  * without any conventions considered. Calling this method will enable
+  * conventions, e.g. parsing request-response pairs or multiparam commands.
+  *
+  * @returns self
+  */
+  withConventions(): this {
     this.conventions = [
       new MultiparamConvention(),
       new RequestResponseConvention(),
@@ -46,6 +90,15 @@ export class Trimsock {
     return this;
   }
 
+  /**
+  * Ingest incoming data and output parsed commands
+  *
+  * Depending on the previously ingested and current data, the call may yield
+  * zero or more parsed commands and parse errors.
+  *
+  * @param data incoming data
+  * @returns a list of parsed commands and errors
+  */
   ingest(data: Buffer | string): Array<ParserOutput> {
     const results: Array<ParserOutput> = [];
     let remaining = data;
