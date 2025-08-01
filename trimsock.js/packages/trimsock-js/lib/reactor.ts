@@ -2,17 +2,32 @@ import assert from "./assert.js";
 import { Command, type CommandSpec } from "./command.js";
 import { Trimsock, isCommand } from "./trimsock.js";
 
+/**
+* Callback type for handling incoming commands
+*/
 export type CommandHandler<T> = (
   command: Command,
   exchange: Exchange<T>,
 ) => void;
 
+/**
+* Callback type for handling errors resulting from failed command processing
+*/
 export type CommandErrorHandler<T> = (
   command: Command,
   exchange: Exchange<T>,
   error: unknown,
 ) => void;
 
+/**
+* Callback type for generating exchange ID's
+*
+* The resulting ID's must be unique for each active exchange, per peer. In
+* other words, two exchanges may have the same ID as long as only one of them
+* is active, and / or both exchanges belong to different peers.
+*
+* @see {@link makeDefaultIdGenerator}
+*/
 export type ExchangeIdGenerator = () => string;
 
 function generateCryptoId(length: number): string {
@@ -27,27 +42,161 @@ function generateCryptoId(length: number): string {
     .join("");
 }
 
+/**
+* Return the default exchange generator
+*
+* Its exact algorithm is an implementation detail and is free to change. Useful
+* when the default algorithm is needed, but with different ID lenghts.
+*/
 export function makeDefaultIdGenerator(length = 16): ExchangeIdGenerator {
   return () => generateCryptoId(length);
 }
 
+/**
+* Read-only exchange
+*
+* @see {@link WritableExchange}
+* @see {@link Exchange}
+*/
 export interface ReadableExchange {
+  /**
+  * Return the next {@link Command.isSimple | simple command}
+  */
   onCommand(): Promise<CommandSpec>;
+
+  /**
+  * Return the next reply command
+  */
   onReply(): Promise<CommandSpec>;
+
+  /**
+  * Return the next stream chunk or stream end command
+  *
+  * Note that stream commands are buffered until they are processed either by
+  * `onStream()` or {@link chunks | chunks()}.
+  */
   onStream(): Promise<CommandSpec>;
+
+  /**
+  * Iterate all stream chunks as they arrive
+  *
+  * Note that stream commands are buffered until they are processed either by
+  * {@link onStream | onStream()} or `chunks()`.
+  */
   chunks(): AsyncGenerator<CommandSpec>;
 }
 
+/**
+* Write-only exchange
+*
+* @typeParam T - connection type ( e.g. socket, stream, etc. )
+*
+* @see {@link ReadableExchange}
+* @see {@link Exchange}
+*/
 export interface WritableExchange<T> {
+  /**
+  * Send a command
+  *
+  * The command will be sent in reference to the exchange's originating
+  * command, by default to the originating command's sender.
+  *
+  * @param what command to send
+  * @param to recipient
+  * @returns this
+  */
   send(what: CommandSpec, to?: T): this;
+
+  /**
+  * Send a request
+  *
+  * The request will be sent over the exchange's connection, with a generated
+  * request ID.
+  *
+  * @param what request command
+  * @returns this
+  */
   request(what: CommandSpec): this;
+
+  /**
+  * Send a reply
+  *
+  * The sent command's name is empty to save on bandwidth. This closes the
+  * exchange, meaning no more data will be sent over it. If the response needs
+  * to be sent in multiple parts, consider using a {@link stream}.
+  *
+  * @throws if the exchange has no ID to reply to, or if the exchange was
+  * already closed.
+  *
+  * @param what reply command to send
+  */
   reply(what: Omit<CommandSpec, "name">): void;
+
+  /**
+  * Send a failure reply
+  *
+  * The sent command's name is empty to save on bandwidth. Use when the
+  * incoming request wasn't processed successfully. This operation closes the
+  * exchange, meaning no more data will be sent over it.
+  *
+  * @throws if the exchange has no ID to reply to, or if the exchange was
+  * already closed.
+  *
+  * @param what failure command to send
+  */
   fail(what: Omit<CommandSpec, "name">): void;
+
+  // TODO: How to initiate a stream?
+  /**
+  * Stream a data chunk
+  *
+  * The sent command's name is empty to save on bandwidth. The stream ID is set
+  * to the exchange's ID.
+  *
+  * @throws if the exchange has no ID to reply to, or if the exchange was
+  * already closed.
+  * 
+  * @param what stream command to send
+  */
   stream(what: Omit<CommandSpec, "name" | "streamId">): void;
+
+  /**
+  * Finish stream
+  *
+  * Sends a stream end command. The stream ID is set to the exchange's ID. This
+  * operation closes the exchange, meaning no more data will be sent over it.
+  *
+  * @throws if the exchange has no ID to reply to, or if the exchange was
+  * already closed.
+  */
   finishStream(): void;
 
+  /**
+  * Return true if the exchange can be replied to
+  *
+  * If this is true, data can be sent over the exchange, e.g. with
+  * {@link reply | reply()}, {@link fail | fail()}, or
+  * {@link stream | stream()}.
+  */
   canReply(): boolean;
+
+  /**
+  * Reply if possible, otherwise send command
+  *
+  *
+  * @param what command to send
+  * @see {@link reply | reply()}
+  * @see {@link send | send()}
+  */
   replyOrSend(what: CommandSpec): void;
+
+  /**
+  * Fail if possible, otherwise send command
+  *
+  * @param what failure command to send
+  * @see {@link fail | fail()}
+  * @see {@link send | send()}
+  */
   failOrSend(what: CommandSpec): void;
 }
 
