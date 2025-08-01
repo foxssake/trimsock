@@ -1,3 +1,5 @@
+import type { Reactor } from "./lib/reactor.js";
+
 export { type CommandSpec, Command } from "./lib/command.js";
 export {
   type ParseError,
@@ -15,3 +17,4 @@ export {
   type ExchangeIdGenerator,
   makeDefaultIdGenerator,
 } from "./lib/reactor.js";
+

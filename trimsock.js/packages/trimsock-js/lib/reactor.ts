@@ -200,6 +200,22 @@ export interface WritableExchange<T> {
   failOrSend(what: CommandSpec): void;
 }
 
+/**
+* Represents an exchange between two peers
+*
+* An exchange can be initiated by receiving a command, or by sending a command.
+* In either case, the initial command is stored and used to determine data for
+* future messages. For example, the original message's request ID is used for
+* sending replies. If the original message had no ID, no replies can be sent.
+*
+* An exchange becomes *closed* if a command transferred indicated that no
+* further commands are expected. For example, sending a reply closes the
+* exchange, as a reply indicates that the request has been processed, and the
+* exchange has served its purpose.
+*
+* Arriving commands are buffered until they are processed, e.g. with
+* {@link onReply | onReply()}, {@link onCommand | onCommand()}, etc.
+*/
 export interface Exchange<T> extends ReadableExchange, WritableExchange<T> {
   readonly source: T;
 }
@@ -480,26 +496,80 @@ export abstract class Reactor<T> {
     private generateExchangeId: ExchangeIdGenerator = makeDefaultIdGenerator(),
   ) {}
 
+  /**
+* Register a command handler
+*
+*
+* @param commandName command name
+* @param handler callback function
+* @returns this
+  */
   public on(commandName: string, handler: CommandHandler<T>): this {
     this.handlers.set(commandName, handler);
     return this;
   }
 
+  /**
+  * Register a handler for unknown commands
+  *
+  * Whenever a command is received that has no associated handler, the unknown
+  * command handler is called.
+  *
+  * @param handler callback function
+  * @returns this
+  */
   public onUnknown(handler: CommandHandler<T>): this {
     this.defaultHandler = handler;
     return this;
   }
 
+  /**
+  * Register an error handler
+  *
+  * Whenever an error occurs during command processing ( e.g. in one of the
+  * registered handlers ), the error handler is called.
+  *
+  * @param handler callback function
+  * @returns this
+  */
   public onError(handler: CommandErrorHandler<T>): this {
     this.errorHandler = handler;
     return this;
   }
 
+  /**
+  * Configure reactor using a callback
+  *
+  * Calls the callback with the reactor instance as parameter. Useful for
+  * writing reusable methods that don't rely on the specific reactor to do
+  * their job.
+  *
+  * @example Reusable error handler
+  * ```
+    function errorHandler<T>(): (reactor: Reactor<T>) => void {
+      return (reactor) => {
+        reactor.onError((cmd, exchange, error) =>
+          exchange.failOrSend({
+            name: "error",
+            data: error + ""
+          })
+        )
+      }
+    }
+
+    let reactor: Reactor<WebSocket>
+    reactor.configure(errorHandler())
+  * ```
+  *
+  * @param callback configurer callback
+  * @returns this
+  */
   public configure(callback: (reactor: this) => void): this {
     callback(this);
     return this;
   }
 
+  // TODO: Protected
   public ingest(data: Buffer, source: T): void {
     for (const item of this.trimsock.ingest(data)) {
       try {
