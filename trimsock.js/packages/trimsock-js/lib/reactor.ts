@@ -484,6 +484,28 @@ export class ExchangeMap<T, E extends Exchange<T> = Exchange<T>> {
   }
 }
 
+/**
+* Manages commands over multiple connections
+*
+* Reactors sit on top of one or multiple connections. Incoming data is parsed
+* and then dispatched to the appropriate handler registered using
+* {@link on | on()}.
+*
+* In response, commands can either be sent through the {@link Exchange}
+* instances passed to the handlers, or entirely new exchanges can be initiated
+* using {@link send | send()}.
+*
+* A single reactor can handle commands from an arbitrary amount of
+* connections - this is why `source` or `target` parameters appear in many
+* methods, specifying which connection to use.
+*
+* This is an abstract class, since trimsock is not tied to any specific
+* transport. Transport-specific implementations can be created by extending
+* this class and implementing {@link write | write()} for sending data, and
+* calling {@link ingest | ingest()} whenever data is received.
+*
+* @typeParam T - connection type ( e.g. socket, stream, etc. )
+*/
 export abstract class Reactor<T> {
   private handlers: Map<string, CommandHandler<T>> = new Map();
   private defaultHandler: CommandHandler<T> = () => {};
@@ -497,12 +519,12 @@ export abstract class Reactor<T> {
   ) {}
 
   /**
-* Register a command handler
-*
-*
-* @param commandName command name
-* @param handler callback function
-* @returns this
+  * Register a command handler
+  *
+  *
+  * @param commandName command name
+  * @param handler callback function
+  * @returns this
   */
   public on(commandName: string, handler: CommandHandler<T>): this {
     this.handlers.set(commandName, handler);
@@ -570,6 +592,14 @@ export abstract class Reactor<T> {
   }
 
   // TODO: Protected
+  /**
+  * Pass a piece of incoming data to the reactor
+  *
+  * The data is parsed, and the appropriate handler is called.
+  *
+  * @param data incoming data
+  * @param source source connection
+  */
   public ingest(data: Buffer, source: T): void {
     for (const item of this.trimsock.ingest(data)) {
       try {
@@ -582,12 +612,27 @@ export abstract class Reactor<T> {
     }
   }
 
+  /**
+  * Initiate an exchange by sending a message over a connection
+  *
+  * @param target connection to use for sending
+  * @param spec command to send
+  * @returns the new exchange
+  */
   public send(target: T, spec: CommandSpec): Exchange<T> {
     const command = new Command(spec);
     this.write(command.serialize(), target);
     return this.ensureExchange(command, target);
   }
 
+  /**
+  * Send data over a target connection
+  *
+  * By this point, all data is serialized. This method's only responsibility is transmitting that data to the target.
+  *
+  * @param data serialized data to send
+  * @param target target connection
+  */
   protected abstract write(data: string, target: T): void;
 
   private handle(command: Command, source: T) {
