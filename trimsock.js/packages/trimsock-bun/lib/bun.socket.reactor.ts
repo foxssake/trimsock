@@ -1,9 +1,31 @@
 import { Reactor } from "@foxssake/trimsock-js";
 import type { SocketHandler } from "bun";
 
+/**
+ * Reactor adapter for [Bun's Socket API]
+ *
+ * It can be initialized either as a server using {@link listen | listen()}, or
+ * or a client using {@link connect | connect()}.
+ *
+ * [Bun's Socket API]: https://bun.com/docs/api/tcp
+ *
+ * @see {@link Reactor}
+ * @typeParam SocketData - custom data associated with each socket
+ */
 export class BunSocketReactor<SocketData = undefined> extends Reactor<
   Bun.Socket<SocketData>
 > {
+  /**
+   * Start a server
+   *
+   * Creates a listening socket by calling [Bun.listen()]. Every new
+   * connection will be read by the Reactor, to handle incoming commands.
+   *
+   * [Bun.listen()]: https://bun.com/docs/api/tcp#start-a-server-bun-listen
+   *
+   * @param options server options
+   * @returns the created server
+   */
   public listen(
     options: Bun.TCPSocketListenOptions<SocketData>,
   ): Bun.TCPSocketListener<SocketData> {
@@ -13,6 +35,17 @@ export class BunSocketReactor<SocketData = undefined> extends Reactor<
     });
   }
 
+  /**
+   * Connect to a peer
+   *
+   * Creates a socket and connects it by calling [Bun.connect()]. Incoming
+   * commands will be parsed and handled by the Reactor.
+   *
+   * [Bun.connect()]: https://bun.com/docs/api/tcp#create-a-connection-bun-connect
+   *
+   * @param options connect options
+   * @returns the created socket
+   */
   public connect(
     options: Bun.TCPSocketConnectOptions<SocketData>,
   ): Promise<Bun.Socket<SocketData>> {

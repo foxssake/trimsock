@@ -1,1 +1,1 @@
-export { BunSocketReactor as SocketReactor } from "./lib/socket.reactor.js";
+export { BunSocketReactor } from "./lib/bun.socket.reactor.js";

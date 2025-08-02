@@ -1,14 +1,15 @@
 # trimsock.js
 
-A reference implementation of the *trimsock* protocol, in TypeScript, running
-under Bun.
+A reference implementation of the *trimsock* protocol, in TypeScript.
 
 This implementation provides multiple packages:
 
-- trimsock.js - The zero-dependency protocol implementation
-- trimsock.bun - An adapter package, providing support for Bun's sockets
+- trimsock-js - The zero-dependency protocol implementation
+- trimsock-bun - Provides support for Bun's sockets
+- trimsock-node - Provides support for Node's sockets
 
-An example server implementation can be found in [server.ts](./server.ts).
+Examples, including server implementations, can be found under
+[examples/](examples/).
 
 ## License
 
