@@ -58,9 +58,9 @@ interface RequestResponseCommandSpec extends BaseCommandSpec {
   /**
    * Flag marking error responses
    *
-   * If this flag is true, the other peer has failed to process the request, and
-   * this command signifies that, optionally carrying information about the
-   * error. Exclusive with the other flags.
+   * If this flag is true, the other peer has failed to process the request.
+   * This command may carry information about the error. Exclusive with the
+   * other flags.
    */
   isErrorResponse?: boolean;
 }
@@ -232,11 +232,18 @@ export class Command implements CommandSpec {
 
   /**
    * Serialize the command into a string, that can be transmitted over trimsock
+*
+* @returns serialized command string
    */
   serialize(): string {
     return Command.serialize(this);
   }
 
+  /**
+   * Serialize the command into a string, that can be transmitted over trimsock
+*
+* @returns serialized command string
+   */
   static serialize(spec: CommandSpec): string {
     let name = "";
 
@@ -265,6 +272,11 @@ export class Command implements CommandSpec {
     return data ? `${name} ${data}\n` : `${name}\n`;
   }
 
+  /**
+* Escape a command name, making it safe for serialization
+*
+* @returns escaped command name
+  */
   static escapeName(name: string): string {
     return name
       .replaceAll("\n", "\\n")
@@ -272,6 +284,11 @@ export class Command implements CommandSpec {
       .replaceAll(" ", "\\s");
   }
 
+  /**
+* Escape a command data, making it safe for serialization
+*
+* @returns escaped command data
+  */
   static escapeData(data: string): string {
     return data
       .replaceAll("\n", "\\n")
@@ -279,6 +296,11 @@ export class Command implements CommandSpec {
       .replaceAll(" ", "\\s");
   }
 
+  /**
+  * Unescape command name, returning its original value
+*
+* @returns unescaped command name
+  */
   static unescapeName(data: string): string {
     return data
       .replaceAll("\\s", " ")
@@ -286,6 +308,11 @@ export class Command implements CommandSpec {
       .replaceAll("\\r", "\r");
   }
 
+  /**
+  * Unescape command data, returning its original value
+*
+* @returns unescaped command data
+  */
   static unescapeData(data: string): string {
     return data.replaceAll("\\n", "\n").replaceAll("\\r", "\r");
   }

@@ -4,7 +4,10 @@
   "version": "0.13.1",
   "type": "module",
   "scripts": {
-    "docs": "typedoc"
+    "docs": "typedoc",
+    "format": "bun --filter '*' check --write --unsafe",
+    "fmt": "bun format",
+    "build": "bun --filter '*' build"
   },
   "workspaces": [
     "packages/*",

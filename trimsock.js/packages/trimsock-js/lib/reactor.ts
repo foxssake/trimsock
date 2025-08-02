@@ -109,7 +109,6 @@ export interface WritableExchange<T> {
    *
    * @param what command to send
    * @param to recipient
-   * @returns this
    */
   send(what: CommandSpec, to?: T): this;
 
@@ -120,7 +119,6 @@ export interface WritableExchange<T> {
    * request ID.
    *
    * @param what request command
-   * @returns this
    */
   request(what: CommandSpec): this;
 
@@ -222,6 +220,7 @@ export interface WritableExchange<T> {
  * Arriving commands are buffered until they are processed, e.g. with
  * {@link onReply | onReply()}, {@link onCommand | onCommand()}, etc.
  *
+ * @typeParam T - connection type ( e.g. socket, stream, etc. )
  * @category Reactor
  */
 export interface Exchange<T> extends ReadableExchange, WritableExchange<T> {
@@ -533,7 +532,6 @@ export abstract class Reactor<T> {
    *
    * @param commandName command name
    * @param handler callback function
-   * @returns this
    */
   public on(commandName: string, handler: CommandHandler<T>): this {
     this.handlers.set(commandName, handler);
@@ -547,7 +545,6 @@ export abstract class Reactor<T> {
    * command handler is called.
    *
    * @param handler callback function
-   * @returns this
    */
   public onUnknown(handler: CommandHandler<T>): this {
     this.defaultHandler = handler;
@@ -561,7 +558,6 @@ export abstract class Reactor<T> {
    * registered handlers ), the error handler is called.
    *
    * @param handler callback function
-   * @returns this
    */
   public onError(handler: CommandErrorHandler<T>): this {
     this.errorHandler = handler;
@@ -593,7 +589,6 @@ export abstract class Reactor<T> {
   * ```
   *
   * @param callback configurer callback
-  * @returns this
   */
   public configure(callback: (reactor: this) => void): this {
     callback(this);

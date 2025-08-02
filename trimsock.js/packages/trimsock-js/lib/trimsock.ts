@@ -81,8 +81,6 @@ export class Trimsock {
    * By default, input is parsed as {@link Command.isSimple | simple} commands,
    * without any conventions considered. Calling this method will enable
    * conventions, e.g. parsing request-response pairs or multiparam commands.
-   *
-   * @returns self
    */
   withConventions(): this {
     this.conventions = [
