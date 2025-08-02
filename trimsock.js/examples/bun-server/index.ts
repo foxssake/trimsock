@@ -1,5 +1,5 @@
 import assert from "node:assert";
-import { SocketReactor } from "@foxssake/trimsock-bun";
+import { BunSocketReactor } from "@foxssake/trimsock-bun";
 import { Command, makeDefaultIdGenerator } from "@foxssake/trimsock-js";
 import type { Socket } from "bun";
 
@@ -8,7 +8,7 @@ const sockets: Set<Socket<SocketContext>> = new Set();
 
 const generateSessionId = makeDefaultIdGenerator(4);
 
-const reactor = new SocketReactor<SocketContext>()
+const reactor = new BunSocketReactor<SocketContext>()
   .on("echo", (cmd, exchange) => exchange.send(cmd))
   .on("info", (_, exchange) =>
     exchange.reply({

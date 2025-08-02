@@ -11,7 +11,7 @@ import {
 */
 export interface ParseError {
   /**
-  * Perse error message
+  * Parse error message
   */
   error: string;
 }
