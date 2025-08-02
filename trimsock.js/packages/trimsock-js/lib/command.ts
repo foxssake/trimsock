@@ -232,8 +232,8 @@ export class Command implements CommandSpec {
 
   /**
    * Serialize the command into a string, that can be transmitted over trimsock
-*
-* @returns serialized command string
+   *
+   * @returns serialized command string
    */
   serialize(): string {
     return Command.serialize(this);
@@ -241,8 +241,8 @@ export class Command implements CommandSpec {
 
   /**
    * Serialize the command into a string, that can be transmitted over trimsock
-*
-* @returns serialized command string
+   *
+   * @returns serialized command string
    */
   static serialize(spec: CommandSpec): string {
     let name = "";
@@ -273,10 +273,10 @@ export class Command implements CommandSpec {
   }
 
   /**
-* Escape a command name, making it safe for serialization
-*
-* @returns escaped command name
-  */
+   * Escape a command name, making it safe for serialization
+   *
+   * @returns escaped command name
+   */
   static escapeName(name: string): string {
     return name
       .replaceAll("\n", "\\n")
@@ -285,10 +285,10 @@ export class Command implements CommandSpec {
   }
 
   /**
-* Escape a command data, making it safe for serialization
-*
-* @returns escaped command data
-  */
+   * Escape a command data, making it safe for serialization
+   *
+   * @returns escaped command data
+   */
   static escapeData(data: string): string {
     return data
       .replaceAll("\n", "\\n")
@@ -297,10 +297,10 @@ export class Command implements CommandSpec {
   }
 
   /**
-  * Unescape command name, returning its original value
-*
-* @returns unescaped command name
-  */
+   * Unescape command name, returning its original value
+   *
+   * @returns unescaped command name
+   */
   static unescapeName(data: string): string {
     return data
       .replaceAll("\\s", " ")
@@ -309,10 +309,10 @@ export class Command implements CommandSpec {
   }
 
   /**
-  * Unescape command data, returning its original value
-*
-* @returns unescaped command data
-  */
+   * Unescape command data, returning its original value
+   *
+   * @returns unescaped command data
+   */
   static unescapeData(data: string): string {
     return data.replaceAll("\\n", "\n").replaceAll("\\r", "\r");
   }

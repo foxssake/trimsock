@@ -10,12 +10,13 @@ const generateSessionId = makeDefaultIdGenerator(4);
 
 new BunSocketReactor()
   .on("echo", (cmd, exchange) => exchange.replyOrSend(cmd))
-  .onError((cmd, exchange, error) => console.error("Error occured processing command:", error))
+  .onError((cmd, exchange, error) =>
+    console.error("Error occured processing command:", error),
+  )
   .listen({
     hostname: "localhost",
     port: 8890,
-
-  })
+  });
 
 const reactor = new BunSocketReactor<SocketContext>()
   .on("echo", (cmd, exchange) => exchange.send(cmd))
