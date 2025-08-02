@@ -2,7 +2,7 @@ import assert from "./assert.js";
 
 /**
 * Describes the core data fields of a command, without conventions
-* @public
+* @category Parser
 */
 export interface BaseCommandSpec {
   /**
@@ -90,7 +90,7 @@ interface StreamCommandSpec extends BaseCommandSpec {
 
 /**
 * Describes all the data in a command, including conventions
-* @public
+* @category Parser
 */
 export interface CommandSpec
   extends BaseCommandSpec,
@@ -100,7 +100,7 @@ export interface CommandSpec
 
 /**
 * Specifies a {@link CommandSpec}, while implementing utility methods
-* @public
+* @category Parser
 */
 export class Command implements CommandSpec {
   name: string;

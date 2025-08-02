@@ -4,6 +4,7 @@ import { Trimsock, isCommand } from "./trimsock.js";
 
 /**
 * Callback type for handling incoming commands
+* @category Reactor
 */
 export type CommandHandler<T> = (
   command: Command,
@@ -12,6 +13,7 @@ export type CommandHandler<T> = (
 
 /**
 * Callback type for handling errors resulting from failed command processing
+* @category Reactor
 */
 export type CommandErrorHandler<T> = (
   command: Command,
@@ -27,6 +29,7 @@ export type CommandErrorHandler<T> = (
 * is active, and / or both exchanges belong to different peers.
 *
 * @see {@link makeDefaultIdGenerator}
+* @category Reactor
 */
 export type ExchangeIdGenerator = () => string;
 
@@ -47,6 +50,7 @@ function generateCryptoId(length: number): string {
 *
 * Its exact algorithm is an implementation detail and is free to change. Useful
 * when the default algorithm is needed, but with different ID lenghts.
+* @category Reactor
 */
 export function makeDefaultIdGenerator(length = 16): ExchangeIdGenerator {
   return () => generateCryptoId(length);
@@ -57,6 +61,7 @@ export function makeDefaultIdGenerator(length = 16): ExchangeIdGenerator {
 *
 * @see {@link WritableExchange}
 * @see {@link Exchange}
+* @category Reactor
 */
 export interface ReadableExchange {
   /**
@@ -93,6 +98,7 @@ export interface ReadableExchange {
 *
 * @see {@link ReadableExchange}
 * @see {@link Exchange}
+* @category Reactor
 */
 export interface WritableExchange<T> {
   /**
@@ -215,6 +221,8 @@ export interface WritableExchange<T> {
 *
 * Arriving commands are buffered until they are processed, e.g. with
 * {@link onReply | onReply()}, {@link onCommand | onCommand()}, etc.
+*
+* @category Reactor
 */
 export interface Exchange<T> extends ReadableExchange, WritableExchange<T> {
   readonly source: T;
@@ -505,6 +513,7 @@ export class ExchangeMap<T, E extends Exchange<T> = Exchange<T>> {
 * calling {@link ingest | ingest()} whenever data is received.
 *
 * @typeParam T - connection type ( e.g. socket, stream, etc. )
+* @category Reactor
 */
 export abstract class Reactor<T> {
   private handlers: Map<string, CommandHandler<T>> = new Map();

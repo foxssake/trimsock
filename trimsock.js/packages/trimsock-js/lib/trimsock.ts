@@ -8,6 +8,7 @@ import {
 
 /**
 * Represents an error during command parsing
+* @category Parser
 */
 export interface ParseError {
   /**
@@ -18,6 +19,7 @@ export interface ParseError {
 
 /**
 * Resulting item of parsing, either an error or a command
+* @category Parser
 */
 export type ParserOutput = CommandSpec | ParseError;
 
@@ -34,6 +36,7 @@ enum ParserState {
 * Can be used when processing {@link Trimsock.ingest}'s output to decide how to handle each item.
 *
 * @param what item to inspect
+* @category Parser
 */
 export function isCommand(what: ParserOutput): boolean {
   return (what as CommandSpec).name !== undefined;
@@ -49,6 +52,7 @@ export function isCommand(what: ParserOutput): boolean {
 * ), it will attempt to ignore it and parse the next messages as usual.
 *
 * @see {@link Trimsock.ingest | ingest()} for parsing data
+* @category Parser
 */
 export class Trimsock {
   private lineBuffer = "";
