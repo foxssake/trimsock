@@ -17,8 +17,6 @@
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
-  "files": [
-    "./dist/"
-  ],
+  "files": ["./dist/"],
   "exports": "./dist/index.js"
 }
