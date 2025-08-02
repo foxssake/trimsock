@@ -15,4 +15,3 @@ export {
   type ExchangeIdGenerator,
   makeDefaultIdGenerator,
 } from "./lib/reactor.js";
-

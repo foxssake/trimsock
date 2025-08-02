@@ -3,18 +3,18 @@ import { Command, type CommandSpec } from "./command.js";
 import { Trimsock, isCommand } from "./trimsock.js";
 
 /**
-* Callback type for handling incoming commands
-* @category Reactor
-*/
+ * Callback type for handling incoming commands
+ * @category Reactor
+ */
 export type CommandHandler<T> = (
   command: Command,
   exchange: Exchange<T>,
 ) => void;
 
 /**
-* Callback type for handling errors resulting from failed command processing
-* @category Reactor
-*/
+ * Callback type for handling errors resulting from failed command processing
+ * @category Reactor
+ */
 export type CommandErrorHandler<T> = (
   command: Command,
   exchange: Exchange<T>,
@@ -22,15 +22,15 @@ export type CommandErrorHandler<T> = (
 ) => void;
 
 /**
-* Callback type for generating exchange ID's
-*
-* The resulting ID's must be unique for each active exchange, per peer. In
-* other words, two exchanges may have the same ID as long as only one of them
-* is active, and / or both exchanges belong to different peers.
-*
-* @see {@link makeDefaultIdGenerator}
-* @category Reactor
-*/
+ * Callback type for generating exchange ID's
+ *
+ * The resulting ID's must be unique for each active exchange, per peer. In
+ * other words, two exchanges may have the same ID as long as only one of them
+ * is active, and / or both exchanges belong to different peers.
+ *
+ * @see {@link makeDefaultIdGenerator}
+ * @category Reactor
+ */
 export type ExchangeIdGenerator = () => string;
 
 function generateCryptoId(length: number): string {
@@ -46,184 +46,184 @@ function generateCryptoId(length: number): string {
 }
 
 /**
-* Return the default exchange generator
-*
-* Its exact algorithm is an implementation detail and is free to change. Useful
-* when the default algorithm is needed, but with different ID lenghts.
-* @category Reactor
-*/
+ * Return the default exchange generator
+ *
+ * Its exact algorithm is an implementation detail and is free to change. Useful
+ * when the default algorithm is needed, but with different ID lenghts.
+ * @category Reactor
+ */
 export function makeDefaultIdGenerator(length = 16): ExchangeIdGenerator {
   return () => generateCryptoId(length);
 }
 
 /**
-* Read-only exchange
-*
-* @see {@link WritableExchange}
-* @see {@link Exchange}
-* @category Reactor
-*/
+ * Read-only exchange
+ *
+ * @see {@link WritableExchange}
+ * @see {@link Exchange}
+ * @category Reactor
+ */
 export interface ReadableExchange {
   /**
-  * Return the next {@link Command.isSimple | simple command}
-  */
+   * Return the next {@link Command.isSimple | simple command}
+   */
   onCommand(): Promise<CommandSpec>;
 
   /**
-  * Return the next reply command
-  */
+   * Return the next reply command
+   */
   onReply(): Promise<CommandSpec>;
 
   /**
-  * Return the next stream chunk or stream end command
-  *
-  * Note that stream commands are buffered until they are processed either by
-  * `onStream()` or {@link chunks | chunks()}.
-  */
+   * Return the next stream chunk or stream end command
+   *
+   * Note that stream commands are buffered until they are processed either by
+   * `onStream()` or {@link chunks | chunks()}.
+   */
   onStream(): Promise<CommandSpec>;
 
   /**
-  * Iterate all stream chunks as they arrive
-  *
-  * Note that stream commands are buffered until they are processed either by
-  * {@link onStream | onStream()} or `chunks()`.
-  */
+   * Iterate all stream chunks as they arrive
+   *
+   * Note that stream commands are buffered until they are processed either by
+   * {@link onStream | onStream()} or `chunks()`.
+   */
   chunks(): AsyncGenerator<CommandSpec>;
 }
 
 /**
-* Write-only exchange
-*
-* @typeParam T - connection type ( e.g. socket, stream, etc. )
-*
-* @see {@link ReadableExchange}
-* @see {@link Exchange}
-* @category Reactor
-*/
+ * Write-only exchange
+ *
+ * @typeParam T - connection type ( e.g. socket, stream, etc. )
+ *
+ * @see {@link ReadableExchange}
+ * @see {@link Exchange}
+ * @category Reactor
+ */
 export interface WritableExchange<T> {
   /**
-  * Send a command
-  *
-  * The command will be sent in reference to the exchange's originating
-  * command, by default to the originating command's sender.
-  *
-  * @param what command to send
-  * @param to recipient
-  * @returns this
-  */
+   * Send a command
+   *
+   * The command will be sent in reference to the exchange's originating
+   * command, by default to the originating command's sender.
+   *
+   * @param what command to send
+   * @param to recipient
+   * @returns this
+   */
   send(what: CommandSpec, to?: T): this;
 
   /**
-  * Send a request
-  *
-  * The request will be sent over the exchange's connection, with a generated
-  * request ID.
-  *
-  * @param what request command
-  * @returns this
-  */
+   * Send a request
+   *
+   * The request will be sent over the exchange's connection, with a generated
+   * request ID.
+   *
+   * @param what request command
+   * @returns this
+   */
   request(what: CommandSpec): this;
 
   /**
-  * Send a reply
-  *
-  * The sent command's name is empty to save on bandwidth. This closes the
-  * exchange, meaning no more data will be sent over it. If the response needs
-  * to be sent in multiple parts, consider using a {@link stream}.
-  *
-  * @throws if the exchange has no ID to reply to, or if the exchange was
-  * already closed.
-  *
-  * @param what reply command to send
-  */
+   * Send a reply
+   *
+   * The sent command's name is empty to save on bandwidth. This closes the
+   * exchange, meaning no more data will be sent over it. If the response needs
+   * to be sent in multiple parts, consider using a {@link stream}.
+   *
+   * @throws if the exchange has no ID to reply to, or if the exchange was
+   * already closed.
+   *
+   * @param what reply command to send
+   */
   reply(what: Omit<CommandSpec, "name">): void;
 
   /**
-  * Send a failure reply
-  *
-  * The sent command's name is empty to save on bandwidth. Use when the
-  * incoming request wasn't processed successfully. This operation closes the
-  * exchange, meaning no more data will be sent over it.
-  *
-  * @throws if the exchange has no ID to reply to, or if the exchange was
-  * already closed.
-  *
-  * @param what failure command to send
-  */
+   * Send a failure reply
+   *
+   * The sent command's name is empty to save on bandwidth. Use when the
+   * incoming request wasn't processed successfully. This operation closes the
+   * exchange, meaning no more data will be sent over it.
+   *
+   * @throws if the exchange has no ID to reply to, or if the exchange was
+   * already closed.
+   *
+   * @param what failure command to send
+   */
   fail(what: Omit<CommandSpec, "name">): void;
 
   // TODO: How to initiate a stream?
   /**
-  * Stream a data chunk
-  *
-  * The sent command's name is empty to save on bandwidth. The stream ID is set
-  * to the exchange's ID.
-  *
-  * @throws if the exchange has no ID to reply to, or if the exchange was
-  * already closed.
-  * 
-  * @param what stream command to send
-  */
+   * Stream a data chunk
+   *
+   * The sent command's name is empty to save on bandwidth. The stream ID is set
+   * to the exchange's ID.
+   *
+   * @throws if the exchange has no ID to reply to, or if the exchange was
+   * already closed.
+   *
+   * @param what stream command to send
+   */
   stream(what: Omit<CommandSpec, "name" | "streamId">): void;
 
   /**
-  * Finish stream
-  *
-  * Sends a stream end command. The stream ID is set to the exchange's ID. This
-  * operation closes the exchange, meaning no more data will be sent over it.
-  *
-  * @throws if the exchange has no ID to reply to, or if the exchange was
-  * already closed.
-  */
+   * Finish stream
+   *
+   * Sends a stream end command. The stream ID is set to the exchange's ID. This
+   * operation closes the exchange, meaning no more data will be sent over it.
+   *
+   * @throws if the exchange has no ID to reply to, or if the exchange was
+   * already closed.
+   */
   finishStream(): void;
 
   /**
-  * Return true if the exchange can be replied to
-  *
-  * If this is true, data can be sent over the exchange, e.g. with
-  * {@link reply | reply()}, {@link fail | fail()}, or
-  * {@link stream | stream()}.
-  */
+   * Return true if the exchange can be replied to
+   *
+   * If this is true, data can be sent over the exchange, e.g. with
+   * {@link reply | reply()}, {@link fail | fail()}, or
+   * {@link stream | stream()}.
+   */
   canReply(): boolean;
 
   /**
-  * Reply if possible, otherwise send command
-  *
-  *
-  * @param what command to send
-  * @see {@link reply | reply()}
-  * @see {@link send | send()}
-  */
+   * Reply if possible, otherwise send command
+   *
+   *
+   * @param what command to send
+   * @see {@link reply | reply()}
+   * @see {@link send | send()}
+   */
   replyOrSend(what: CommandSpec): void;
 
   /**
-  * Fail if possible, otherwise send command
-  *
-  * @param what failure command to send
-  * @see {@link fail | fail()}
-  * @see {@link send | send()}
-  */
+   * Fail if possible, otherwise send command
+   *
+   * @param what failure command to send
+   * @see {@link fail | fail()}
+   * @see {@link send | send()}
+   */
   failOrSend(what: CommandSpec): void;
 }
 
 /**
-* Represents an exchange between two peers
-*
-* An exchange can be initiated by receiving a command, or by sending a command.
-* In either case, the initial command is stored and used to determine data for
-* future messages. For example, the original message's request ID is used for
-* sending replies. If the original message had no ID, no replies can be sent.
-*
-* An exchange becomes *closed* if a command transferred indicated that no
-* further commands are expected. For example, sending a reply closes the
-* exchange, as a reply indicates that the request has been processed, and the
-* exchange has served its purpose.
-*
-* Arriving commands are buffered until they are processed, e.g. with
-* {@link onReply | onReply()}, {@link onCommand | onCommand()}, etc.
-*
-* @category Reactor
-*/
+ * Represents an exchange between two peers
+ *
+ * An exchange can be initiated by receiving a command, or by sending a command.
+ * In either case, the initial command is stored and used to determine data for
+ * future messages. For example, the original message's request ID is used for
+ * sending replies. If the original message had no ID, no replies can be sent.
+ *
+ * An exchange becomes *closed* if a command transferred indicated that no
+ * further commands are expected. For example, sending a reply closes the
+ * exchange, as a reply indicates that the request has been processed, and the
+ * exchange has served its purpose.
+ *
+ * Arriving commands are buffered until they are processed, e.g. with
+ * {@link onReply | onReply()}, {@link onCommand | onCommand()}, etc.
+ *
+ * @category Reactor
+ */
 export interface Exchange<T> extends ReadableExchange, WritableExchange<T> {
   readonly source: T;
 }
@@ -493,28 +493,28 @@ export class ExchangeMap<T, E extends Exchange<T> = Exchange<T>> {
 }
 
 /**
-* Manages commands over multiple connections
-*
-* Reactors sit on top of one or multiple connections. Incoming data is parsed
-* and then dispatched to the appropriate handler registered using
-* {@link on | on()}.
-*
-* In response, commands can either be sent through the {@link Exchange}
-* instances passed to the handlers, or entirely new exchanges can be initiated
-* using {@link send | send()}.
-*
-* A single reactor can handle commands from an arbitrary amount of
-* connections - this is why `source` or `target` parameters appear in many
-* methods, specifying which connection to use.
-*
-* This is an abstract class, since trimsock is not tied to any specific
-* transport. Transport-specific implementations can be created by extending
-* this class and implementing {@link write | write()} for sending data, and
-* calling {@link ingest | ingest()} whenever data is received.
-*
-* @typeParam T - connection type ( e.g. socket, stream, etc. )
-* @category Reactor
-*/
+ * Manages commands over multiple connections
+ *
+ * Reactors sit on top of one or multiple connections. Incoming data is parsed
+ * and then dispatched to the appropriate handler registered using
+ * {@link on | on()}.
+ *
+ * In response, commands can either be sent through the {@link Exchange}
+ * instances passed to the handlers, or entirely new exchanges can be initiated
+ * using {@link send | send()}.
+ *
+ * A single reactor can handle commands from an arbitrary amount of
+ * connections - this is why `source` or `target` parameters appear in many
+ * methods, specifying which connection to use.
+ *
+ * This is an abstract class, since trimsock is not tied to any specific
+ * transport. Transport-specific implementations can be created by extending
+ * this class and implementing {@link write | write()} for sending data, and
+ * calling {@link ingest | ingest()} whenever data is received.
+ *
+ * @typeParam T - connection type ( e.g. socket, stream, etc. )
+ * @category Reactor
+ */
 export abstract class Reactor<T> {
   private handlers: Map<string, CommandHandler<T>> = new Map();
   private defaultHandler: CommandHandler<T> = () => {};
@@ -528,41 +528,41 @@ export abstract class Reactor<T> {
   ) {}
 
   /**
-  * Register a command handler
-  *
-  *
-  * @param commandName command name
-  * @param handler callback function
-  * @returns this
-  */
+   * Register a command handler
+   *
+   *
+   * @param commandName command name
+   * @param handler callback function
+   * @returns this
+   */
   public on(commandName: string, handler: CommandHandler<T>): this {
     this.handlers.set(commandName, handler);
     return this;
   }
 
   /**
-  * Register a handler for unknown commands
-  *
-  * Whenever a command is received that has no associated handler, the unknown
-  * command handler is called.
-  *
-  * @param handler callback function
-  * @returns this
-  */
+   * Register a handler for unknown commands
+   *
+   * Whenever a command is received that has no associated handler, the unknown
+   * command handler is called.
+   *
+   * @param handler callback function
+   * @returns this
+   */
   public onUnknown(handler: CommandHandler<T>): this {
     this.defaultHandler = handler;
     return this;
   }
 
   /**
-  * Register an error handler
-  *
-  * Whenever an error occurs during command processing ( e.g. in one of the
-  * registered handlers ), the error handler is called.
-  *
-  * @param handler callback function
-  * @returns this
-  */
+   * Register an error handler
+   *
+   * Whenever an error occurs during command processing ( e.g. in one of the
+   * registered handlers ), the error handler is called.
+   *
+   * @param handler callback function
+   * @returns this
+   */
   public onError(handler: CommandErrorHandler<T>): this {
     this.errorHandler = handler;
     return this;
@@ -602,13 +602,13 @@ export abstract class Reactor<T> {
 
   // TODO: Protected
   /**
-  * Pass a piece of incoming data to the reactor
-  *
-  * The data is parsed, and the appropriate handler is called.
-  *
-  * @param data incoming data
-  * @param source source connection
-  */
+   * Pass a piece of incoming data to the reactor
+   *
+   * The data is parsed, and the appropriate handler is called.
+   *
+   * @param data incoming data
+   * @param source source connection
+   */
   public ingest(data: Buffer, source: T): void {
     for (const item of this.trimsock.ingest(data)) {
       try {
@@ -622,12 +622,12 @@ export abstract class Reactor<T> {
   }
 
   /**
-  * Initiate an exchange by sending a message over a connection
-  *
-  * @param target connection to use for sending
-  * @param spec command to send
-  * @returns the new exchange
-  */
+   * Initiate an exchange by sending a message over a connection
+   *
+   * @param target connection to use for sending
+   * @param spec command to send
+   * @returns the new exchange
+   */
   public send(target: T, spec: CommandSpec): Exchange<T> {
     const command = new Command(spec);
     this.write(command.serialize(), target);
@@ -635,13 +635,13 @@ export abstract class Reactor<T> {
   }
 
   /**
-  * Send data over a target connection
-  *
-  * By this point, all data is serialized. This method's only responsibility is transmitting that data to the target.
-  *
-  * @param data serialized data to send
-  * @param target target connection
-  */
+   * Send data over a target connection
+   *
+   * By this point, all data is serialized. This method's only responsibility is transmitting that data to the target.
+   *
+   * @param data serialized data to send
+   * @param target target connection
+   */
   protected abstract write(data: string, target: T): void;
 
   private handle(command: Command, source: T) {
