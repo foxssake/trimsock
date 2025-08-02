@@ -1,6 +1,6 @@
 {
   "name": "@foxssake/trimsock-bun",
-  "version": "0.13.2",
+  "version": "0.13.3",
   "module": "dist/index.js",
   "type": "module",
   "author": "Tamás Gálffy",
@@ -12,7 +12,7 @@
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@foxssake/trimsock-js": "workspace:*"
+    "@foxssake/trimsock-js": "*"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
