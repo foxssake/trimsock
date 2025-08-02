@@ -10,8 +10,8 @@
     "check": "biome check"
   },
   "dependencies": {
-    "@foxssake/trimsock-js": "workspace:*",
-    "@foxssake/trimsock-bun": "workspace:*"
+    "@foxssake/trimsock-js": "file:../../packages/trimsock-js",
+    "@foxssake/trimsock-bun": "file:../../packages/trimsock-bun"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
