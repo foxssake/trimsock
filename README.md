@@ -7,6 +7,11 @@ Trimsock is a stream-based communication protocol that:
 * supports binary
 * is extended via conventions
 
+Simple: `command data\n`
+Embedded nl: `"com\n\"mand" "da\nta"\n`
+Multiple params: `command param1 "param 2"\n`
+Key-value params: `command key1=value1 "key with =="="value 2" "not a key=value pair"\n`
+
 ## Quick glance
 
 Trimsock uses commands to transmit instructions, e.g.:
@@ -97,6 +102,40 @@ Without *command data*, the space character is not needed.
 > command name and data being an empty string.
 
 *Commands* MUST be parsed as UTF-8 strings.
+
+#### Data chunks
+
+Command data may be specified in multiple chunks. A chunk is either a regular
+string, or a quoted string.
+
+A regular string can contain any other character, except `"`. Those may be
+escaped as `\"`.
+
+Quoted strings are enclosed in `"` characters.
+
+For example:
+
+```
+command chunk one "chunk two" chunk three\n
+```
+
+In this case, the command would have three chunks:
+
+- `chunk one `
+- `chunk two`
+- ` chunk three`
+
+Note the spaces at the end and beginning of the regular chunks.
+
+Chunk don't change the meaning of the command data, but they may be used by
+*conventions* for semantics.
+
+Meaning that the previous example is - without considering conventions -
+equivalent to the following:
+
+```
+command chunk one chunk two chunk three\n
+```
 
 #### Escape sequences
 
