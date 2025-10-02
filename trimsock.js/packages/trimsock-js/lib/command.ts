@@ -1,5 +1,10 @@
 import assert from "./assert.js";
 
+export interface CommandDataChunk {
+  text: string;
+  isQuoted: boolean;
+}
+
 /**
  * Describes the core data fields of a command, without conventions
  * @category Parser
@@ -14,6 +19,7 @@ export interface BaseCommandSpec {
    * Command data
    *
    * For raw commands, `data` is undefined, and {@link raw} is used instead.
+   * @deprecated
    */
   data?: string;
 
@@ -23,6 +29,9 @@ export interface BaseCommandSpec {
    * For regular commands, `raw` is undefined, and {@link data} is used.
    */
   raw?: Buffer;
+
+  chunks?: CommandDataChunk[];
+  text?: string;
 }
 
 interface MultiparamCommandSpec extends BaseCommandSpec {
