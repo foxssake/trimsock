@@ -16,14 +16,6 @@ export interface BaseCommandSpec {
   name: string;
 
   /**
-   * Command data
-   *
-   * For raw commands, `data` is undefined, and {@link raw} is used instead.
-   * @deprecated
-   */
-  data?: string;
-
-  /**
    * Raw command data
    *
    * For regular commands, `raw` is undefined, and {@link data} is used.
@@ -306,54 +298,5 @@ export class Command implements CommandSpec {
       .replaceAll("\\n", "\n")
       .replaceAll("\\r", "\r")
       .replaceAll("\\\"", "\"");
-  }
-
-  /**
-   * Escape a command name, making it safe for serialization
-   *
-   * @returns escaped command name
-   * @deprecated
-   */
-  static escapeName(name: string): string {
-    return name
-      .replaceAll("\n", "\\n")
-      .replaceAll("\r", "\\r")
-      .replaceAll(" ", "\\s");
-  }
-
-  /**
-   * Escape a command data, making it safe for serialization
-   *
-   * @returns escaped command data
-   * @deprecated
-   */
-  static escapeData(data: string): string {
-    return data
-      .replaceAll("\n", "\\n")
-      .replaceAll("\r", "\\r")
-      .replaceAll(" ", "\\s");
-  }
-
-  /**
-   * Unescape command name, returning its original value
-   *
-   * @returns unescaped command name
-   * @deprecated
-   */
-  static unescapeName(data: string): string {
-    return data
-      .replaceAll("\\s", " ")
-      .replaceAll("\\n", "\n")
-      .replaceAll("\\r", "\r");
-  }
-
-  /**
-   * Unescape command data, returning its original value
-   *
-   * @returns unescaped command data
-   * @deprecated
-   */
-  static unescapeData(data: string): string {
-    return data.replaceAll("\\n", "\n").replaceAll("\\r", "\r");
   }
 }

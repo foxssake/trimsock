@@ -1,7 +1,6 @@
 import assert from "./assert.js";
 import { Command, type CommandSpec } from "./command.js";
 import { TrimsockReader } from "./reader.js";
-import { Trimsock, isCommand } from "./trimsock.js";
 
 /**
  * Callback type for handling incoming commands
@@ -365,7 +364,6 @@ export class ReactorExchange<T> implements Exchange<T> {
     this.write(
       {
         name: "",
-        data: "",
         streamId: this.command?.requireId(),
         isStreamEnd: true,
       },
@@ -523,9 +521,8 @@ export abstract class Reactor<T> {
   private exchanges = new ExchangeMap<T, ReactorExchange<T>>();
 
   constructor(
-    private trimsock: Trimsock = new Trimsock().withConventions(),
+    private reader: TrimsockReader = new TrimsockReader(),
     private generateExchangeId: ExchangeIdGenerator = makeDefaultIdGenerator(),
-    private reader: TrimsockReader = new TrimsockReader()
   ) {}
 
   /**
