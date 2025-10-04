@@ -217,6 +217,10 @@ export class TrimsockReader {
     }
   }
 
+  disableConventions() {
+    this.conventions = []
+  }
+
   private pop(): CommandSpec | undefined {
     if (this.queuedRawCommand != undefined) {
       const data = this.reader.readRaw(this.queuedRawSize)

@@ -25,7 +25,8 @@ describe("TrimsockReader", () => {
   ]))
 
   describe("raw commands", () => tests([
-    ["should parse raw", "\rcommand 4\n1234\n", [{ name: "command", raw: Buffer.from("1234")}]]
+    ["should parse raw", "\rcommand 4\n1234\n", [{ name: "command", raw: Buffer.from("1234")}]],
+    ["should parse empty raw", "\rcommand 0\n\n", [{ name: "command", raw: Buffer.of()}]]
   ]))
 
   describe("chunked commands", () => tests([
@@ -47,6 +48,7 @@ function tests(kases: Kase[]) {
       const reader = new TrimsockReader()
       const results: CommandSpec[] = []
 
+      reader.disableConventions()
       chunks.forEach(it => {
         reader.ingest(it)
         results.push(...reader.commands())
