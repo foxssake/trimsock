@@ -224,6 +224,35 @@ comment.
 Conforming implementations MUST NOT parse *raw command data* as multiple
 parameters.
 
+#### Key-value parameters
+
+Commands may need associative data with keys that may or may not be known in
+advance. Some examples could be submitting forms, adding custom labels to an
+entry, or transmitting certain settings.
+
+This is supported using key-value parameters:
+
+```
+[command name] [key1]=[value1] [key2]=[value2] [...]\n
+```
+
+Key-value pairs are separated the same way as with *multiple parameter
+commands*, using the *space* character as delimiter. To use spaces or other
+characters in a key or a value, use a quoted data chunk:
+
+```
+set-user-details firstname=Tom surname=Acme bio="I'm paid for being in these \"examples\". "\n
+```
+
+To avoid parsing a regular parameter as a key-value pair, they may be quoted:
+
+```
+post-message "i++?=++i"
+```
+
+In this example, even though the command data would be a valid key-value pair,
+it will be left as-is, since it's in quotes.
+
 #### Request-response pairs
 
 A common use case is requesting some data, and then receiving it in a response

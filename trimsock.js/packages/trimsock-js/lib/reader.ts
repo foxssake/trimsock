@@ -1,6 +1,6 @@
 import { Command, type CommandDataChunk, type CommandSpec } from "./command.js";
 import {
-  MultiparamConvention,
+  ParamsConvention,
   RequestResponseConvention,
   StreamConvention,
 } from "./conventions.js";
@@ -232,7 +232,7 @@ export class TrimsockReader {
   private queuedRawSize = -1;
 
   private conventions = [
-    new MultiparamConvention(),
+    new ParamsConvention(),
     new RequestResponseConvention(),
     new StreamConvention(),
   ];

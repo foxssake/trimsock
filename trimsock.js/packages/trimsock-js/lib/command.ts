@@ -54,6 +54,24 @@ interface MultiparamCommandSpec extends BaseCommandSpec {
   params?: Array<string>;
 }
 
+interface KeyValueParamCommandSpec extends BaseCommandSpec {
+  /**
+   * List of key-value parameters
+   *
+   * If a key appears multiple times in the command, it will appear multiple times
+   * in this list.
+   */
+  kvParams?: Array<[string, string]>;
+
+  /**
+   * Key-value parameters as a map
+   *
+   * If a key appears multiple times in the command, only its last value will
+   * appear here.
+   */
+  kvMap?: Map<string, string>;
+}
+
 interface RequestResponseCommandSpec extends BaseCommandSpec {
   /**
    * Request ID, used to associate responses with requests
@@ -115,6 +133,7 @@ interface StreamCommandSpec extends BaseCommandSpec {
 export interface CommandSpec
   extends BaseCommandSpec,
     MultiparamCommandSpec,
+    KeyValueParamCommandSpec,
     RequestResponseCommandSpec,
     StreamCommandSpec {}
 
@@ -288,7 +307,7 @@ export class Command implements CommandSpec {
     if (spec.params)
       data = spec.params.map((it) => Command.toChunk(it)).join(" ");
     else if (spec.chunks)
-      data = spec.chunks.map((it) => Command.toChunk(it.text)).join("") ?? "";
+      data = spec.chunks.map((it) => Command.toChunk(it)).join("") ?? "";
     else if (spec.text) data = Command.toChunk(spec.text);
 
     return data ? `${name} ${data}\n` : `${name}\n`;
@@ -298,10 +317,15 @@ export class Command implements CommandSpec {
    * Serialize a piece of text as a command data chunk, quoting and escaping it
    * as necessary
    */
-  static toChunk(text: string): string {
-    return text.includes(" ")
-      ? `"${Command.escapeQuoted(text)}"`
-      : Command.escape(text);
+  static toChunk(what: string | CommandDataChunk): string {
+    if (typeof what === "string")
+      return what.includes(" ")
+        ? `"${Command.escapeQuoted(what)}"`
+        : Command.escape(what);
+
+    return what.isQuoted
+      ? `"${Command.escapeQuoted(what.text)}"`
+      : Command.toChunk(what.text);
   }
 
   /**

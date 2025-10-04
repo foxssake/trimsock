@@ -13,7 +13,7 @@ describe("Commands", () => {
       ["should serialize empty", { name: "" }, "\n"],
       [
         "should escape newline in data",
-        { name: "command", chunks: [{ text: "da\nta", isQuoted: true }] },
+        { name: "command", chunks: [{ text: "da\nta", isQuoted: false }] },
         "command da\\nta\n",
       ],
       [
@@ -35,6 +35,11 @@ describe("Commands", () => {
         "should escape \\r in name",
         { name: "\rcommand", text: "data" },
         "\\rcommand data\n",
+      ],
+      [
+        "should retain quoted chunks",
+        { name: "command", chunks: [{ text: "foo", isQuoted: true }] },
+        'command "foo"\n',
       ],
       [
         "should serialize raw",
