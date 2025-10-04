@@ -6,6 +6,10 @@ import {
 } from "./conventions.js";
 import { BufferOverflowError, UnexpectedCharacterError } from "./errors.js";
 
+/*
+ * Converts the ingested data into either command lines that can be parsed, or
+ * raw command data
+ */
 class CommandReader {
   public maxSize = 16384;
 
@@ -16,10 +20,13 @@ class CommandReader {
 
   ingest(data: Buffer) {
     const newSize = this.buffer.byteLength + data.byteLength;
-    if (newSize > this.maxSize)
+    if (newSize > this.maxSize) {
+      this.buffer = Buffer.of();
+
       throw new BufferOverflowError(
         `Buffer overflow! New size ${newSize} exceeds ${this.maxSize}!`,
       );
+    }
 
     this.buffer = Buffer.concat([this.buffer, data]);
   }
@@ -78,6 +85,9 @@ class CommandReader {
   }
 }
 
+/*
+ * Takes an extracted command line and parses it
+ */
 class CommandParser {
   private line = "";
   private at = 0;
@@ -188,7 +198,31 @@ class CommandParser {
   }
 }
 
+/**
+ * Parses incoming data as trimsock commands
+ *
+ * It can handle full or partial commands, making it suitable for ingesting data
+ * streams as-is.
+ *
+ * If an error occurs during parsing ( e.g. an ill-formed command is encountered
+ * ), it will throw a {@link ParserError}.
+ *
+ * @see {@link TrimsockReader.ingest | ingest()} for ingesting data
+ * @see {@link TrimsockReader.read | read()} for extracting commands from
+ * ingested data
+ * @category Parser
+ */
 export class TrimsockReader {
+  /**
+   * Upper limit on the internal buffer's size
+   *
+   * When calling {@link TrimsockReader.ingest | ingest()}, the data is stored in
+   * a buffer until {@link Trimsock.read | read()} is called, and a full command
+   * can be extracted.
+   *
+   * If this size limit is exceeded, the buffer's contents are discarded and a
+   * {@link BufferOverflowError} is thrown.
+   */
   public maxSize = 16384;
 
   private reader = new CommandReader();
@@ -203,6 +237,11 @@ export class TrimsockReader {
     new StreamConvention(),
   ];
 
+  /**
+   * Ingest incoming data, preparing it for parsing
+   *
+   * @see {link TrimsockReader.maxSize}
+   */
   ingest(data: Buffer | string) {
     this.reader.maxSize = this.maxSize;
 
@@ -210,6 +249,11 @@ export class TrimsockReader {
     else this.reader.ingest(data);
   }
 
+  /**
+   * Try and extract a command from the ingested ata
+   *
+   * @returns the extracted command, or undefined
+   */
   read(): CommandSpec | undefined {
     let command = this.pop();
 
@@ -220,6 +264,9 @@ export class TrimsockReader {
     return command;
   }
 
+  /**
+   * Iterate through all the extractable commands
+   */
   *commands() {
     while (true) {
       const command = this.read();
@@ -228,6 +275,9 @@ export class TrimsockReader {
     }
   }
 
+  /**
+   * Disable conventions, parsing messages as per the core specification
+   */
   disableConventions() {
     this.conventions = [];
   }

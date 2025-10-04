@@ -1,7 +1,17 @@
 import assert from "./assert.js";
 
+/**
+ * A single chunk of command data extracted from the command line
+ */
 export interface CommandDataChunk {
+  /**
+   * Chunk text
+   */
   text: string;
+
+  /**
+   * True if the chunk was specified in quotes
+   */
   isQuoted: boolean;
 }
 
@@ -18,12 +28,21 @@ export interface BaseCommandSpec {
   /**
    * Raw command data
    *
-   * For regular commands, `raw` is undefined, and {@link data} is used.
+   * For regular commands, `raw` is undefined, and {@link text} is used.
    */
   raw?: Buffer;
 
-  chunks?: CommandDataChunk[];
+  /**
+   * Command data in text
+   *
+   * For raw commands, `text` is undefined, and {@link raw} is used.
+   */
   text?: string;
+
+  /**
+   * List of data chunks
+   */
+  chunks?: CommandDataChunk[];
 }
 
 interface MultiparamCommandSpec extends BaseCommandSpec {
@@ -36,7 +55,20 @@ interface MultiparamCommandSpec extends BaseCommandSpec {
 }
 
 interface KeyValueParamCommandSpec extends BaseCommandSpec {
+  /**
+   * List of key-value parameters
+   *
+   * If a key appears multiple times in the command, it will appear multiple times
+   * in this list.
+   */
   kvParams?: Array<[string, string]>;
+
+  /**
+   * Key-value parameters as a map
+   *
+   * If a key appears multiple times in the command, only its last value will
+   * appear here.
+   */
   kvMap?: Map<string, string>;
 }
 
@@ -281,12 +313,19 @@ export class Command implements CommandSpec {
     return data ? `${name} ${data}\n` : `${name}\n`;
   }
 
+  /**
+   * Serialize a piece of text as a command data chunk, quoting and escaping it
+   * as necessary
+   */
   static toChunk(text: string): string {
     return text.includes(" ")
       ? `"${Command.escapeQuoted(text)}"`
       : Command.escape(text);
   }
 
+  /**
+   * Escape text, making it safe to use in commands
+   */
   static escape(text: string): string {
     return text
       .replaceAll("\n", "\\n")
@@ -294,10 +333,17 @@ export class Command implements CommandSpec {
       .replaceAll('"', '\\"');
   }
 
+  /**
+   * Escape text, with the assumption that it will be enclosed in quotes
+   */
   static escapeQuoted(text: string): string {
     return text.replaceAll('"', '\\"');
   }
 
+  /**
+   * Unescape text, converting it to its original form after it has been
+   * transmitted in a command
+   */
   static unescape(text: string): string {
     return text
       .replaceAll("\\n", "\n")
