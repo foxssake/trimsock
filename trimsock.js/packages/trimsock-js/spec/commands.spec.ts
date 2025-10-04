@@ -105,7 +105,7 @@ describe("Commands", () => {
           isErrorResponse: true,
           text: "unknown command!",
         },
-        "!0123 unknown command!\n",
+        "!0123 \"unknown command!\"\n",
       ],
     ];
 
