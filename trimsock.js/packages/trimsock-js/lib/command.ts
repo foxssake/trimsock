@@ -262,7 +262,7 @@ export class Command implements CommandSpec {
     else if (spec.isErrorResponse) name = `${spec.name}!${spec.requestId}`;
     else name = spec.name;
 
-    name = this.toChunk(name);
+    name = Command.toChunk(name);
 
     // Early return for raw spec.
     if (spec.raw)
@@ -273,19 +273,18 @@ export class Command implements CommandSpec {
     // Figure out data
     let data = "";
     if (spec.params)
-      data = spec.params.map((it) => this.toChunk(it)).join(" ");
+      data = spec.params.map((it) => Command.toChunk(it)).join(" ");
     else if (spec.chunks)
-      data = spec.chunks.map((it) => this.toChunk(it.text)).join("") ?? "";
-    else if (spec.text)
-      data = this.toChunk(spec.text);
+      data = spec.chunks.map((it) => Command.toChunk(it.text)).join("") ?? "";
+    else if (spec.text) data = Command.toChunk(spec.text);
 
     return data ? `${name} ${data}\n` : `${name}\n`;
   }
 
   static toChunk(text: string): string {
     return text.includes(" ")
-      ? `"${this.escapeQuoted(text)}"`
-      : this.escape(text);
+      ? `"${Command.escapeQuoted(text)}"`
+      : Command.escape(text);
   }
 
   static escape(text: string): string {
