@@ -1,4 +1,4 @@
-import type { CommandDataChunk, CommandSpec } from "./command.js";
+import { Command, type CommandDataChunk, type CommandSpec } from "./command.js";
 
 class CommandReader {
   public maxSize = 16384 // TODO
@@ -28,10 +28,8 @@ class CommandReader {
       }
       if (this.char == "\n" && !this.isQuote) {
         const result = this.buffer.subarray(0, this.at).toString("utf8")
-        console.log("[lin]", result)
         ++this.at
         this.flush()
-        console.log("[li>]", this.buffer.toString("utf8"))
         return result
       } 
     }
@@ -42,15 +40,11 @@ class CommandReader {
     this.isEscape = false
     this.isQuote = false
 
-    console.log("[li@]", this.buffer.length, "/", size, ":", this.buffer.toString("utf8"))
-
     if (this.buffer.length >= size) {
       const result = this.buffer.subarray(0, size)
       this.at = size + 1
       this.flush()
 
-      console.log("[li^]", result.toString("utf8"))
-      console.log("[lir]", this.buffer.toString("utf8"))
       return result
     }
   }
@@ -80,12 +74,8 @@ class CommandParser {
   parse(line: string): CommandSpec {
     this.rewind(line)
 
-    console.log("parse\n", line)
     const isRaw = this.char == "\r"
-    if (isRaw) {
-      console.log("found raw")
-      this.at++
-    }
+    if (isRaw) this.at++
 
     const name = this.readName()
     this.at++;
@@ -97,8 +87,21 @@ class CommandParser {
     const text = chunks.map(it => it.text).join("")
 
     return isRaw
-      ? { name, text, raw: Buffer.of() }
-      : { name, text, chunks }
+      ? this.unescape({ name, text, raw: Buffer.of() })
+      : this.unescape({ name, text, chunks })
+  }
+
+  private unescape(command: CommandSpec): CommandSpec {
+    const result: CommandSpec = { name: Command.unescape(command.name) }
+    if (command.chunks) {
+      result.chunks = command.chunks.map(it => ({ ...it, text: Command.unescape(it.text) }))
+      result.text = result.chunks.map(it => it.text).join("")
+    }
+
+    return {
+      ...command,
+      ...result
+    }
   }
 
   private rewind(line: string) {
@@ -207,9 +210,7 @@ export class TrimsockReader {
     if (!line) return;
 
     const command = this.parser.parse(line);
-    console.log("parsed", command)
     if (command.raw !== undefined) {
-      console.log("IT'S FUCKING RAW", command)
       this.queuedRawCommand = command
       this.queuedRawSize = parseInt(command.text!!)
       return this.read()

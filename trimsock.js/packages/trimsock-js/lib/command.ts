@@ -281,10 +281,25 @@ export class Command implements CommandSpec {
     return data ? `${name} ${data}\n` : `${name}\n`;
   }
 
+  static escape(text: string): string {
+    return text
+      .replaceAll("\n", "\\n")
+      .replaceAll("\r", "\\r")
+      .replaceAll("\"", "\\\"");
+  }
+
+  static unescape(text: string): string {
+    return text
+      .replaceAll("\\n", "\n")
+      .replaceAll("\\r", "\r")
+      .replaceAll("\\\"", "\"");
+  }
+
   /**
    * Escape a command name, making it safe for serialization
    *
    * @returns escaped command name
+   * @deprecated
    */
   static escapeName(name: string): string {
     return name
@@ -297,6 +312,7 @@ export class Command implements CommandSpec {
    * Escape a command data, making it safe for serialization
    *
    * @returns escaped command data
+   * @deprecated
    */
   static escapeData(data: string): string {
     return data
@@ -309,6 +325,7 @@ export class Command implements CommandSpec {
    * Unescape command name, returning its original value
    *
    * @returns unescaped command name
+   * @deprecated
    */
   static unescapeName(data: string): string {
     return data
@@ -321,6 +338,7 @@ export class Command implements CommandSpec {
    * Unescape command data, returning its original value
    *
    * @returns unescaped command data
+   * @deprecated
    */
   static unescapeData(data: string): string {
     return data.replaceAll("\\n", "\n").replaceAll("\\r", "\r");
