@@ -47,7 +47,7 @@ export interface BaseCommandSpec {
 
 interface MultiparamCommandSpec extends BaseCommandSpec {
   /**
-   * Command parameters parsed from {@link data}
+   * Command parameters parsed from {@link chunks}
    *
    * Undefined if the data does not contain multiple parameters.
    */
@@ -262,7 +262,7 @@ export class Command implements CommandSpec {
   }
 
   /**
-   * Return the command's text {@link data}, or throw if it's not present
+   * Return the command's text {@link text}, or throw if it's not present
    */
   requireText(): string {
     assert(this.text !== undefined, "Command has no text data!");
