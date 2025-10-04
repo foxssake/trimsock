@@ -9,12 +9,12 @@ const generateSessionId = makeDefaultIdGenerator(4);
 
 new NodeSocketReactor()
   .on("info", (_, xchg) =>
-    xchg.replyOrSend({ name: "info", data: "trimsock on node" }),
+    xchg.replyOrSend({ name: "info", text: "trimsock on node" }),
   )
   .on("whoami", (_, xchg) =>
     xchg.replyOrSend({
       name: "whoami",
-      data: sessionIds.get(xchg.source) || "???",
+      text: sessionIds.get(xchg.source) || "???",
     }),
   )
   .serve({}, (socket) => {
