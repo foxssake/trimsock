@@ -147,6 +147,8 @@ export class Command implements CommandSpec {
   chunks?: CommandDataChunk[];
   raw?: Buffer;
   params?: string[];
+  kvParams?: Array<[string, string]>;
+  kvMap?: Map<string, string>;
   requestId?: string;
   isRequest?: boolean;
   isSuccessResponse?: boolean;
