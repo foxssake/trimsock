@@ -54,24 +54,6 @@ interface MultiparamCommandSpec extends BaseCommandSpec {
   params?: Array<string>;
 }
 
-interface KeyValueParamCommandSpec extends BaseCommandSpec {
-  /**
-   * List of key-value parameters
-   *
-   * If a key appears multiple times in the command, it will appear multiple times
-   * in this list.
-   */
-  kvParams?: Array<[string, string]>;
-
-  /**
-   * Key-value parameters as a map
-   *
-   * If a key appears multiple times in the command, only its last value will
-   * appear here.
-   */
-  kvMap?: Map<string, string>;
-}
-
 interface RequestResponseCommandSpec extends BaseCommandSpec {
   /**
    * Request ID, used to associate responses with requests
@@ -133,7 +115,6 @@ interface StreamCommandSpec extends BaseCommandSpec {
 export interface CommandSpec
   extends BaseCommandSpec,
     MultiparamCommandSpec,
-    KeyValueParamCommandSpec,
     RequestResponseCommandSpec,
     StreamCommandSpec {}
 
