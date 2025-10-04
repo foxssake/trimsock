@@ -12,7 +12,7 @@ const reactor = new BunSocketReactor<SocketContext>()
   .on("echo", (cmd, exchange) => exchange.send(cmd))
   .on("info", (_, exchange) =>
     exchange.reply({
-      data: "trimsock reactor",
+      text: "trimsock reactor",
     }),
   )
   .on("askme", async (_, exchange) => {
@@ -20,43 +20,43 @@ const reactor = new BunSocketReactor<SocketContext>()
     const result = await exchange
       .request({
         name: "answer",
-        data: "Give me a number pls",
+        text: "Give me a number pls",
       })
       .onReply();
-    console.log("Response is ", result.data);
+    console.log("Response is ", result.text);
   })
   .on("stream", async (_, exchange) => {
     console.log("Started stream");
     for await (const chunk of exchange.chunks())
-      console.log("Chunk", chunk.data, chunk.raw);
+      console.log("Chunk", chunk.text, chunk.raw);
     console.log("Finished stream");
   })
   .on("proxy", (cmd, exchange) => {
     cmd.requireParams(2);
     const peerId = cmd.requireParam(0);
-    const data = cmd.requireParam(1);
+    const text = cmd.requireParam(1);
 
     const target = sockets.values().find((it) => it.data.sessionId === peerId);
     assert(target, `Unknown peer: ${peerId}`);
 
-    exchange.send({ name: "proxy-data", data }, target);
+    exchange.send({ name: "proxy-data", text }, target);
   })
   .on("sessions", (_, exchange) => {
     for (const socket of sockets)
-      exchange.stream({ data: socket.data.sessionId });
+      exchange.stream({ text: socket.data.sessionId });
     exchange.finishStream();
   })
   .onUnknown((cmd, exchange) =>
     exchange.failOrSend({
       name: cmd.name,
-      data: `Unknown command: ${cmd.name}`,
+      text: `Unknown command: ${cmd.name}`,
     }),
   )
   .onError((cmd, exchange, error) => {
     const message = (error as Error).message ?? error;
     exchange.failOrSend({
       name: cmd.name,
-      data: `Failed to process command: ${Command.serialize(cmd)}\nError: ${message}`,
+      text: `Failed to process command: ${Command.serialize(cmd)}\nError: ${message}`,
     });
   });
 
@@ -74,11 +74,11 @@ reactor.listen({
       reactor
         .send(socket, {
           name: "greet",
-          data: sessionId,
+          text: sessionId,
         })
         .send({
           name: "stats",
-          data: `Active connections: ${sockets.size}`,
+          text: `Active connections: ${sockets.size}`,
         });
     },
     close(socket, error) {

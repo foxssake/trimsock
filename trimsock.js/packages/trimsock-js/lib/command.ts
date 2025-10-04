@@ -1,6 +1,21 @@
 import assert from "./assert.js";
 
 /**
+ * A single chunk of command data extracted from the command line
+ */
+export interface CommandDataChunk {
+  /**
+   * Chunk text
+   */
+  text: string;
+
+  /**
+   * True if the chunk was specified in quotes
+   */
+  isQuoted: boolean;
+}
+
+/**
  * Describes the core data fields of a command, without conventions
  * @category Parser
  */
@@ -11,23 +26,28 @@ export interface BaseCommandSpec {
   name: string;
 
   /**
-   * Command data
-   *
-   * For raw commands, `data` is undefined, and {@link raw} is used instead.
-   */
-  data?: string;
-
-  /**
    * Raw command data
    *
-   * For regular commands, `raw` is undefined, and {@link data} is used.
+   * For regular commands, `raw` is undefined, and {@link text} is used.
    */
   raw?: Buffer;
+
+  /**
+   * Command data in text
+   *
+   * For raw commands, `text` is undefined, and {@link raw} is used.
+   */
+  text?: string;
+
+  /**
+   * List of data chunks
+   */
+  chunks?: CommandDataChunk[];
 }
 
 interface MultiparamCommandSpec extends BaseCommandSpec {
   /**
-   * Command parameters parsed from {@link data}
+   * Command parameters parsed from {@link chunks}
    *
    * Undefined if the data does not contain multiple parameters.
    */
@@ -104,20 +124,20 @@ export interface CommandSpec
  */
 export class Command implements CommandSpec {
   name: string;
-  data?: string | undefined;
-  raw?: Buffer | undefined;
-  params?: string[] | undefined;
-  requestId?: string | undefined;
-  isRequest?: boolean | undefined;
-  isSuccessResponse?: boolean | undefined;
-  isErrorResponse?: boolean | undefined;
-  streamId?: string | undefined;
-  isStreamChunk?: boolean | undefined;
-  isStreamEnd?: boolean | undefined;
+  text?: string;
+  chunks?: CommandDataChunk[];
+  raw?: Buffer;
+  params?: string[];
+  requestId?: string;
+  isRequest?: boolean;
+  isSuccessResponse?: boolean;
+  isErrorResponse?: boolean;
+  streamId?: string;
+  isStreamChunk?: boolean;
+  isStreamEnd?: boolean;
 
   constructor(spec: CommandSpec) {
     this.name = spec.name;
-    this.data = spec.data;
     Object.assign(this, spec);
   }
 
@@ -223,11 +243,11 @@ export class Command implements CommandSpec {
   }
 
   /**
-   * Return the command's text {@link data}, or throw if it's not present
+   * Return the command's text {@link text}, or throw if it's not present
    */
   requireText(): string {
-    assert(this.data !== undefined, "Command has no text data!");
-    return this.data;
+    assert(this.text !== undefined, "Command has no text data!");
+    return this.text;
   }
 
   /**
@@ -255,7 +275,7 @@ export class Command implements CommandSpec {
     else if (spec.isErrorResponse) name = `${spec.name}!${spec.requestId}`;
     else name = spec.name;
 
-    name = Command.escapeName(name);
+    name = Command.toChunk(name);
 
     // Early return for raw spec.
     if (spec.raw)
@@ -266,54 +286,49 @@ export class Command implements CommandSpec {
     // Figure out data
     let data = "";
     if (spec.params)
-      data = spec.params.map((it) => Command.escapeData(it)).join(" ");
-    else data = Command.escapeData(spec.data ?? "");
+      data = spec.params.map((it) => Command.toChunk(it)).join(" ");
+    else if (spec.chunks)
+      data = spec.chunks.map((it) => Command.toChunk(it.text)).join("") ?? "";
+    else if (spec.text) data = Command.toChunk(spec.text);
 
     return data ? `${name} ${data}\n` : `${name}\n`;
   }
 
   /**
-   * Escape a command name, making it safe for serialization
-   *
-   * @returns escaped command name
+   * Serialize a piece of text as a command data chunk, quoting and escaping it
+   * as necessary
    */
-  static escapeName(name: string): string {
-    return name
-      .replaceAll("\n", "\\n")
-      .replaceAll("\r", "\\r")
-      .replaceAll(" ", "\\s");
+  static toChunk(text: string): string {
+    return text.includes(" ")
+      ? `"${Command.escapeQuoted(text)}"`
+      : Command.escape(text);
   }
 
   /**
-   * Escape a command data, making it safe for serialization
-   *
-   * @returns escaped command data
+   * Escape text, making it safe to use in commands
    */
-  static escapeData(data: string): string {
-    return data
+  static escape(text: string): string {
+    return text
       .replaceAll("\n", "\\n")
       .replaceAll("\r", "\\r")
-      .replaceAll(" ", "\\s");
+      .replaceAll('"', '\\"');
   }
 
   /**
-   * Unescape command name, returning its original value
-   *
-   * @returns unescaped command name
+   * Escape text, with the assumption that it will be enclosed in quotes
    */
-  static unescapeName(data: string): string {
-    return data
-      .replaceAll("\\s", " ")
+  static escapeQuoted(text: string): string {
+    return text.replaceAll('"', '\\"');
+  }
+
+  /**
+   * Unescape text, converting it to its original form after it has been
+   * transmitted in a command
+   */
+  static unescape(text: string): string {
+    return text
       .replaceAll("\\n", "\n")
-      .replaceAll("\\r", "\r");
-  }
-
-  /**
-   * Unescape command data, returning its original value
-   *
-   * @returns unescaped command data
-   */
-  static unescapeData(data: string): string {
-    return data.replaceAll("\\n", "\n").replaceAll("\\r", "\r");
+      .replaceAll("\\r", "\r")
+      .replaceAll('\\"', '"');
   }
 }
