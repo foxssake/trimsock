@@ -35,6 +35,11 @@ interface MultiparamCommandSpec extends BaseCommandSpec {
   params?: Array<string>;
 }
 
+interface KeyValueParamCommandSpec extends BaseCommandSpec {
+  kvParams?: Array<[string, string]>
+  kvMap?: Map<string, string>
+}
+
 interface RequestResponseCommandSpec extends BaseCommandSpec {
   /**
    * Request ID, used to associate responses with requests
@@ -96,6 +101,7 @@ interface StreamCommandSpec extends BaseCommandSpec {
 export interface CommandSpec
   extends BaseCommandSpec,
     MultiparamCommandSpec,
+    KeyValueParamCommandSpec,
     RequestResponseCommandSpec,
     StreamCommandSpec {}
 

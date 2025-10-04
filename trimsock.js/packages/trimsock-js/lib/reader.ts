@@ -1,5 +1,5 @@
 import { Command, type CommandDataChunk, type CommandSpec } from "./command.js";
-import { MultiparamConvention, RequestResponseConvention, StreamConvention } from "./conventions.js";
+import { ParamsConvention, RequestResponseConvention, StreamConvention } from "./conventions.js";
 
 class CommandReader {
   public maxSize = 16384 // TODO
@@ -188,7 +188,7 @@ export class TrimsockReader {
   private queuedRawSize: number = -1
 
   private conventions = [
-    new MultiparamConvention(),
+    new ParamsConvention(),
     new RequestResponseConvention(),
     new StreamConvention()
   ]
