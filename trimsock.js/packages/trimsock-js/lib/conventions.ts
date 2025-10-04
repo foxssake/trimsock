@@ -6,11 +6,13 @@ export interface Convention {
 
 export class MultiparamConvention implements Convention {
   public process(command: CommandSpec): CommandSpec {
-    if (command.data === undefined) return command;
-    if (!command.data.includes(" ")) return command;
+    if (command.text === undefined || command.chunks === undefined)
+      return command;
 
-    const text = command.data;
-    const params = text.split(" ").map((param) => param.replaceAll("\\s", " "));
+    const params = command.chunks.flatMap(chunk => chunk.isQuoted
+      ? [chunk.text]
+      : chunk.text.trim().split(" ")
+    )
 
     return { ...command, params };
   }

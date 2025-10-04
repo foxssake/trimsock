@@ -1,4 +1,5 @@
 import { Command, type CommandDataChunk, type CommandSpec } from "./command.js";
+import { MultiparamConvention } from "./conventions.js";
 
 class CommandReader {
   public maxSize = 16384 // TODO
@@ -185,6 +186,10 @@ export class TrimsockReader {
   private queuedRawCommand?: CommandSpec
   private queuedRawSize: number = -1
 
+  private conventions = [
+    new MultiparamConvention()
+  ]
+
   ingest(data: Buffer | string) {
     if (typeof data === "string")
       this.reader.ingest(Buffer.from(data, "utf8"))
@@ -193,6 +198,24 @@ export class TrimsockReader {
   }
 
   read(): CommandSpec | undefined {
+    let command = this.pop()
+
+    if (command)
+      for (const convention of this.conventions)
+        command = convention.process(command)
+
+    return command
+  }
+
+  *commands() {
+    while (true) {
+      const command = this.read()
+      if (!command) break;
+      yield command;
+    }
+  }
+
+  private pop(): CommandSpec | undefined {
     if (this.queuedRawCommand != undefined) {
       const data = this.reader.readRaw(this.queuedRawSize)
       if (!data) return
@@ -217,13 +240,5 @@ export class TrimsockReader {
     }
 
     return command;
-  }
-
-  *commands() {
-    while (true) {
-      const command = this.read()
-      if (!command) break;
-      yield command;
-    }
   }
 }
