@@ -1,5 +1,6 @@
 import assert from "./assert.js";
 import { Command, type CommandSpec } from "./command.js";
+import { TrimsockReader } from "./reader.js";
 import { Trimsock, isCommand } from "./trimsock.js";
 
 /**
@@ -524,6 +525,7 @@ export abstract class Reactor<T> {
   constructor(
     private trimsock: Trimsock = new Trimsock().withConventions(),
     private generateExchangeId: ExchangeIdGenerator = makeDefaultIdGenerator(),
+    private reader: TrimsockReader = new TrimsockReader()
   ) {}
 
   /**
@@ -605,15 +607,11 @@ export abstract class Reactor<T> {
    * @param source source connection
    */
   public ingest(data: Buffer, source: T): void {
-    for (const item of this.trimsock.ingest(data)) {
-      try {
-        if (isCommand(item))
-          this.handle(new Command(item as CommandSpec), source);
-      } catch (err) {
-        console.log(err);
-        throw err;
-      }
-    }
+    // TODO: Invoke error handler when ingest fails?
+    this.reader.ingest(data)
+
+    for (const item of this.reader.commands()) 
+      this.handle(new Command(item as CommandSpec), source);
   }
 
   /**
