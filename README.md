@@ -147,8 +147,8 @@ these special characters are *escaped* based on the following table:
 During parsing, these escape sequences must be replaced with their original
 counterparts.
 
-Note that these escape sequences must be applied both in regular chunks and in
-quoted chunks.
+Note that these escape sequences must be considered both in regular chunks and
+in quoted chunks.
 
 #### Reserved characters in command names
 
@@ -243,6 +243,15 @@ characters in a key or a value, use a quoted data chunk:
 ```
 set-user-details firstname=Tom surname=Acme bio="I'm paid for being in these \"examples\". "\n
 ```
+
+To avoid parsing a regular parameter as a key-value pair, they may be quoted:
+
+```
+post-message "i++?=++i"
+```
+
+In this example, even though the command data would be a valid key-value pair,
+it will be left as-is, since it's in quotes.
 
 #### Request-response pairs
 
