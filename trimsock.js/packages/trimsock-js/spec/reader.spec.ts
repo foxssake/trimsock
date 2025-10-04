@@ -21,7 +21,9 @@ describe("TrimsockReader", () => {
   ]))
 
   describe("technically well formed commands", () => tests([
-    ["should parse empty command", " \n", [{ name: "", text: "", chunks: []}]]
+    ["should parse space command", " \n", [{ name: "", text: "", chunks: []}]],
+    ["should parse empty command", "\n", [{ name: "", text: "", chunks: []}]],
+    ["should parse name only command", "command\n", [{ name: "command", text: "", chunks: []}]]
   ]))
 
   describe("raw commands", () => tests([

@@ -113,20 +113,20 @@ export interface CommandSpec
  */
 export class Command implements CommandSpec {
   name: string;
-  data?: string | undefined;
-  raw?: Buffer | undefined;
-  params?: string[] | undefined;
-  requestId?: string | undefined;
-  isRequest?: boolean | undefined;
-  isSuccessResponse?: boolean | undefined;
-  isErrorResponse?: boolean | undefined;
-  streamId?: string | undefined;
-  isStreamChunk?: boolean | undefined;
-  isStreamEnd?: boolean | undefined;
+  text?: string;
+  chunks?: CommandDataChunk[];
+  raw?: Buffer;
+  params?: string[];
+  requestId?: string;
+  isRequest?: boolean;
+  isSuccessResponse?: boolean;
+  isErrorResponse?: boolean;
+  streamId?: string;
+  isStreamChunk?: boolean;
+  isStreamEnd?: boolean;
 
   constructor(spec: CommandSpec) {
     this.name = spec.name;
-    this.data = spec.data;
     Object.assign(this, spec);
   }
 
@@ -235,8 +235,8 @@ export class Command implements CommandSpec {
    * Return the command's text {@link data}, or throw if it's not present
    */
   requireText(): string {
-    assert(this.data !== undefined, "Command has no text data!");
-    return this.data;
+    assert(this.text !== undefined, "Command has no text data!");
+    return this.text;
   }
 
   /**
@@ -264,7 +264,7 @@ export class Command implements CommandSpec {
     else if (spec.isErrorResponse) name = `${spec.name}!${spec.requestId}`;
     else name = spec.name;
 
-    name = Command.escapeName(name);
+    name = this.toChunk(name)
 
     // Early return for raw spec.
     if (spec.raw)
@@ -275,10 +275,19 @@ export class Command implements CommandSpec {
     // Figure out data
     let data = "";
     if (spec.params)
-      data = spec.params.map((it) => Command.escapeData(it)).join(" ");
-    else data = Command.escapeData(spec.data ?? "");
+      data = spec.params.map(it => this.toChunk(it)).join(" ");
+    else if(spec.chunks)
+      data = spec.chunks.map(it => this.toChunk(it.text)).join("") ?? "";
+    else
+      data = spec.text ?? ""
 
     return data ? `${name} ${data}\n` : `${name}\n`;
+  }
+
+  static toChunk(text: string): string {
+    return text.includes(" ")
+      ? (`"${this.escapeQuoted(text)}"`)
+      : this.escape(text)
   }
 
   static escape(text: string): string {
@@ -286,6 +295,10 @@ export class Command implements CommandSpec {
       .replaceAll("\n", "\\n")
       .replaceAll("\r", "\\r")
       .replaceAll("\"", "\\\"");
+  }
+
+  static escapeQuoted(text: string): string {
+    return text.replaceAll("\"", "\\\"")
   }
 
   static unescape(text: string): string {

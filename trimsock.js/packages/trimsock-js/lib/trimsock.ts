@@ -53,6 +53,8 @@ export function isCommand(what: ParserOutput): boolean {
  *
  * @see {@link Trimsock.ingest | ingest()} for parsing data
  * @category Parser
+*
+* @deprecated
  */
 export class Trimsock {
   private lineBuffer = "";

@@ -75,6 +75,10 @@ class CommandParser {
   parse(line: string): CommandSpec {
     this.rewind(line)
 
+    // Empty command
+    if (this.atEnd)
+      return { name: "", text: "", chunks: [] };
+
     const isRaw = this.char == "\r"
     if (isRaw) this.at++
 
@@ -126,10 +130,7 @@ class CommandParser {
 
   private readIdentifier(): string {
     const from = this.at
-    for (; this.char != " "; ++this.at)
-      if (this.atEnd)
-        // TODO: Specific error type
-        throw new Error("Unexpected EOF while reading identifier!")
+    for (; this.char != " " && !this.atEnd; ++this.at);
     return this.line.substring(from, this.at)
   }
 
@@ -236,7 +237,7 @@ export class TrimsockReader {
     }
 
     const line = this.reader.readLine();
-    if (!line) return;
+    if (line === undefined) return;
 
     const command = this.parser.parse(line);
     if (command.raw !== undefined) {
