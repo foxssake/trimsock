@@ -7,11 +7,6 @@ Trimsock is a stream-based communication protocol that:
 * supports binary
 * is extended via conventions
 
-Simple: `command data\n`
-Embedded nl: `"com\n\"mand" "da\nta"\n`
-Multiple params: `command param1 "param 2"\n`
-Key-value params: `command key1=value1 "key with =="="value 2" "not a key=value pair"\n`
-
 ## Quick glance
 
 Trimsock uses commands to transmit instructions, e.g.:
