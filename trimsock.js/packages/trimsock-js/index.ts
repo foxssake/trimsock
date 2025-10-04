@@ -1,10 +1,14 @@
-export { type CommandSpec, Command } from "./lib/command.js";
 export {
-  type ParseError,
-  type ParserOutput,
-  isCommand,
-  Trimsock,
-} from "./lib/trimsock.js";
+  type CommandDataChunk,
+  type CommandSpec,
+  Command,
+} from "./lib/command.js";
+export {
+  BufferOverflowError,
+  ParserError,
+  UnexpectedCharacterError,
+} from "./lib/errors.js";
+export { TrimsockReader } from "./lib/reader.js";
 export {
   type CommandHandler,
   type CommandErrorHandler,

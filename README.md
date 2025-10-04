@@ -98,6 +98,40 @@ Without *command data*, the space character is not needed.
 
 *Commands* MUST be parsed as UTF-8 strings.
 
+#### Data chunks
+
+Command data may be specified in multiple chunks. A chunk is either a regular
+string, or a quoted string.
+
+A regular string can contain any other character, except `"`. Those may be
+escaped as `\"`.
+
+Quoted strings are enclosed in `"` characters.
+
+For example:
+
+```
+command chunk one "chunk two" chunk three\n
+```
+
+In this case, the command would have three chunks:
+
+- `chunk one `
+- `chunk two`
+- ` chunk three`
+
+Note the spaces at the end and beginning of the regular chunks.
+
+Chunks don't change the meaning of the command data, but they may be used by
+*conventions* for semantics.
+
+Meaning that the previous example is - without considering conventions -
+equivalent to the following:
+
+```
+command chunk one chunk two chunk three\n
+```
+
 #### Escape sequences
 
 Both the *command name* and *command data* may want to encode characters that
@@ -108,13 +142,13 @@ these special characters are *escaped* based on the following table:
 |-----------|----------------|-----------------|--------------|
 | `\n`      | `0x0A`         | `\\n`           | `0x5C 0x6E`  |
 | `\r`      | `0x0D`         | `\\r`           | `0x5C 0x72`  |
-| ` `       | `0x20`         | `\\s`           | `0x5C 0x73`  |
+| `"`       | `0x34`         | `\\"`           | `0x5C 0x34`  |
 
 During parsing, these escape sequences must be replaced with their original
 counterparts.
 
-The space character's escape sequence is only recognized in the *command name*.
-In command data, the `\\s` character sequence is left as-is.
+Note that these escape sequences must be considered both in regular chunks and
+in quoted chunks.
 
 #### Reserved characters in command names
 
@@ -177,14 +211,15 @@ For example:
 set-user-details Tom Acme tom@acme.com
 ```
 
-For this conventions, implementations MUST recognize the following escape
-sequence:
+If you need parameters with spaces, use a quoted data chunk - while regular
+data chunks are split, quoted data chunks are left as-is:
 
-| Character | Escape sequence | Byte sequence (hexadecimal) |
-|-----------|-----------------|-----------------------------|
-| ` `       | `\\s`           | `0x5C 0x73`                 |
+```
+submit-review 5/5 "I enjoy."\n
+```
 
-This allows *command parameters* to contain space characters.
+The above command submits a product rating of 5 stars out of 5, with a short
+comment.
 
 Conforming implementations MUST NOT parse *raw command data* as multiple
 parameters.

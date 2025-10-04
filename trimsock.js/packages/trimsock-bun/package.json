@@ -1,6 +1,6 @@
 {
   "name": "@foxssake/trimsock-bun",
-  "version": "0.13.3",
+  "version": "0.14.0",
   "module": "dist/index.js",
   "type": "module",
   "author": "Tamás Gálffy",

@@ -1,6 +1,6 @@
 import assert from "./assert.js";
 import { Command, type CommandSpec } from "./command.js";
-import { Trimsock, isCommand } from "./trimsock.js";
+import { TrimsockReader } from "./reader.js";
 
 /**
  * Callback type for handling incoming commands
@@ -364,7 +364,6 @@ export class ReactorExchange<T> implements Exchange<T> {
     this.write(
       {
         name: "",
-        data: "",
         streamId: this.command?.requireId(),
         isStreamEnd: true,
       },
@@ -522,7 +521,7 @@ export abstract class Reactor<T> {
   private exchanges = new ExchangeMap<T, ReactorExchange<T>>();
 
   constructor(
-    private trimsock: Trimsock = new Trimsock().withConventions(),
+    private reader: TrimsockReader = new TrimsockReader(),
     private generateExchangeId: ExchangeIdGenerator = makeDefaultIdGenerator(),
   ) {}
 
@@ -605,15 +604,11 @@ export abstract class Reactor<T> {
    * @param source source connection
    */
   public ingest(data: Buffer, source: T): void {
-    for (const item of this.trimsock.ingest(data)) {
-      try {
-        if (isCommand(item))
-          this.handle(new Command(item as CommandSpec), source);
-      } catch (err) {
-        console.log(err);
-        throw err;
-      }
-    }
+    // TODO: Invoke error handler when ingest fails?
+    this.reader.ingest(data);
+
+    for (const item of this.reader.commands())
+      this.handle(new Command(item as CommandSpec), source);
   }
 
   /**
