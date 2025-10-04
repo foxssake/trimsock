@@ -36,7 +36,11 @@ describe("Commands", () => {
         { name: "\rcommand", text: "data" },
         "\\rcommand data\n",
       ],
-      ["should retain quoted chunks", { name: "command", chunks: [{ text: "foo", isQuoted: true }]}, "command \"foo\"\n"],
+      [
+        "should retain quoted chunks",
+        { name: "command", chunks: [{ text: "foo", isQuoted: true }] },
+        'command "foo"\n',
+      ],
       [
         "should serialize raw",
         { name: "command", raw: Buffer.from([102, 0, 111]) },

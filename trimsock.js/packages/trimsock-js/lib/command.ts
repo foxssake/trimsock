@@ -320,12 +320,12 @@ export class Command implements CommandSpec {
   static toChunk(what: string | CommandDataChunk): string {
     if (typeof what === "string")
       return what.includes(" ")
-        ? `"${this.escapeQuoted(what)}"`
-        : this.escape(what);
-    else
-      return what.isQuoted
-        ? `"${this.escapeQuoted(what.text)}"`
-        : this.toChunk(what.text)
+        ? `"${Command.escapeQuoted(what)}"`
+        : Command.escape(what);
+
+    return what.isQuoted
+      ? `"${Command.escapeQuoted(what.text)}"`
+      : Command.toChunk(what.text);
   }
 
   /**
