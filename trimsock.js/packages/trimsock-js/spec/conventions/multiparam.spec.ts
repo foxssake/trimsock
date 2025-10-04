@@ -7,7 +7,9 @@ type Kase = [string, string, CommandSpec]
 describe("MultiparamConvention", () => tests([
   ["should passthrough raw command", "\rcommand 4\n1234\n", { name: "command", raw: Buffer.from("1234") }],
   ["should parse multiple params", "command foo bar\n", { name: "command", text: "foo bar", chunks: [{ text: "foo bar", isQuoted: false}], params: ["foo", "bar"]}],
-  ["should retain quoted", "command foo \"quix bar\" baz\n", { name: "command", text: "foo quix bar baz", chunks: [{ text: "foo ", isQuoted: false}, { text: "quix bar", isQuoted: true}, { text: " baz", isQuoted: false }], params: ["foo", "quix bar", "baz"]}]
+  ["should retain quoted", "command foo \"quix bar\" baz\n", { name: "command", text: "foo quix bar baz", chunks: [{ text: "foo ", isQuoted: false}, { text: "quix bar", isQuoted: true}, { text: " baz", isQuoted: false }], params: ["foo", "quix bar", "baz"]}],
+  ["should skip empty data", "command \n", { name: "command", text: "", chunks: [] }],
+  ["should skip single-param data", "command foo\n", { name: "command", text: "foo", chunks: [{ text: "foo", isQuoted: false }]}]
 ]))
 
 function tests(kases: Kase[]) {

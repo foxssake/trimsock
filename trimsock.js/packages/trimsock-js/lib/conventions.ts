@@ -51,7 +51,7 @@ export class StreamConvention implements Convention {
 
     const parts = parseName(name, "|");
     // NOTE: Last `?? 0` should never run, command has either `data` or `raw`
-    const dataSize = command.data?.length ?? command.raw?.byteLength ?? 0;
+    const dataSize = command.text?.length ?? command.raw?.byteLength ?? 0;
 
     return {
       ...command,
