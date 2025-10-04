@@ -52,12 +52,12 @@ describe("MultiparamConvention", () =>
   ]));
 
 function tests(kases: Kase[]) {
-  kases.forEach(([name, input, expected]) => {
+  for (const [name, input, expected] of kases) {
     test(name, () => {
       const reader = new TrimsockReader();
       reader.ingest(input);
 
       expect(reader.read()).toEqual(expected);
     });
-  });
+  }
 }

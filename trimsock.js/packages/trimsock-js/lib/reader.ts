@@ -240,7 +240,7 @@ export class TrimsockReader {
     const command = this.parser.parse(line);
     if (command.raw !== undefined) {
       this.queuedRawCommand = command;
-      this.queuedRawSize = Number.parseInt(command.text!);
+      this.queuedRawSize = Number.parseInt(command.text ?? "");
       return this.read();
     }
 

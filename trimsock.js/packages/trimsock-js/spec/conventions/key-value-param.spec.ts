@@ -107,14 +107,14 @@ describe("KeyValueParamConvention", () =>
   ]));
 
 function tests(cases: Kase[]) {
-  cases.forEach(([name, input, expected]) =>
+  for (const [name, input, expected] of cases) {
     test(name, () => {
       const reader = new TrimsockReader();
       reader.ingest(input);
       const actual = reader.read();
       expect(actual).toEqual(expected);
-    }),
-  );
+    });
+  }
 }
 
 function mapOf(...values: string[]): Map<string, string> {

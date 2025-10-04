@@ -186,7 +186,7 @@ describe("TrimsockReader", () => {
 });
 
 function tests(kases: Kase[]) {
-  kases.forEach(([name, input, expected]) => {
+  for (const [name, input, expected] of kases) {
     const chunks = typeof input === "string" ? [input] : [...input];
 
     test(name, () => {
@@ -194,12 +194,12 @@ function tests(kases: Kase[]) {
       const results: CommandSpec[] = [];
 
       reader.disableConventions();
-      chunks.forEach((it) => {
-        reader.ingest(it);
+      for (const chunk of chunks) {
+        reader.ingest(chunk);
         results.push(...reader.commands());
-      });
+      }
 
       expect(results).toEqual(expected);
     });
-  });
+  }
 }

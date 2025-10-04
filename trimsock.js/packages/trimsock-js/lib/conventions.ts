@@ -56,7 +56,8 @@ export class ParamsConvention implements Convention {
     if (kvParams.length) {
       result.kvParams = kvParams;
       result.kvMap = new Map();
-      kvParams.forEach((it) => result.kvMap?.set(it[0], it[1]));
+
+      for (const [key, value] of kvParams) result.kvMap.set(key, value);
     }
 
     if (params.length >= 2) result.params = params;

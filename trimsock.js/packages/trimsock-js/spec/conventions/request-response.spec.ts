@@ -64,11 +64,11 @@ describe("RequestResponseConvention", () =>
   ]));
 
 function tests(cases: Kase[]) {
-  cases.forEach(([name, input, expected]) =>
+  for (const [name, input, expected] of cases) {
     test(name, () => {
       const reader = new TrimsockReader();
       reader.ingest(input);
       expect(reader.read()).toEqual(expected);
-    }),
-  );
+    });
+  }
 }
