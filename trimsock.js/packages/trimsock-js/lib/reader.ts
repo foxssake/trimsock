@@ -1,6 +1,6 @@
 import { Command, type CommandDataChunk, type CommandSpec } from "./command.js";
 import {
-    MultiparamConvention,
+  MultiparamConvention,
   RequestResponseConvention,
   StreamConvention,
 } from "./conventions.js";
