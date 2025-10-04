@@ -1,6 +1,6 @@
 {
   "name": "@foxssake/trimsock-node",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "module": "./dist/index.js",
   "type": "module",
   "author": "Tamás Gálffy",
@@ -21,9 +21,13 @@
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
-  "files": ["./dist/"],
+  "files": [
+    "./dist/"
+  ],
   "engines": {
     "node": ">=18.16.0"
   },
-  "exports": ["./dist/index.js"]
+  "exports": [
+    "./dist/index.js"
+  ]
 }
