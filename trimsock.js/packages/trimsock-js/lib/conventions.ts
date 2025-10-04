@@ -14,7 +14,9 @@ export class MultiparamConvention implements Convention {
       : chunk.text.trim().split(" ")
     )
 
-    return { ...command, params };
+    return params.length >= 2
+      ? { ...command, params }
+      : command;
   }
 }
 
