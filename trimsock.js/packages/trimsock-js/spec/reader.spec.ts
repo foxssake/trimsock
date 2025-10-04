@@ -183,6 +183,13 @@ describe("TrimsockReader", () => {
         ],
       ],
     ]));
+
+  test("should throw on buffer overflow", () => {
+    const reader = new TrimsockReader();
+    reader.maxSize = 8;
+
+    expect(() => reader.ingest("command foobar\n")).toThrow();
+  });
 });
 
 function tests(kases: Kase[]) {

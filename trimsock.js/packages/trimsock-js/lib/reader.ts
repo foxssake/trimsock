@@ -6,7 +6,7 @@ import {
 } from "./conventions.js";
 
 class CommandReader {
-  public maxSize = 16384; // TODO
+  public maxSize = 16384;
 
   private buffer = Buffer.of();
   private at = 0;
@@ -14,6 +14,12 @@ class CommandReader {
   private isEscape = false;
 
   ingest(data: Buffer) {
+    const newSize = this.buffer.byteLength + data.byteLength;
+    if (newSize > this.maxSize)
+      throw new Error(
+        `Buffer overflow! New size ${newSize} exceeds ${this.maxSize}!`,
+      );
+
     this.buffer = Buffer.concat([this.buffer, data]);
   }
 
@@ -181,6 +187,8 @@ class CommandParser {
 }
 
 export class TrimsockReader {
+  public maxSize = 16384;
+
   private reader = new CommandReader();
   private parser = new CommandParser();
 
@@ -194,6 +202,8 @@ export class TrimsockReader {
   ];
 
   ingest(data: Buffer | string) {
+    this.reader.maxSize = this.maxSize;
+
     if (typeof data === "string") this.reader.ingest(Buffer.from(data, "utf8"));
     else this.reader.ingest(data);
   }
