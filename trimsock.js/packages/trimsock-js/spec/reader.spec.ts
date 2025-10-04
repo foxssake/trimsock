@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { CommandSpec } from "@lib/command.js";
+import { BufferOverflowError } from "@lib/errors.js";
 import { TrimsockReader } from "@lib/reader.js";
 
 type Kase = [string, string[] | string, CommandSpec[]];
@@ -188,7 +189,9 @@ describe("TrimsockReader", () => {
     const reader = new TrimsockReader();
     reader.maxSize = 8;
 
-    expect(() => reader.ingest("command foobar\n")).toThrow();
+    expect(() => reader.ingest("command foobar\n")).toThrow(
+      BufferOverflowError,
+    );
   });
 });
 

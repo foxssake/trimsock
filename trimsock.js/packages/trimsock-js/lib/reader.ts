@@ -4,6 +4,7 @@ import {
   RequestResponseConvention,
   StreamConvention,
 } from "./conventions.js";
+import { BufferOverflowError, UnexpectedCharacterError } from "./errors.js";
 
 class CommandReader {
   public maxSize = 16384;
@@ -16,7 +17,7 @@ class CommandReader {
   ingest(data: Buffer) {
     const newSize = this.buffer.byteLength + data.byteLength;
     if (newSize > this.maxSize)
-      throw new Error(
+      throw new BufferOverflowError(
         `Buffer overflow! New size ${newSize} exceeds ${this.maxSize}!`,
       );
 
@@ -170,8 +171,9 @@ class CommandParser {
         break;
       }
       if (this.atEnd)
-        // TODO: Specific error type
-        throw new Error("Unexpected EOF while reading quoted!");
+        throw new UnexpectedCharacterError(
+          "Unexpected EOF while reading quoted!",
+        );
     }
 
     return this.line.substring(from + 1, this.at - 1);
