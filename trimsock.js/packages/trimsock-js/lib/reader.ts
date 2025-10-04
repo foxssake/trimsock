@@ -218,7 +218,7 @@ export class TrimsockReader {
    *
    * When calling {@link TrimsockReader.ingest | ingest()}, the data is stored in
    * a buffer until {@link TrimsockReader.read | read()} is called, and a full
-    * command can be extracted.
+   * command can be extracted.
    *
    * If this size limit is exceeded, the buffer's contents are discarded and a
    * {@link BufferOverflowError} is thrown.
