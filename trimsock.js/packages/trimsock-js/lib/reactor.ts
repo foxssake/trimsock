@@ -605,9 +605,9 @@ export abstract class Reactor<T> {
    */
   public ingest(data: Buffer, source: T): void {
     // TODO: Invoke error handler when ingest fails?
-    this.reader.ingest(data)
+    this.reader.ingest(data);
 
-    for (const item of this.reader.commands()) 
+    for (const item of this.reader.commands())
       this.handle(new Command(item as CommandSpec), source);
   }
 

@@ -4,7 +4,11 @@ import { Command, type CommandSpec } from "@lib/command.js";
 describe("Commands", () => {
   describe("serialize()", () => {
     const kases: Array<[string, CommandSpec, string]> = [
-      ["should stringify", { name: "command", chunks: [{ text: "data", isQuoted: false}] }, "command data\n"],
+      [
+        "should stringify",
+        { name: "command", chunks: [{ text: "data", isQuoted: false }] },
+        "command data\n",
+      ],
       ["should optimize without data", { name: "command" }, "command\n"],
       ["should serialize empty", { name: "" }, "\n"],
       [
@@ -14,8 +18,8 @@ describe("Commands", () => {
       ],
       [
         "should quote space in data",
-        { name: "command", chunks: [{ text: "foo bar", isQuoted: false }]},
-        "command \"foo bar\"\n"
+        { name: "command", chunks: [{ text: "foo bar", isQuoted: false }] },
+        'command "foo bar"\n',
       ],
       [
         "should escape newline in name",
@@ -25,7 +29,7 @@ describe("Commands", () => {
       [
         "should quote space in name",
         { name: "comm and", text: "data" },
-        "\"comm and\" data\n",
+        '"comm and" data\n',
       ],
       [
         "should escape \\r in name",
@@ -41,7 +45,7 @@ describe("Commands", () => {
       [
         "should keep spaces between params",
         { name: "command", text: "", params: ["foo", "ba ar"] },
-        "command foo \"ba ar\"\n",
+        'command foo "ba ar"\n',
       ],
       [
         "should serialize stream chunk",

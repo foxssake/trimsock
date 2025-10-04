@@ -36,8 +36,8 @@ interface MultiparamCommandSpec extends BaseCommandSpec {
 }
 
 interface KeyValueParamCommandSpec extends BaseCommandSpec {
-  kvParams?: Array<[string, string]>
-  kvMap?: Map<string, string>
+  kvParams?: Array<[string, string]>;
+  kvMap?: Map<string, string>;
 }
 
 interface RequestResponseCommandSpec extends BaseCommandSpec {
@@ -262,7 +262,7 @@ export class Command implements CommandSpec {
     else if (spec.isErrorResponse) name = `${spec.name}!${spec.requestId}`;
     else name = spec.name;
 
-    name = this.toChunk(name)
+    name = Command.toChunk(name);
 
     // Early return for raw spec.
     if (spec.raw)
@@ -273,36 +273,35 @@ export class Command implements CommandSpec {
     // Figure out data
     let data = "";
     if (spec.params)
-      data = spec.params.map(it => this.toChunk(it)).join(" ");
-    else if(spec.chunks)
-      data = spec.chunks.map(it => this.toChunk(it.text)).join("") ?? "";
-    else
-      data = spec.text ?? ""
+      data = spec.params.map((it) => Command.toChunk(it)).join(" ");
+    else if (spec.chunks)
+      data = spec.chunks.map((it) => Command.toChunk(it.text)).join("") ?? "";
+    else data = spec.text ?? "";
 
     return data ? `${name} ${data}\n` : `${name}\n`;
   }
 
   static toChunk(text: string): string {
     return text.includes(" ")
-      ? (`"${this.escapeQuoted(text)}"`)
-      : this.escape(text)
+      ? `"${Command.escapeQuoted(text)}"`
+      : Command.escape(text);
   }
 
   static escape(text: string): string {
     return text
       .replaceAll("\n", "\\n")
       .replaceAll("\r", "\\r")
-      .replaceAll("\"", "\\\"");
+      .replaceAll('"', '\\"');
   }
 
   static escapeQuoted(text: string): string {
-    return text.replaceAll("\"", "\\\"")
+    return text.replaceAll('"', '\\"');
   }
 
   static unescape(text: string): string {
     return text
       .replaceAll("\\n", "\n")
       .replaceAll("\\r", "\r")
-      .replaceAll("\\\"", "\"");
+      .replaceAll('\\"', '"');
   }
 }

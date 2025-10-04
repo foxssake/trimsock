@@ -10,14 +10,11 @@ export class MultiparamConvention implements Convention {
     if (command.text === undefined || command.chunks === undefined)
       return command;
 
-    const params = command.chunks.flatMap(chunk => chunk.isQuoted
-      ? [chunk.text]
-      : chunk.text.trim().split(" ")
-    )
+    const params = command.chunks.flatMap((chunk) =>
+      chunk.isQuoted ? [chunk.text] : chunk.text.trim().split(" "),
+    );
 
-    return params.length >= 2
-      ? { ...command, params }
-      : command;
+    return params.length >= 2 ? { ...command, params } : command;
   }
 }
 
@@ -29,46 +26,43 @@ export class ParamsConvention implements Convention {
 
     const result = { ...command };
 
-    const kvParams: [string, string][] = []
-    const params: string[] = []
+    const kvParams: [string, string][] = [];
+    const params: string[] = [];
 
-    const chunks = command.chunks.flatMap(it => it.isQuoted
-      ? [it.text]
-      : it.text.split(" ")
-        .flatMap(it => {
-          const splitAt = it.indexOf("=")
-          return splitAt >= 0
-            ? [it.substring(0, splitAt), "=", it.substring(splitAt + 1)]
-            : [it]
-      })
-      .filter(it => it !== "")
-    )
+    const chunks = command.chunks.flatMap((it) =>
+      it.isQuoted
+        ? [it.text]
+        : it.text
+            .split(" ")
+            .flatMap((it) => {
+              const splitAt = it.indexOf("=");
+              return splitAt >= 0
+                ? [it.substring(0, splitAt), "=", it.substring(splitAt + 1)]
+                : [it];
+            })
+            .filter((it) => it !== ""),
+    );
 
     for (let i = 0; i < chunks.length; ++i) {
-      const chunk = chunks[i]
-      const prev = chunks[i - 1]
-      const next = chunks[i + 1]
+      const chunk = chunks[i];
+      const prev = chunks[i - 1];
+      const next = chunks[i + 1];
 
-      if (next === "=" || prev === "=")
-        continue;
-      else if (chunk === "=" && prev && next)
-        kvParams.push([prev, next])
-      else
-        params.push(chunk)
+      if (next === "=" || prev === "=") continue;
+      if (chunk === "=" && prev && next) kvParams.push([prev, next]);
+      else params.push(chunk);
     }
 
     if (kvParams.length) {
-      result.kvParams = kvParams
-      result.kvMap = new Map()
-      kvParams.forEach(it => result.kvMap?.set(it[0], it[1]))
+      result.kvParams = kvParams;
+      result.kvMap = new Map();
+      kvParams.forEach((it) => result.kvMap?.set(it[0], it[1]));
     }
 
-    if (params.length >= 2)
-      result.params = params
-    else
-      delete result.params
+    if (params.length >= 2) result.params = params;
+    else result.params = undefined;
 
-    return result
+    return result;
   }
 }
 

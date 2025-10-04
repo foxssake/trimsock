@@ -1,7 +1,5 @@
 export { type CommandSpec, Command } from "./lib/command.js";
-export {
-  TrimsockReader
-} from "./lib/reader.js";
+export { TrimsockReader } from "./lib/reader.js";
 export {
   type CommandHandler,
   type CommandErrorHandler,
