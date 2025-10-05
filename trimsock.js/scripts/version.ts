@@ -1,6 +1,7 @@
 #!/bin/env bun
 import { join } from "node:path";
-import { findPackages } from "./shared";
+import { findPackages, root } from "./shared";
+import { $ } from "bun";
 
 async function checkVersions(): Promise<void> {
   const packages = findPackages();
@@ -49,6 +50,8 @@ async function bumpVersions(component: string): Promise<void> {
     json.version = newVersion.join(".");
     Bun.write(file, JSON.stringify(json, undefined, 2));
   }
+
+  await $`bun format`.cwd(root).quiet()
 }
 
 async function main(args: string[]) {
