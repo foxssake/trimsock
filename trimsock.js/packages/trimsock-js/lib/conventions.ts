@@ -60,7 +60,10 @@ export class ParamsConvention implements Convention {
       for (const [key, value] of kvParams) result.kvMap.set(key, value);
     }
 
-    if (params.length >= 2) result.params = params;
+    // Retain params if there's more than two, OR we've also found kv pairs
+    // If there's a single param, we just keep it in `text`
+    if (params.length >= 2 || (params.length >= 1 && kvParams.length >= 1))
+      result.params = params;
     else result.params = undefined;
 
     return result;
