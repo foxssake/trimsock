@@ -312,12 +312,11 @@ export class Command implements CommandSpec {
       data = spec.chunks.map((it) => Command.toChunk(it)).join("") ?? "";
     // If no chunks, serialize structural conventions
     else if (spec.params || spec.kvParams || spec.kvMap) {
-      spec.params?.forEach((it) => {
-        data += `${Command.toChunk(it)} `;
-      });
-      (spec.kvParams ?? spec.kvMap?.entries())?.forEach(([key, value]) => {
+      for (const it of spec.params ?? []) data += `${Command.toChunk(it)} `;
+
+      for (const [key, value] of spec.kvParams ?? spec.kvMap?.entries() ?? [])
         data += `${Command.toChunk(key)}=${Command.toChunk(value)} `;
-      });
+
       data = data.trimEnd();
     }
     // If no conventions, take text
