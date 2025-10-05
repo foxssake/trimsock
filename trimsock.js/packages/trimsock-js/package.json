@@ -1,6 +1,6 @@
 {
   "name": "@foxssake/trimsock-js",
-  "version": "0.15.2",
+  "version": "0.15.3",
   "module": "dist/index.js",
   "type": "module",
   "author": "Tamás Gálffy",

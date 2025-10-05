@@ -104,6 +104,36 @@ describe("KeyValueParamConvention", () =>
         kvMap: mapOf("foo", "baz"),
       },
     ],
+    [
+      "should parse params and key-value pairs",
+      "cmd foo bar foo=bar\n",
+      {
+        name: "cmd",
+        text: "foo bar foo=bar",
+        chunks: [{ text: "foo bar foo=bar", isQuoted: false }],
+        kvParams: [["foo", "bar"]],
+        kvMap: new Map([["foo", "bar"]]),
+        params: ["foo", "bar"],
+      },
+    ],
+    [
+      "should parse single param and key-value pairs",
+      "cmd foo quix=baz bar=uhh\n",
+      {
+        name: "cmd",
+        text: "foo quix=baz bar=uhh",
+        chunks: [{ text: "foo quix=baz bar=uhh", isQuoted: false }],
+        kvParams: [
+          ["quix", "baz"],
+          ["bar", "uhh"],
+        ],
+        kvMap: new Map([
+          ["quix", "baz"],
+          ["bar", "uhh"],
+        ]),
+        params: ["foo"],
+      },
+    ],
   ]));
 
 function tests(cases: Kase[]) {
