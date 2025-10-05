@@ -1,16 +1,24 @@
 import { describe, expect, test } from "bun:test";
 import { Command, type CommandSpec } from "@lib/command.js";
 
+type Kase = [string, CommandSpec, string];
+
 describe("Commands", () => {
   describe("serialize()", () => {
-    const kases: Array<[string, CommandSpec, string]> = [
+    describe("simple commands", () => tests([
       [
         "should stringify",
         { name: "command", chunks: [{ text: "data", isQuoted: false }] },
         "command data\n",
       ],
-      ["should optimize without data", { name: "command" }, "command\n"],
-      ["should serialize empty", { name: "" }, "\n"],
+      [
+        "should serialize raw",
+        { name: "command", raw: Buffer.from([102, 0, 111]) },
+        "\rcommand 3\nf\x00o\n",
+      ],
+    ]))
+
+    describe("escaping", () => tests([
       [
         "should escape newline in data",
         { name: "command", chunks: [{ text: "da\nta", isQuoted: false }] },
@@ -18,7 +26,7 @@ describe("Commands", () => {
       ],
       [
         "should quote space in data",
-        { name: "command", chunks: [{ text: "foo bar", isQuoted: false }] },
+        { name: "command", text: "foo bar" },
         'command "foo bar"\n',
       ],
       [
@@ -41,47 +49,35 @@ describe("Commands", () => {
         { name: "command", chunks: [{ text: "foo", isQuoted: true }] },
         'command "foo"\n',
       ],
-      [
-        "should serialize raw",
-        { name: "command", raw: Buffer.from([102, 0, 111]) },
-        "\rcommand 3\nf\x00o\n",
-      ],
-      ["should optimize empty", { name: "command", text: "" }, "command\n"],
+    ]))
+
+    describe("optimize", () => tests([
+      ["should optimize without data", { name: "command" }, "command\n"],
+      ["should serialize empty", { name: "" }, "\n"],
+    ]))
+
+    describe("multiparam", () => tests([
       [
         "should keep spaces between params",
         { name: "command", text: "", params: ["foo", "ba ar"] },
         'command foo "ba ar"\n',
       ],
       [
-        "should serialize stream chunk",
-        {
-          name: "command",
-          streamId: "0123",
-          isStreamChunk: true,
-          text: "foo",
-        },
-        "command|0123 foo\n",
-      ],
-      [
-        "should serialize stream chunk with empty id",
-        {
-          name: "command",
-          streamId: "",
-          isStreamChunk: true,
-          text: "foo",
-        },
-        "command| foo\n",
-      ],
-      [
-        "should serialize stream end",
-        {
-          name: "command",
-          streamId: "0123",
-          isStreamEnd: true,
-          text: "",
-        },
-        "command|0123\n",
-      ],
+        "should fall back to chunks",
+        { name: "command", params: ["foo", "bar"], chunks: [{text: "bar foo", isQuoted: false}]},
+        "command bar foo\n"
+      ]
+    ]))
+
+    describe("key-value params", () => tests([
+      ["should serialize kvParams", { name: "command", kvParams: [["foo", "bar"], ["quix", "baz"], ["foo", "baz"]]}, "command foo=bar quix=baz foo=baz\n"],
+      ["should quote kvParams", { name: "command", kvParams: [["foo", "bar baz"]]}, "command foo=\"bar baz\"\n"],
+      ["should prefer kvParams over kvMap", { name: "command", kvParams: [["foo", "bar"]], kvMap: new Map([["foo", "baz"]])}, "command foo=bar\n"],
+      ["should fall back to kvMap", { name: "command", kvMap: new Map([["foo", "bar"], ["quix", "baz"]])}, "command foo=bar quix=baz\n"],
+      ["should retain params", { name: "command", kvParams: [["foo", "bar"]], params: ["foo", "bar"] }, "command foo bar foo=bar\n"]
+    ]))
+
+    describe("request-response", () => tests([
       [
         "should serialize request",
         {
@@ -112,13 +108,48 @@ describe("Commands", () => {
         },
         '!0123 "unknown command!"\n',
       ],
-    ];
+    ]))
 
-    for (const kase of kases) {
-      const [name, spec, expected] = kase;
-      test(name, () => {
-        expect(Command.serialize(spec)).toBe(expected);
-      });
-    }
+    describe("streams", () => tests([
+      [
+        "should serialize stream chunk",
+        {
+          name: "command",
+          streamId: "0123",
+          isStreamChunk: true,
+          text: "foo",
+        },
+        "command|0123 foo\n",
+      ],
+      [
+        "should serialize stream chunk with empty id",
+        {
+          name: "command",
+          streamId: "",
+          isStreamChunk: true,
+          text: "foo",
+        },
+        "command| foo\n",
+      ],
+      [
+        "should serialize stream end",
+        {
+          name: "command",
+          streamId: "0123",
+          isStreamEnd: true,
+          text: "",
+        },
+        "command|0123\n",
+      ],
+    ]))
   });
 });
+
+function tests(kases: Kase[]) {
+  for (const kase of kases) {
+    const [name, spec, expected] = kase;
+    test(name, () => {
+      expect(Command.serialize(spec)).toBe(expected);
+    });
+  }
+}

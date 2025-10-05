@@ -1,6 +1,6 @@
 {
   "name": "@foxssake/trimsock-bun",
-  "version": "0.15.1",
+  "version": "0.15.2",
   "module": "dist/index.js",
   "type": "module",
   "author": "Tamás Gálffy",
@@ -21,7 +21,9 @@
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
-  "files": ["./dist/"],
+  "files": [
+    "./dist/"
+  ],
   "exports": "./dist/index.js",
   "engines": {
     "bun": "1.1.34"

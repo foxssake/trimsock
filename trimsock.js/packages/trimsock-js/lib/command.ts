@@ -306,11 +306,26 @@ export class Command implements CommandSpec {
 
     // Figure out data
     let data = "";
-    if (spec.params)
-      data = spec.params.map((it) => Command.toChunk(it)).join(" ");
-    else if (spec.chunks)
+
+    // Prefer chunks
+    if (spec.chunks)
       data = spec.chunks.map((it) => Command.toChunk(it)).join("") ?? "";
-    else if (spec.text) data = Command.toChunk(spec.text);
+    // If no chunks, serialize structural conventions
+    else if (spec.params || spec.kvParams || spec.kvMap) {
+      spec.params?.forEach(it => {
+        data += this.toChunk(it) + " "
+      });
+      (spec.kvParams ?? spec.kvMap?.entries())?.forEach(([key, value]) => {
+        data += `${this.toChunk(key)}=${this.toChunk(value)} `
+      })
+      data = data.trimEnd()
+    }
+    // If no conventions, take text
+    else if (spec.text)
+      data = this.toChunk(spec.text)
+    // No data
+    else
+      data = ""
 
     return data ? `${name} ${data}\n` : `${name}\n`;
   }
@@ -327,7 +342,7 @@ export class Command implements CommandSpec {
 
     return what.isQuoted
       ? `"${Command.escapeQuoted(what.text)}"`
-      : Command.toChunk(what.text);
+      : Command.escape(what.text);
   }
 
   /**
