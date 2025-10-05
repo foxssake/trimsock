@@ -1,24 +1,7 @@
 #!/bin/env bun
 import { join } from "node:path";
-import { Glob } from "bun";
-
-const root = join(import.meta.dir, "../");
-const packagesRoot = join(root, "packages/");
-
-interface Package {
-  name: string;
-  path: string;
-}
-
-function findPackages(): Package[] {
-  const glob = new Glob("*");
-  const packages = [...glob.scanSync({ cwd: packagesRoot, onlyFiles: false })];
-
-  return [
-    { name: "root", path: root },
-    ...packages.map((pkg) => ({ name: pkg, path: join(packagesRoot, pkg) })),
-  ];
-}
+import { findPackages, root } from "./shared";
+import { $ } from "bun";
 
 async function checkVersions(): Promise<void> {
   const packages = findPackages();
@@ -67,6 +50,8 @@ async function bumpVersions(component: string): Promise<void> {
     json.version = newVersion.join(".");
     Bun.write(file, JSON.stringify(json, undefined, 2));
   }
+
+  await $`bun format`.cwd(root).quiet()
 }
 
 async function main(args: string[]) {
