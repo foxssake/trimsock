@@ -1,7 +1,7 @@
 extends VestTest
 
 func get_suite_name():
-	return "LineReader"
+	return "TrimsockLineReader"
 
 var line_reader: _TrimsockLineReader
 

@@ -19,8 +19,10 @@ enum Type {
 }
 
 # Core properties
+var name: String = ""
 var text: String = ""
 var chunks: Array[Chunk] = []
+var is_raw: bool = false
 var raw: PackedByteArray
 
 # Multiparam
