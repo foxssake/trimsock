@@ -17,3 +17,7 @@ config/icon="res://icon.svg"
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/trimsock.gd/plugin.cfg", "res://addons/vest/plugin.cfg")
+
+[vest]
+
+new_test_location=2
