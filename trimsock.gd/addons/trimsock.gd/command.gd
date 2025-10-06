@@ -37,6 +37,14 @@ var exchange_id: String
 var type: Type = Type.SIMPLE
 
 
+static func unescape(what: String) -> String:
+	return (what
+		.replace("\\n", "\n")
+		.replace("\\r", "\r")
+		.replace("\\\"", "\"")
+	)
+
+
 func is_request() -> bool:
 	return type == Type.REQUEST
 

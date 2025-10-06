@@ -29,6 +29,8 @@ func parse(p_line: String) -> TrimsockCommand:
 	for chunk in command.chunks:
 		command.text += chunk.text
 	
+	unescape(command)
+	
 	return command
 
 func read_name() -> String:
@@ -94,6 +96,12 @@ func read_quoted() -> String:
 	
 	# Return string between quotes
 	return line.substr(from + 1, (at - 1) - (from + 1))
+
+func unescape(command: TrimsockCommand) -> void:
+	command.name = TrimsockCommand.unescape(command.name)
+	for chunk in command.chunks:
+		chunk.text = TrimsockCommand.unescape(chunk.text)
+	command.text = TrimsockCommand.unescape(command.text)
 
 func chr() -> String:
 	return line[at]
