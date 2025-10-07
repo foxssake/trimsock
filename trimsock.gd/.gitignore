@@ -1,2 +1,5 @@
 # Godot 4+ specific ignores
 .godot/
+
+# Only for local use
+sh/ensure-uids.sh
