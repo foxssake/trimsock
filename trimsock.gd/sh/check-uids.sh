@@ -4,7 +4,7 @@
 source sh/shared.sh
 
 # Check Godot version
-if ! godot --version | grep ^4.4; then
+if ! godot --version | grep ^4.5; then
   print "Wrong Godot version!"
   godot --version
   exit 1;
