@@ -60,12 +60,10 @@ func read_identifier() -> String:
 func read_unquoted() -> String:
 	var from := at
 	
-	while true:
+	while not is_eol():
 		if chr() == "\\":
 			at += 1
 		elif chr() == "\n" or chr() == "\"":
-			break
-		elif is_eol():
 			break
 		at += 1
 	

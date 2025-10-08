@@ -44,6 +44,12 @@ static func unescape(what: String) -> String:
 		.replace("\\\"", "\"")
 	)
 
+static func pair_of(key: String, value: String) -> Pair:
+	var pair := Pair.new()
+	pair.key = key
+	pair.value = value
+	return pair
+
 
 func is_request() -> bool:
 	return type == Type.REQUEST
