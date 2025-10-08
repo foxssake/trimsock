@@ -9,7 +9,7 @@ func suite():
 			check_serialized("simple name", TrimsockCommand.simple("command"), "command\n")
 			check_serialized("quote name", TrimsockCommand.simple("command name"), "\"command name\"\n")
 			check_serialized("raw", TrimsockCommand.simple("command").as_raw(), "\rcommand 0\n\n")
-			check_serialized("raw quoted", TrimsockCommand.simple("command name").as_raw(), "\"command name\" 0\n\n")
+			check_serialized("raw quoted", TrimsockCommand.simple("command name").as_raw(), "\r\"command name\" 0\n\n")
 		)
 		
 		define("request-response", func():

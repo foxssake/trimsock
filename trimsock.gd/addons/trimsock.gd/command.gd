@@ -216,7 +216,7 @@ func serialize_to_buffer(out: StreamPeerBuffer) -> void:
 		out.put_8(13) # \r
 
 	# Add name
-	out.put_data(name.to_utf8_buffer()) # TODO: Escape / quote if needed
+	out.put_data(_escape_name(name).to_utf8_buffer())
 
 	# Add separator if request / stream
 	match type:
@@ -252,32 +252,32 @@ func serialize_to_buffer(out: StreamPeerBuffer) -> void:
 		for chunk in chunks:
 			if chunk.is_quoted:
 				out.put_u8(_ord("\""))
-				out.put_data(chunk.text.to_utf8_buffer()) # TODO: Escape
+				out.put_data(_quoted_chunk(chunk.text).to_utf8_buffer())
 				out.put_u8(_ord("\""))
 			else:
-				out.put_data(chunk.text.to_utf8_buffer()) # TODO: Escape
+				out.put_data(_unquoted_chunk(chunk.text).to_utf8_buffer())
 	elif not kv_pairs.is_empty() or not kv_map.is_empty() or not params.is_empty():
 		# Fall back to params if no chunks
 		var tokens := PackedStringArray()
 		
 		# Print params first
 		for param in params:
-			tokens.append(param) # TODO: Escape
+			tokens.append(_autoquoted_chunk(param))
 		
 		# Print kv-params, either from `kv_pairs`, or `kv_map`
 		if not kv_pairs.is_empty():
 			for pair in kv_pairs:
-				tokens.append(pair.key + "=" + pair.value) # TODO: Escape
+				tokens.append(_autoquoted_chunk(pair.key) + "=" + _autoquoted_chunk(pair.value))
 		else:
 			for key in kv_map:
 				var value = kv_map[key]
-				tokens.append(key + "=" + value) # TODO: Escape
+				tokens.append(_autoquoted_chunk(key) + "=" + _autoquoted_chunk(value))
 
 		# Push to buffer
 		out.put_data(" ".join(tokens).to_utf8_buffer())
 	else:
 		# Use `text` as last resort
-		out.put_data(text.to_utf8_buffer()) # TODO: Escape
+		out.put_data(_autoquoted_chunk(text).to_utf8_buffer())
 
 	# Add closing NL
 	out.put_u8(_ord("\n"))
@@ -285,8 +285,17 @@ func serialize_to_buffer(out: StreamPeerBuffer) -> void:
 func _ord(chr: String) -> int:
 	return chr.unicode_at(0)
 
-func _to_chunk(what: String) -> String:
+func _escape_name(what: String) -> String:
+	return _autoquoted_chunk(what)
+
+func _quoted_chunk(what: String) -> String:
+	return "\"%s\"" % [escape_quoted(what)]
+
+func _unquoted_chunk(what: String) -> String:
+	return escape_unquoted(what)
+
+func _autoquoted_chunk(what: String) -> String:
 	if what.contains(" "):
-		return "\"%s\"" % [escape_quoted(what)]
+		return _quoted_chunk(what)
 	else:
-		return escape_unquoted(what)
+		return _unquoted_chunk(what)
