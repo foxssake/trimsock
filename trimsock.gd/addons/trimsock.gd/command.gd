@@ -146,7 +146,7 @@ func with_text(p_text: String) -> TrimsockCommand:
 	return self
 
 func with_chunks(p_chunks: Array[Chunk]) -> TrimsockCommand:
-	chunks = p_chunks
+	chunks += p_chunks
 	return self
 
 func as_raw() -> TrimsockCommand:
@@ -156,10 +156,8 @@ func as_raw() -> TrimsockCommand:
 	return self
 
 func with_data(data: PackedByteArray) -> TrimsockCommand:
+	as_raw()
 	raw = data
-	is_raw = true
-	text = ""
-	chunks = []
 	return self
 
 func with_params(p_params: Array[String]) -> TrimsockCommand:
@@ -208,7 +206,6 @@ func serialize_to_array(out: PackedByteArray) -> void:
 	var buffer := StreamPeerBuffer.new()
 	serialize_to_buffer(buffer)
 	out.append_array(buffer.data_array)
-	print(out)
 
 func serialize_to_buffer(out: StreamPeerBuffer) -> void:
 	# Add raw marker
