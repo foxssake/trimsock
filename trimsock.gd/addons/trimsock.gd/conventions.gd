@@ -28,8 +28,8 @@ static func parse_type(command: TrimsockCommand) -> void:
 		
 		at = command.name.find("|")
 		if at >= 0:
-			if ((command.is_raw and command.raw.is_empty()) or command.text.is_empty()):
-				command.type = TrimsockCommand.Type.STREAM_FINSIH
+			if ((command.is_raw and command.raw.is_empty()) or (not command.is_raw and command.text.is_empty())):
+				command.type = TrimsockCommand.Type.STREAM_FINISH
 			else:
 				command.type = TrimsockCommand.Type.STREAM_CHUNK
 			break

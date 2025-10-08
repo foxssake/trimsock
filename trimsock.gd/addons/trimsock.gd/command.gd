@@ -15,7 +15,7 @@ enum Type {
 	SUCCESS_RESPONSE,
 	ERROR_RESPONSE,
 	STREAM_CHUNK,
-	STREAM_FINSIH
+	STREAM_FINISH
 }
 
 # Core properties
@@ -50,6 +50,16 @@ static func pair_of(key: String, value: String) -> Pair:
 	pair.value = value
 	return pair
 
+static func type_string(type: Type) -> String:
+	match type:
+		Type.SIMPLE: return "Simple"
+		Type.REQUEST: return "Request"
+		Type.SUCCESS_RESPONSE: return "Success Response"
+		Type.ERROR_RESPONSE: return "Error Response"
+		Type.STREAM_CHUNK: return "Stream Chunk"
+		Type.STREAM_FINISH: return "Stream Finish"
+	return "%d???" % [type]
+
 
 func is_request() -> bool:
 	return type == Type.REQUEST
@@ -64,4 +74,4 @@ func is_stream_chunk() -> bool:
 	return type == Type.STREAM_CHUNK
 
 func is_stream_end() -> bool:
-	return type == Type.STREAM_FINSIH
+	return type == Type.STREAM_FINISH
