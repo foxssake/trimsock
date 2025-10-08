@@ -14,7 +14,8 @@ func suite():
 		check_type("should parse request", "cmd?1234 foo\n", TrimsockCommand.Type.REQUEST, "1234")
 		check_type("should parse success", ".1234 foo\n", TrimsockCommand.Type.SUCCESS_RESPONSE, "1234")
 		check_type("should parse error", "!1234 foo\n", TrimsockCommand.Type.ERROR_RESPONSE, "1234")
-		check_type("should parse stream", "cmd|1234 foo\n", TrimsockCommand.Type.STREAM_CHUNK, "1234")
+		check_type("should parse stream chunk", "cmd|1234 foo\n", TrimsockCommand.Type.STREAM_CHUNK, "1234")
+		check_type("should parse stream end", "cmd|1234\n", TrimsockCommand.Type.STREAM_FINSIH, "1234")
 	)
 	
 	define("Params", func():
