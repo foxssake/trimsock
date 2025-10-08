@@ -35,6 +35,7 @@ static func parse_type(command: TrimsockCommand) -> void:
 			break
 		return
 
+	# Extract data
 	var name := command.name.substr(0, at)
 	var id := command.name.substr(at + 1)
 
@@ -53,18 +54,21 @@ static func parse_params(command: TrimsockCommand) -> void:
 		else:
 			# Unquoted chunks are separated by spaces, and then each separated
 			# word is checked for equal signs
-			for word in chunk.text.split(" "):
+			for word in chunk.text.split(" ", false):
 				var at := word.find("=")
 				if at >= 0:
 					chunks.append(word.substr(0, at))
 					chunks.append("=")
 					chunks.append(word.substr(at + 1))
+				else:
+					chunks.append(word)
+	chunks = chunks.filter(func(it): return it)
 	
 	# Extract params and kv-pairs
 	for i in range(chunks.size()):
 		var chunk := chunks[i]
-		var prev := chunk[i-1] if i > 0 else ""
-		var next := chunk[i+1] if i < chunks.size() - 1 else ""
+		var prev := chunks[i-1] if i > 0 else ""
+		var next := chunks[i+1] if i < chunks.size() - 1 else ""
 		
 		if next == "=" or prev == "=":
 			continue
