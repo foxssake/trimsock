@@ -2,14 +2,9 @@ extends TrimsockReactor
 class_name TrimsockTCPServerReactor
 
 var _server: TCPServer
-var _streams: Array[StreamPeerTCP] = []
 
 func _init(server: TCPServer):
 	_server = server
-	
-	# TODO: Track sources in Reactor
-	on_attach.connect(func(src): _streams.append(src))
-	on_detach.connect(func(src): _streams.erase(src))
 
 func _poll() -> void:
 	# Handle incoming connections
@@ -17,7 +12,9 @@ func _poll() -> void:
 		attach(_server.take_connection())
 
 	# Poll each connection
-	for stream in _streams:
+	for source in _sources:
+		var stream := source as StreamPeerTCP
+
 		# Update status
 		stream.poll()
 

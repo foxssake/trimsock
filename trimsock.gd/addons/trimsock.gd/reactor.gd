@@ -1,6 +1,7 @@
 extends RefCounted
 class_name TrimsockReactor
 
+var _sources: Array = []
 var _readers: Dictionary = {} # source to reader
 var _handlers: Dictionary = {} # command name to handler method
 var _unknown_handler: Callable = func(_cmd): pass
@@ -26,16 +27,18 @@ func send(target: Variant, command: TrimsockCommand) -> void:
 	_write(target, command)
 
 func attach(source: Variant) -> void:
-	if _readers.has(source):
+	if _sources.has(source):
 		return
 
+	_sources.append(source)
 	_readers[source] = TrimsockReader.new()
 	on_attach.emit(source)
 
 func detach(source: Variant) -> void:
-	if not _readers.has(source):
+	if not _sources.has(source):
 		return
 
+	_sources.erase(source)
 	_readers.erase(source)
 	on_detach.emit(source)
 
@@ -57,8 +60,8 @@ func _write(target: Variant, command: TrimsockCommand) -> void:
 	pass
 
 func _ingest(source: Variant, data: PackedByteArray) -> Error:
-	# TODO: Assert known source?
-	var reader := _get_reader(source)
+	assert(_readers.has(source), "Ingesting data from unknown source! Did you call `attach()`?")
+	var reader := _readers[source] as TrimsockReader
 	return reader.ingest_bytes(data)
 
 func _handle(command: TrimsockCommand) -> void:
@@ -68,7 +71,3 @@ func _handle(command: TrimsockCommand) -> void:
 	else:
 		_unknown_handler.call(command)
 
-func _get_reader(source: Variant) -> TrimsockReader:
-	if not _readers.has(source):
-		_readers[source] = TrimsockReader.new()
-	return _readers[source]
