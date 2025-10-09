@@ -52,7 +52,7 @@ func read_chunk() -> TrimsockCommand.Chunk:
 func read_identifier() -> String:
 	var from := at
 	
-	while chr() != " " and not is_eol():
+	while not is_eol() and chr() != " ":
 		at += 1
 
 	return line.substr(from, at - from)
