@@ -204,10 +204,10 @@ func serialize() -> PackedByteArray:
 
 func serialize_to_array(out: PackedByteArray) -> void:
 	var buffer := StreamPeerBuffer.new()
-	serialize_to_buffer(buffer)
+	serialize_to_stream(buffer)
 	out.append_array(buffer.data_array)
 
-func serialize_to_buffer(out: StreamPeerBuffer) -> void:
+func serialize_to_stream(out: StreamPeer) -> void:
 	# Add raw marker
 	if is_raw:
 		out.put_8(13) # \r
@@ -296,3 +296,8 @@ func _autoquoted_chunk(what: String) -> String:
 		return _quoted_chunk(what)
 	else:
 		return _unquoted_chunk(what)
+
+func _to_string() -> String:
+	if is_raw:
+		return "(raw)" + serialize().get_string_from_utf8()
+	return serialize().get_string_from_utf8()

@@ -1,0 +1,75 @@
+[gd_scene load_steps=2 format=3 uid="uid://bndrb0i5hpfl3"]
+
+[sub_resource type="GDScript" id="GDScript_01onl"]
+script/source = "extends Control
+
+const PORT = 9980
+
+var _server: TCPServer
+var _reactor: TrimsockTCPServerReactor
+
+@export var logs_label: Label
+
+func _ready() -> void:
+	_log(\"[srv] Init\")
+	_server = TCPServer.new()
+	_reactor = TrimsockTCPServerReactor.new(_server)
+	
+	_server.listen(PORT)
+	_log(\"[srv] Listening on port %d\" % PORT)
+	_setup_reactor()
+	_log(\"[srv] Reactor initialized\")
+
+func _process(_dt):
+	_reactor.poll()
+
+func _setup_reactor() -> void:
+	_reactor.on(\"info\", func(_cmd):
+		_log(\"[cmd] Info: trimsock.gd\")
+	).on_unknown(func(cmd):
+		_log(\"[srv] Unknown command: %s\" % cmd)
+	)
+	
+	_reactor.on_attach.connect(func(src: StreamPeerTCP):
+		_log(\"[srv] New connection!\")
+		src.set_no_delay(true)
+		_reactor.send(src, TrimsockCommand.simple(\"ohai\"))
+	)
+	
+	_reactor.on_detach.connect(func(src):
+		_log(\"[srv] Connection closed!\")
+	)
+
+func _log(what: String) -> void:
+	logs_label.text += what + \"\\n\"
+"
+
+[node name="Control" type="Control" node_paths=PackedStringArray("logs_label")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("GDScript_01onl")
+logs_label = NodePath("Panel/ScrollContainer/Logs")
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Panel"]
+custom_minimum_size = Vector2(640, 0)
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+grow_vertical = 2
+
+[node name="Logs" type="Label" parent="Panel/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
