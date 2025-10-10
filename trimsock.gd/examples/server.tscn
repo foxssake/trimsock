@@ -24,10 +24,12 @@ func _process(_dt):
 	_reactor.poll()
 
 func _setup_reactor() -> void:
-	_reactor.on(\"info\", func(_cmd):
+	_reactor.on(\"info\", func(_cmd, xchg: TrimsockExchange):
 		_log(\"[cmd] Info: trimsock.gd\")
-	).on_unknown(func(cmd):
+		xchg.reply_or_send(TrimsockCommand.simple(\"info\", \"trimsock.gd\"))
+	).on_unknown(func(cmd, xchg: TrimsockExchange):
 		_log(\"[srv] Unknown command: %s\" % cmd)
+		xchg.fail_or_send(TrimsockCommand.simple(\"error\", \"Unknown command: \" + cmd.name))
 	)
 	
 	_reactor.on_attach.connect(func(src: StreamPeerTCP):

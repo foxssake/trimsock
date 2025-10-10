@@ -4,6 +4,24 @@ class_name TrimsockCommand
 class Chunk:
 	var text: String
 	var is_quoted: bool
+	
+	static func quoted(p_text: String) -> Chunk:
+		var chunk := Chunk.new()
+		chunk.is_quoted = true
+		chunk.text = p_text
+		return chunk
+
+	static func unquoted(p_text: String) -> Chunk:
+		var chunk := Chunk.new()
+		chunk.is_quoted = false
+		chunk.text = p_text
+		return chunk
+	
+	static func of_text(p_text: String) -> Chunk:
+		var chunk := Chunk.new()
+		chunk.is_quoted = p_text.contains(" ")
+		chunk.text = p_text
+		return chunk
 
 class Pair:
 	var key: String
@@ -42,9 +60,12 @@ static func from_buffer(name: String, data: PackedByteArray) -> TrimsockCommand:
 	command.raw = data
 	return command
 
-static func simple(name: String) -> TrimsockCommand:
+static func simple(name: String, text: String = "") -> TrimsockCommand:
 	var command := TrimsockCommand.new()
 	command.name = name
+	if text:
+		command.chunks.append(Chunk.of_text(text))
+	
 	return command
 
 static func request(name: String, exchange_id: String = "") -> TrimsockCommand:
@@ -137,6 +158,14 @@ func is_empty() -> bool:
 	else:
 		return text.is_empty() and chunks.is_empty() and params.is_empty() and kv_pairs.is_empty() and kv_map.is_empty()
 
+func clear():
+	raw.clear()
+	chunks.clear()
+	params.clear()
+	kv_pairs.clear()
+	kv_map.clear()
+	text = ""
+
 func with_name(p_name: String) -> TrimsockCommand:
 	name = p_name
 	return self
@@ -210,10 +239,11 @@ func serialize_to_array(out: PackedByteArray) -> void:
 func serialize_to_stream(out: StreamPeer) -> void:
 	# Add raw marker
 	if is_raw:
-		out.put_8(13) # \r
+		out.put_8(_ord("\r"))
 
 	# Add name
-	out.put_data(_escape_name(name).to_utf8_buffer())
+	if name:
+		out.put_data(_escape_name(name).to_utf8_buffer())
 
 	# Add separator if request / stream
 	match type:
@@ -248,9 +278,7 @@ func serialize_to_stream(out: StreamPeer) -> void:
 		# Prefer chunks, if available
 		for chunk in chunks:
 			if chunk.is_quoted:
-				out.put_u8(_ord("\""))
 				out.put_data(_quoted_chunk(chunk.text).to_utf8_buffer())
-				out.put_u8(_ord("\""))
 			else:
 				out.put_data(_unquoted_chunk(chunk.text).to_utf8_buffer())
 	elif not kv_pairs.is_empty() or not kv_map.is_empty() or not params.is_empty():

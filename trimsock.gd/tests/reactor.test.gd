@@ -17,7 +17,7 @@ func suite():
 
 	test("should call handler", func():
 		var commands := []
-		var handler := func(cmd):
+		var handler := func(cmd, xchg):
 			commands.append(cmd)
 		reactor.on("command", handler)
 		
@@ -29,7 +29,7 @@ func suite():
 	
 	test("should handle unknown", func():
 		var commands := []
-		var handler := func(cmd):
+		var handler := func(cmd, xchg):
 			commands.append(cmd)
 			reactor.send(some_source, TrimsockCommand.simple("error"))
 		reactor.on_unknown(handler)

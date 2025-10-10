@@ -17,6 +17,10 @@ func suite():
 			check_serialized("success", TrimsockCommand.success_response("command", "1234"), "command.1234\n")
 			check_serialized("error", TrimsockCommand.error_response("command", "1234"), "command!1234\n")
 			check_serialized("stream", TrimsockCommand.stream_chunk("command", "1234"), "command|1234\n")
+			
+			check_serialized("success without name", TrimsockCommand.success_response("", "1234"), ".1234\n")
+			check_serialized("error without name", TrimsockCommand.error_response("", "1234"), "!1234\n")
+			check_serialized("stream without name", TrimsockCommand.stream_chunk("", "1234"), "|1234\n")
 		)
 		
 		define("multiparam", func():
