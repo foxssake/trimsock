@@ -4,6 +4,7 @@ class_name TrimsockReactor
 var _sources: Array = []
 var _readers: Dictionary = {} # source to reader
 var _handlers: Dictionary = {} # command name to handler method
+var _exchanges: Array[TrimsockExchange] = []
 var _unknown_handler: Callable = func(_cmd): pass
 
 
@@ -14,14 +15,14 @@ signal on_detach(source: Variant)
 func poll() -> void:
 	_poll()
 
-	for r in _readers.values():
-		var reader := r as TrimsockReader
+	for source in _sources:
+		var reader := _readers[source] as TrimsockReader
 		while true:
 			var command := reader.read()
 			if not command:
 				break
 
-			_handle(command)
+			_handle(command, source)
 
 func send(target: Variant, command: TrimsockCommand) -> void:
 	_write(target, command)
@@ -64,10 +65,29 @@ func _ingest(source: Variant, data: PackedByteArray) -> Error:
 	var reader := _readers[source] as TrimsockReader
 	return reader.ingest_bytes(data)
 
-func _handle(command: TrimsockCommand) -> void:
+func _handle(command: TrimsockCommand, source: Variant) -> void:
+	var xchg := _get_exchange_for(command, source)
 	if _handlers.has(command.name):
 		var handler := _handlers[command.name] as Callable
-		handler.call(command)
+		handler.call(command, xchg)
 	else:
-		_unknown_handler.call(command)
+		_unknown_handler.call(command, xchg)
+	
+	# Free exchange if needed
+	if not xchg.is_open():
+		_exchanges.erase(xchg)
 
+func _get_exchange_for(command: TrimsockCommand, source: Variant) -> TrimsockExchange:
+	if command.exchange_id:
+		# Try and find known exchange
+		for xchg in _exchanges:
+			if xchg.id() == command.exchange_id and xchg._source == source:
+				return xchg
+
+		# Create new otherwise
+		var xchg := TrimsockExchange.new(command, source, self)
+		_exchanges.append(xchg)
+		return xchg
+	else:
+		# Command has no ID, create a new exchange
+		return TrimsockExchange.new(command, source, self)
