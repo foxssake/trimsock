@@ -75,27 +75,34 @@ func _ingest(source: Variant, data: PackedByteArray) -> Error:
 
 func _handle(command: TrimsockCommand, source: Variant) -> void:
 	var xchg := _get_exchange_for(command, source)
-	if _handlers.has(command.name):
-		var handler := _handlers[command.name] as Callable
-		handler.call(command, xchg)
+	if xchg != null:
+		# Known exchange, handle it there
+		xchg.push(command)
 	else:
-		_unknown_handler.call(command, xchg)
-	
-	# Free exchange if needed
-	if not xchg.is_open():
-		_exchanges.erase(xchg)
+		# New exchange, create instance and pass to handler
+		xchg = _make_exchange_for(command, source)
+		var handler := (_handlers.get(command.name) if _handlers.has(command.name) else _unknown_handler) as Callable
+
+		var result := await handler.call(command, xchg)
+		if xchg.is_open() and result is TrimsockCommand:
+			xchg.send_and_close(result)
+
+		# Free exchange if needed
+		if not xchg.is_open():
+			_exchanges.erase(xchg)
 
 func _get_exchange_for(command: TrimsockCommand, source: Variant) -> TrimsockExchange:
-	if command.exchange_id:
+	if not command.is_simple():
 		# Try and find known exchange
 		for xchg in _exchanges:
 			if xchg.id() == command.exchange_id and xchg._source == source:
 				return xchg
 
-		# Create new otherwise
-		var xchg := TrimsockExchange.new(command, source, self)
+	# Command has no ID, or ID not found
+	return null
+
+func _make_exchange_for(command: TrimsockCommand, source: Variant) -> TrimsockExchange:
+	var xchg := TrimsockExchange.new(command, source, self)
+	if not command.is_simple():
 		_exchanges.append(xchg)
-		return xchg
-	else:
-		# Command has no ID, create a new exchange
-		return TrimsockExchange.new(command, source, self)
+	return xchg

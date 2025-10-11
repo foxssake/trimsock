@@ -29,9 +29,25 @@ func _setup_reactor() -> void:
 		xchg.reply_or_send(TrimsockCommand.simple(\"info\", \"trimsock.gd\"))
 	).on(\"whoami\", func(_cmd, xchg: TrimsockExchange):
 		xchg.reply_or_send(TrimsockCommand.simple(\"youare\", xchg.session()))
+	).on(\"guess\", func(_cmd, xchg: TrimsockExchange):
+		# Pick an initial number
+		var number := randi_range(0, 100)
+		xchg.stream(TrimsockCommand.simple(\"guess\", \"?\"))
+		
+		while xchg.is_open():
+			var response := await xchg.read()
+			var guess := int(response.text)
+			
+			if guess > number:
+				xchg.stream(TrimsockCommand.simple(\"guess\", \"v\"))
+			elif guess < number:
+				xchg.stream(TrimsockCommand.simple(\"guess\", \"^\"))
+			else:
+				xchg.stream(TrimsockCommand.simple(\"guess\", \"🎉\"))
+				xchg.stream_finish(TrimsockCommand.simple(\"\"))
 	).on_unknown(func(cmd, xchg: TrimsockExchange):
 		_log(\"[srv] Unknown command: %s\" % cmd)
-		xchg.fail_or_send(TrimsockCommand.simple(\"error\", \"Unknown command: \" + cmd.name))
+		return TrimsockCommand.error_from(cmd, \"error\", [\"Unknown command\", cmd.name])
 	)
 	
 	_reactor.on_attach.connect(func(src: StreamPeerTCP):
