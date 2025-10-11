@@ -6,6 +6,10 @@ var _reactor: TrimsockReactor
 var _command: TrimsockCommand
 
 var _is_open: bool = true
+var _queue: Array[TrimsockCommand] = []
+
+
+signal _on_command(command: TrimsockCommand)
 
 
 func _init(command: TrimsockCommand, source: Variant, reactor: TrimsockReactor):
@@ -116,4 +120,21 @@ func fail_or_send(command: TrimsockCommand) -> bool:
 		send_and_close(command)
 
 	return true
+#endregion
+
+#region Read
+func push(command: TrimsockCommand) -> void:
+	match command.type:
+		TrimsockCommand.Type.SUCCESS_RESPONSE,\
+		TrimsockCommand.Type.ERROR_RESPONSE,\
+		TrimsockCommand.Type.STREAM_FINISH:
+			close()
+
+	_queue.append(command)
+	_on_command.emit(command)
+
+func read() -> TrimsockCommand:
+	while _queue.is_empty():
+		await _on_command
+	return _queue.pop_front()
 #endregion

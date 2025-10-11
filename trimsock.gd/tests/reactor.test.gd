@@ -40,3 +40,32 @@ func suite():
 		expect_not_empty(commands, "No commands handled!")
 		expect_not_empty(reactor.outbox, "No commands sent!")
 	)
+	
+	test("should route to exchange", func():
+		var commands := []
+		var handler := func(cmd: TrimsockCommand, xchg: TrimsockExchange):
+			commands.append(cmd)
+			while xchg.is_open():
+				commands.append(await xchg.read())
+		reactor.on("command", handler)
+		
+		reactor.ingest_text(some_source, "command|1 foo\ncommand|1 bar\n")
+		reactor.poll()
+		
+		expect_equal(commands.size(), 2)
+	)
+	
+	test("should reply with handler return value", func():
+		var commands := []
+		var handler := func(cmd, xchg):
+			commands.append(cmd)
+			return TrimsockCommand.simple("response")
+		reactor.on("command", handler)
+		
+		reactor.ingest_text(some_source, "command foo\n")
+		reactor.poll()
+		
+		expect_equal(commands.size(), 1)
+		expect_equal(reactor.outbox[0].target, some_source)
+		expect_equal(reactor.outbox[0].command, TrimsockCommand.simple("response"))
+	)

@@ -103,6 +103,24 @@ static func stream_finish(name: String, exchange_id: String = "") -> TrimsockCom
 	command.exchange_id = exchange_id
 	return command
 
+static func error_from(command: TrimsockCommand, name: String, data) -> TrimsockCommand:
+	var result := TrimsockCommand.new()
+	
+	if not result.is_simple():
+		result.name = ""
+		result.type = Type.ERROR_RESPONSE
+		result.exchange_id = command.exchange_id
+	else:
+		result.name = name
+	
+	if typeof(data) == TYPE_ARRAY:
+		for param in data:
+			result.params.append(str(param))
+	else:
+		result.chunks.append(Chunk.of_text(str(data)))
+	
+	return result
+
 static func unescape(what: String) -> String:
 	return (what
 		.replace("\\n", "\n")
@@ -137,6 +155,9 @@ static func type_string(type: Type) -> String:
 	return "%d???" % [type]
 
 
+func is_simple() -> bool:
+	return type == Type.SIMPLE
+
 func is_request() -> bool:
 	return type == Type.REQUEST
 
@@ -145,6 +166,9 @@ func is_success() -> bool:
 
 func is_error() -> bool:
 	return type == Type.ERROR_RESPONSE
+
+func is_stream() -> bool:
+	return is_stream_chunk() or is_stream_end()
 
 func is_stream_chunk() -> bool:
 	return type == Type.STREAM_CHUNK
@@ -306,6 +330,24 @@ func serialize_to_stream(out: StreamPeer) -> void:
 
 	# Add closing NL
 	out.put_u8(_ord("\n"))
+
+func equals(what) -> bool:
+	if not what is TrimsockCommand:
+		return false
+
+	var command := what as TrimsockCommand
+
+	if not command.name == name or \
+		not command.type == type:
+			return false
+	
+	if not is_simple() and exchange_id != command.exchange_id:
+		return false
+	
+	if not is_raw:
+		return text == command.text
+	else:
+		return raw == command.raw
 
 func _ord(chr: String) -> int:
 	return chr.unicode_at(0)
