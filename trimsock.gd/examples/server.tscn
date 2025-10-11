@@ -27,14 +27,19 @@ func _setup_reactor() -> void:
 	_reactor.on(\"info\", func(_cmd, xchg: TrimsockExchange):
 		_log(\"[cmd] Info: trimsock.gd\")
 		xchg.reply_or_send(TrimsockCommand.simple(\"info\", \"trimsock.gd\"))
+	).on(\"whoami\", func(_cmd, xchg: TrimsockExchange):
+		xchg.reply_or_send(TrimsockCommand.simple(\"youare\", xchg.session()))
 	).on_unknown(func(cmd, xchg: TrimsockExchange):
 		_log(\"[srv] Unknown command: %s\" % cmd)
 		xchg.fail_or_send(TrimsockCommand.simple(\"error\", \"Unknown command: \" + cmd.name))
 	)
 	
 	_reactor.on_attach.connect(func(src: StreamPeerTCP):
-		_log(\"[srv] New connection!\")
+		var id := _session_id()
+		_log(\"[srv] New connection: \" + id)
 		src.set_no_delay(true)
+		
+		_reactor.set_session(src, id)
 		_reactor.send(src, TrimsockCommand.simple(\"ohai\"))
 	)
 	
@@ -44,6 +49,13 @@ func _setup_reactor() -> void:
 
 func _log(what: String) -> void:
 	logs_label.text += what + \"\\n\"
+
+func _session_id(length: int = 4) -> String:
+	const charset := \"abcdefghijklmnopqrstuvwxyz\" + \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\" + \"0123456789\"
+	var id := \"\"
+	for i in length:
+		id += charset[randi() % charset.length()]
+	return id
 "
 
 [node name="Control" type="Control" node_paths=PackedStringArray("logs_label")]

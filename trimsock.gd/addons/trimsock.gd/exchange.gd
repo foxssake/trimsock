@@ -20,6 +20,12 @@ func source() -> Variant:
 func id() -> String:
 	return _command.exchange_id
 
+func session() -> Variant:
+	return _reactor.get_session(_source)
+
+func set_session(data: Variant) -> void:
+	_reactor.set_session(_source, data)
+
 func is_open() -> bool:
 	return _is_open
 
