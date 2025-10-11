@@ -2,6 +2,7 @@ extends RefCounted
 class_name TrimsockReactor
 
 var _sources: Array = []
+var _sessions: Dictionary = {} # source to session data
 var _readers: Dictionary = {} # source to reader
 var _handlers: Dictionary = {} # command name to handler method
 var _exchanges: Array[TrimsockExchange] = []
@@ -40,8 +41,15 @@ func detach(source: Variant) -> void:
 		return
 
 	_sources.erase(source)
+	_sessions.erase(source)
 	_readers.erase(source)
 	on_detach.emit(source)
+
+func set_session(source: Variant, data: Variant) -> void:
+	_sessions[source] = data
+
+func get_session(source: Variant) -> Variant:
+	return _sessions.get(source)
 
 func on(command_name: String, handler: Callable) -> TrimsockReactor:
 	_handlers[command_name] = handler

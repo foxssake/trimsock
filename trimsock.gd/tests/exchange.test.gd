@@ -12,6 +12,8 @@ var exchange: TrimsockExchange
 func suite() -> void:
 	on_case_begin.connect(func(__):
 		reactor = TestingReactor.new()
+		reactor.attach(source)
+
 		command = TrimsockCommand.simple("command", "foo")
 		to_send = TrimsockCommand.simple("test")
 		exchange = TrimsockExchange.new(command, source, reactor)
@@ -160,5 +162,21 @@ func suite() -> void:
 				expect_false(exchange.stream_finish(to_send), "Send succeeded!")
 				expect_empty(reactor.outbox, "Command was sent!")
 			)
+		)
+	)
+	
+	define("Session", func():
+		test("should get reactor's session", func():
+			var session := "session"
+			reactor.set_session(source, session)
+			expect_equal(exchange.session(), session, "Exchange's session didn't match!")
+			expect_equal(reactor.get_session(source), session, "Reactor's session didn't match!")
+		)
+
+		test("should set reactor's session", func():
+			var session := "session"
+			exchange.set_session(session)
+			expect_equal(exchange.session(), session, "Exchange's session was not set!")
+			expect_equal(reactor.get_session(source), session, "Reactor's session was not set!")
 		)
 	)
