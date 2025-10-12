@@ -27,7 +27,7 @@ if grep "not ok" "$VEST_LOG"; then
   cat "$VEST_LOG"
   exit 1
 else
-  print "Success! Test resuts:"
+  print "Success! Test results:"
   cat "$VEST_LOG"
 fi
 
