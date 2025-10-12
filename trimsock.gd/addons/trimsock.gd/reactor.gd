@@ -25,8 +25,16 @@ func poll() -> void:
 
 			_handle(command, source)
 
-func send(target: Variant, command: TrimsockCommand) -> void:
+func send(target: Variant, command: TrimsockCommand) -> TrimsockExchange:
+	# Send command
 	_write(target, command)
+
+	# Ensure exchange
+	var xchg := _get_exchange_for(command, target)
+	if xchg == null:
+		xchg = _make_exchange_for(command, target)
+
+	return xchg
 
 func attach(source: Variant) -> void:
 	if _sources.has(source):
