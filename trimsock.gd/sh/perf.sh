@@ -28,5 +28,6 @@ if grep "not ok" "$VEST_LOG"; then
   exit 1
 else
   print "Success!"
+  cat "$VEST_LOG"
 fi
 
