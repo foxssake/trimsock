@@ -11,6 +11,12 @@ func _init(connection: StreamPeerTCP):
 func submit(command: TrimsockCommand) -> TrimsockExchange:
 	return send(_connection, command)
 
+func submit_request(command: TrimsockCommand) -> TrimsockExchange:
+	return request(_connection, command)
+
+func submit_stream(command: TrimsockCommand) -> TrimsockExchange:
+	return stream(_connection, command)
+
 func _poll() -> void:
 	_connection.poll()
 

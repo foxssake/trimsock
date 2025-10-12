@@ -69,3 +69,22 @@ func suite():
 		expect_equal(reactor.outbox[0].target, some_source)
 		expect_equal(reactor.outbox[0].command, TrimsockCommand.simple("response"))
 	)
+
+	test("should fill ID on request", func():
+		var command := TrimsockCommand.simple("request")
+		command.exchange_id = ""
+		
+		reactor.request(some_source, command)
+		
+		expect(reactor.outbox[0].command.is_request(), "Command was not a request!")
+		expect_not_empty(reactor.outbox[0].command.exchange_id, "Request ID was empty!")
+	)
+	test("should fill ID on stream", func(): 
+		var command := TrimsockCommand.simple("stream", "foo")
+		command.exchange_id = ""
+		
+		reactor.stream(some_source, command)
+		
+		expect(reactor.outbox[0].command.is_stream(), "Command was not a stream!")
+		expect_not_empty(reactor.outbox[0].command.exchange_id, "Stream ID was empty!")
+	)
