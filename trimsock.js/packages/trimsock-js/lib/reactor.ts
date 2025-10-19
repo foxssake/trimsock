@@ -9,7 +9,17 @@ import { TrimsockReader } from "./reader.js";
 export type CommandHandler<T> = (
   command: Command,
   exchange: Exchange<T>,
-) => void;
+) => void | Promise<void>;
+
+/**
+ * Callback type for command filters
+ * @category Reactor
+ */
+export type CommandFilter<T> = (
+  next: () => void | Promise<void>,
+  command: Command,
+  exchange: Exchange<T>,
+) => void | Promise<void>;
 
 /**
  * Callback type for handling errors resulting from failed command processing
@@ -501,6 +511,12 @@ export class ExchangeMap<T, E extends Exchange<T> = Exchange<T>> {
  * instances passed to the handlers, or entirely new exchanges can be initiated
  * using {@link send | send()}.
  *
+ * It also supports filters through {@link use | use()}, which enables the
+ * registration of callbacks. Each of these filter callbacks receives the
+ * command, exchange, and the next filter in the chain. The chain can also be
+ * broken by simply not calling the next filter. Filters run for every incoming
+ * command that doesn't already belong to an exchange.
+ *
  * A single reactor can handle commands from an arbitrary amount of
  * connections - this is why `source` or `target` parameters appear in many
  * methods, specifying which connection to use.
@@ -517,6 +533,7 @@ export abstract class Reactor<T> {
   private handlers: Map<string, CommandHandler<T>> = new Map();
   private defaultHandler: CommandHandler<T> = () => {};
   private errorHandler: CommandErrorHandler<T> = () => {};
+  private filters: CommandFilter<T>[] = [];
 
   private exchanges = new ExchangeMap<T, ReactorExchange<T>>();
 
@@ -564,6 +581,20 @@ export abstract class Reactor<T> {
   }
 
   /**
+   * Register a new command filter
+   *
+   * Whenever the reactor ingests a command that doesn't belong to an existing
+   * exchange, a new exchange is created and the filters are ran in order of
+   * registration.
+   *
+   * @param filter filter callback
+   */
+  public use(filter: CommandFilter<T>): this {
+    this.filters.push(filter);
+    return this;
+  }
+
+  /**
   * Configure reactor using a callback
   *
   * Calls the callback with the reactor instance as parameter. Useful for
@@ -603,9 +634,10 @@ export abstract class Reactor<T> {
    * @param data incoming data
    * @param source source connection
    */
-  public ingest(data: Buffer, source: T): void {
+  public ingest(data: Buffer | string, source: T): void {
     // TODO: Invoke error handler when ingest fails?
-    this.reader.ingest(data);
+    if (typeof data === "string") this.reader.ingest(Buffer.from(data, "utf8"));
+    else this.reader.ingest(data);
 
     for (const item of this.reader.commands())
       this.handle(new Command(item as CommandSpec), source);
@@ -634,16 +666,24 @@ export abstract class Reactor<T> {
    */
   protected abstract write(data: string, target: T): void;
 
-  private handle(command: Command, source: T) {
+  private async handle(command: Command, source: T): Promise<void> {
     const exchangeId = command.id;
 
     if (this.isNewExchange(command, source)) {
-      const handler = this.handlers.get(command.name);
+      const handler = this.handlers.get(command.name) ?? this.defaultHandler;
       const exchange = this.ensureExchange(command, source);
 
+      let filterIdx = 0;
+      const next = async () => {
+        if (filterIdx >= this.filters.length) await handler(command, exchange);
+        else {
+          filterIdx += 1;
+          await this.filters[filterIdx - 1](next, command, exchange);
+        }
+      };
+
       try {
-        if (handler) handler(command, exchange);
-        else this.defaultHandler(command, exchange);
+        await next();
       } catch (error) {
         this.errorHandler(command, exchange, error);
       }
