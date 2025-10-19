@@ -11,7 +11,10 @@ export type CommandHandler<T> = (
   exchange: Exchange<T>,
 ) => void | Promise<void>;
 
-// TODO: Docs
+/**
+ * Callback type for command filters
+ * @category Reactor
+ */
 export type CommandFilter<T> = (
   next: () => void | Promise<void>,
   command: Command,
@@ -508,6 +511,12 @@ export class ExchangeMap<T, E extends Exchange<T> = Exchange<T>> {
  * instances passed to the handlers, or entirely new exchanges can be initiated
  * using {@link send | send()}.
  *
+ * It also supports filters through {@link use | use()}, which enables the
+ * registration of callbacks. Each of these filter callbacks receives the
+ * command, exchange, and the next filter in the chain. The chain can also be
+ * broken by simply not calling the next filter. Filters run for every incoming
+ * command that doesn't already belong to an exchange.
+ *
  * A single reactor can handle commands from an arbitrary amount of
  * connections - this is why `source` or `target` parameters appear in many
  * methods, specifying which connection to use.
@@ -571,6 +580,15 @@ export abstract class Reactor<T> {
     return this;
   }
 
+  /**
+   * Register a new command filter
+   *
+   * Whenever the reactor ingests a command that doesn't belong to an existing
+   * exchange, a new exchange is created and the filters are ran in order of
+   * registration.
+   *
+   * @param filter filter callback
+   */
   public use(filter: CommandFilter<T>): this {
     this.filters.push(filter);
     return this;

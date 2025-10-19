@@ -110,14 +110,16 @@ describe("Reactor", () => {
     });
 
     test("should catch errors", async () => {
-      const filter = () => { throw new Error("oh no!") }
+      const filter = () => {
+        throw new Error("oh no!");
+      };
       const errorHandler = mock();
 
       reactor.use(filter).onError(errorHandler);
       reactor.ingest("command test\n", "session");
-      await Bun.sleep(0.)
+      await Bun.sleep(0);
 
       expect(errorHandler.mock.calls).not.toBeEmpty();
-    })
+    });
   });
 });
