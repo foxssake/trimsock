@@ -8,6 +8,19 @@ describe("Reactor", () => {
     reactor = new TestingReactor();
   });
 
+  describe("knownCommands", () => {
+    test("should return list", () => {
+      reactor.on("foo", () => {});
+      reactor.on("bar", () => {});
+
+      expect(reactor.knownCommands).toEqual(["foo", "bar"]);
+    });
+
+    test("should return empty", () => {
+      expect(reactor.knownCommands).toBeEmpty();
+    });
+  });
+
   describe("use()", () => {
     test("should call filters", () => {
       const firstFilter = mock((next) => {

@@ -625,6 +625,15 @@ export abstract class Reactor<T> {
     return this;
   }
 
+  /**
+   * Returns a list of all the commands handled by this reactor
+   *
+   * This list is extended whenever {@link on | on()} is called.
+   */
+  public get knownCommands(): string[] {
+    return [...this.handlers.keys()];
+  }
+
   // TODO: Protected
   /**
    * Pass a piece of incoming data to the reactor
