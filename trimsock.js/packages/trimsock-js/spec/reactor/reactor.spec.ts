@@ -36,6 +36,28 @@ describe("Reactor", () => {
       );
     });
 
+    test("should call filters on unknown", () => {
+      const firstFilter = mock((next) => {
+        next();
+      });
+      const secondFilter = mock((next) => {
+        next();
+      });
+
+      reactor.use(firstFilter).use(secondFilter);
+
+      reactor.ingest("command test\n", "session");
+
+      // Assert everything was called
+      expect(firstFilter.mock.calls).not.toBeEmpty();
+      expect(secondFilter.mock.calls).not.toBeEmpty();
+
+      // Assert call order
+      expect(firstFilter.mock.invocationCallOrder[0]).toBeLessThan(
+        secondFilter.mock.invocationCallOrder[0],
+      );
+    });
+
     test("should break filter chain", () => {
       const firstFilter = mock((next) => {
         next();
@@ -86,5 +108,16 @@ describe("Reactor", () => {
         handler.mock.invocationCallOrder[0],
       );
     });
+
+    test("should catch errors", async () => {
+      const filter = () => { throw new Error("oh no!") }
+      const errorHandler = mock();
+
+      reactor.use(filter).onError(errorHandler);
+      reactor.ingest("command test\n", "session");
+      await Bun.sleep(0.)
+
+      expect(errorHandler.mock.calls).not.toBeEmpty();
+    })
   });
 });
