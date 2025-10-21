@@ -41,6 +41,17 @@ func suite():
 		expect_not_empty(reactor.outbox, "No commands sent!")
 	)
 	
+	test("should handle unknown by default", func():
+		# Flimsy test: it should ensure that the default handler is not broken
+		# The test only breaks when ran in debug, but might catch an issue or
+		# two simply by being here
+		
+		reactor.ingest_text(some_source, "unknown foo\n")
+		reactor.poll()
+		
+		ok()
+	)
+	
 	test("should route to exchange", func():
 		var commands := []
 		var handler := func(cmd: TrimsockCommand, xchg: TrimsockExchange):
