@@ -6,7 +6,7 @@ var _sessions: Dictionary = {} # source to session data
 var _readers: Dictionary = {} # source to reader
 var _handlers: Dictionary = {} # command name to handler method
 var _exchanges: Array[TrimsockExchange] = []
-var _unknown_handler: Callable = func(_cmd): pass
+var _unknown_handler: Callable = func(_cmd, _xchg): pass
 var _id_generator: TrimsockIDGenerator = RandomTrimsockIDGenerator.new(12)
 
 
