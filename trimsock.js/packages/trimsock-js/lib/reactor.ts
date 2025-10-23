@@ -530,6 +530,7 @@ export class ExchangeMap<T, E extends Exchange<T> = Exchange<T>> {
  * @category Reactor
  */
 export abstract class Reactor<T> {
+  private readers: Map<T, TrimsockReader> = new Map();
   private handlers: Map<string, CommandHandler<T>> = new Map();
   private defaultHandler: CommandHandler<T> = () => {};
   private errorHandler: CommandErrorHandler<T> = () => {};
@@ -538,7 +539,7 @@ export abstract class Reactor<T> {
   private exchanges = new ExchangeMap<T, ReactorExchange<T>>();
 
   constructor(
-    private reader: TrimsockReader = new TrimsockReader(),
+    private makeReader: () => TrimsockReader = () => new TrimsockReader(),
     private generateExchangeId: ExchangeIdGenerator = makeDefaultIdGenerator(),
   ) {}
 
@@ -634,6 +635,28 @@ export abstract class Reactor<T> {
     return [...this.handlers.keys()];
   }
 
+  /**
+* Attach a source to the reactor
+*
+* Note that this is an optimization step, to prepare in advance for ingesting
+* data from the given source. When ingesting data from an unknown source, it
+* will be attached during ingest.
+*
+* Attaching the same source multiple times will have no additional effects.
+*/
+  public attach(source: T): void {
+    this.ensureReaderFor(source);
+  }
+
+  /**
+* Detach a source from the reactor
+*
+* This will free any resource associated to ingesting data from the source.
+*/
+  public detach(source: T): void {
+    this.readers.delete(source);
+  }
+
   // TODO: Protected
   /**
    * Pass a piece of incoming data to the reactor
@@ -645,10 +668,12 @@ export abstract class Reactor<T> {
    */
   public ingest(data: Buffer | string, source: T): void {
     // TODO: Invoke error handler when ingest fails?
-    if (typeof data === "string") this.reader.ingest(Buffer.from(data, "utf8"));
-    else this.reader.ingest(data);
+    const reader = this.ensureReaderFor(source);
 
-    for (const item of this.reader.commands()) {
+    if (typeof data === "string") reader.ingest(Buffer.from(data, "utf8"));
+    else reader.ingest(data);
+
+    for (const item of reader.commands()) {
       this.handle(new Command(item), source);
     }
   }
@@ -769,5 +794,15 @@ export abstract class Reactor<T> {
       this.generateExchangeId,
       command,
     );
+  }
+
+  private ensureReaderFor(source: T): TrimsockReader {
+    let reader = this.readers.get(source)
+    if (reader === undefined) {
+      reader = this.makeReader();
+      this.readers.set(source, reader);
+    }
+
+    return reader
   }
 }
