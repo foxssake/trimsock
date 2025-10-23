@@ -636,23 +636,23 @@ export abstract class Reactor<T> {
   }
 
   /**
-* Attach a source to the reactor
-*
-* Note that this is an optimization step, to prepare in advance for ingesting
-* data from the given source. When ingesting data from an unknown source, it
-* will be attached during ingest.
-*
-* Attaching the same source multiple times will have no additional effects.
-*/
+   * Attach a source to the reactor
+   *
+   * Note that this is an optimization step, to prepare in advance for ingesting
+   * data from the given source. When ingesting data from an unknown source, it
+   * will be attached during ingest.
+   *
+   * Attaching the same source multiple times will have no additional effects.
+   */
   public attach(source: T): void {
     this.ensureReaderFor(source);
   }
 
   /**
-* Detach a source from the reactor
-*
-* This will free any resource associated to ingesting data from the source.
-*/
+   * Detach a source from the reactor
+   *
+   * This will free any resource associated to ingesting data from the source.
+   */
   public detach(source: T): void {
     this.readers.delete(source);
   }
@@ -797,12 +797,12 @@ export abstract class Reactor<T> {
   }
 
   private ensureReaderFor(source: T): TrimsockReader {
-    let reader = this.readers.get(source)
+    let reader = this.readers.get(source);
     if (reader === undefined) {
       reader = this.makeReader();
       this.readers.set(source, reader);
     }
 
-    return reader
+    return reader;
   }
 }

@@ -11,19 +11,19 @@ describe("Reactor", () => {
   describe("ingest()", () => {
     test.only("should parse separately per connection", () => {
       reactor.on("echo", (cmd, xchg) => {
-        xchg.replyOrSend(cmd)
-      })
+        xchg.replyOrSend(cmd);
+      });
 
       // Send the command in two parts, from different sources
       // The reactor should parse them separately, instead of parsing all of
       // them in one stream
-      reactor.ingest("echo ", "0")
-      reactor.ingest(" foo\n", "1")
+      reactor.ingest("echo ", "0");
+      reactor.ingest(" foo\n", "1");
 
       // Outbox should be empty
-      expect(reactor.outbox).toBeEmpty()
-    })
-  })
+      expect(reactor.outbox).toBeEmpty();
+    });
+  });
 
   describe("knownCommands", () => {
     test("should return list", () => {
