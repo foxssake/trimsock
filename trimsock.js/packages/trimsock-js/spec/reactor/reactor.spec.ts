@@ -9,7 +9,7 @@ describe("Reactor", () => {
   });
 
   describe("ingest()", () => {
-    test.only("should parse separately per connection", () => {
+    test("should parse separately per connection", () => {
       reactor.on("echo", (cmd, xchg) => {
         xchg.replyOrSend(cmd);
       });
