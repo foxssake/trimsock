@@ -1,0 +1,24 @@
+{
+  "name": "trimsock-bun-tls-example",
+  "private": true,
+  "version": "0.0.0",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "format": "biome format",
+    "lint": "biome lint",
+    "check": "biome check"
+  },
+  "dependencies": {
+    "@foxssake/trimsock-js": "file:../../packages/trimsock-js",
+    "@foxssake/trimsock-bun": "file:../../packages/trimsock-bun"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
+
