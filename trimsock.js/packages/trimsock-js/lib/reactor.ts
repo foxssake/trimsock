@@ -648,8 +648,9 @@ export abstract class Reactor<T> {
     if (typeof data === "string") this.reader.ingest(Buffer.from(data, "utf8"));
     else this.reader.ingest(data);
 
-    for (const item of this.reader.commands())
-      this.handle(new Command(item as CommandSpec), source);
+    for (const item of this.reader.commands()) {
+      this.handle(new Command(item), source);
+    }
   }
 
   /**
