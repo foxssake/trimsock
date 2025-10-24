@@ -41,12 +41,13 @@ describe("MultiparamConvention", () =>
       { name: "command", text: "", chunks: [] },
     ],
     [
-      "should skip single-param data",
+      "should parse single-param data",
       "command foo\n",
       {
         name: "command",
         text: "foo",
         chunks: [{ text: "foo", isQuoted: false }],
+        params: ["foo"],
       },
     ],
   ]));

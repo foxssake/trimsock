@@ -4,20 +4,6 @@ export interface Convention {
   process(command: CommandSpec): CommandSpec;
 }
 
-export class MultiparamConvention implements Convention {
-  public process(command: CommandSpec): CommandSpec {
-    // No text
-    if (command.text === undefined || command.chunks === undefined)
-      return command;
-
-    const params = command.chunks.flatMap((chunk) =>
-      chunk.isQuoted ? [chunk.text] : chunk.text.trim().split(" "),
-    );
-
-    return params.length >= 2 ? { ...command, params } : command;
-  }
-}
-
 export class ParamsConvention implements Convention {
   public process(command: CommandSpec): CommandSpec {
     // No text
@@ -60,10 +46,8 @@ export class ParamsConvention implements Convention {
       for (const [key, value] of kvParams) result.kvMap.set(key, value);
     }
 
-    // Retain params if there's more than two, OR we've also found kv pairs
-    // If there's a single param, we just keep it in `text`
-    if (params.length >= 2 || (params.length >= 1 && kvParams.length >= 1))
-      result.params = params;
+    // Retain params if there's at least one
+    if (params.length > 0) result.params = params;
     else result.params = undefined;
 
     return result;
