@@ -304,6 +304,11 @@ export class ReactorExchange<T> implements Exchange<T> {
       requestId: this.generateExchangeId(),
     };
 
+    req.isSuccessResponse = undefined;
+    req.isErrorResponse = undefined;
+    req.isStreamChunk = undefined;
+    req.isStreamEnd = undefined;
+
     return this.send(req);
   }
 
@@ -315,15 +320,19 @@ export class ReactorExchange<T> implements Exchange<T> {
     this.requireRepliable();
     this.requireOpen();
 
-    this.write(
-      {
-        ...what,
-        name: "",
-        requestId: this.command?.requireId(),
-        isSuccessResponse: true,
-      },
-      this.source,
-    );
+    const reply = {
+      ...what,
+      name: "",
+      requestId: this.command?.requireId(),
+      isSuccessResponse: true,
+    };
+
+    reply.isRequest = undefined;
+    reply.isErrorResponse = undefined;
+    reply.isStreamChunk = undefined;
+    reply.isStreamEnd = undefined;
+
+    this.write(reply, this.source);
     this.close();
   }
 
@@ -336,15 +345,19 @@ export class ReactorExchange<T> implements Exchange<T> {
     this.requireRepliable();
     this.requireOpen();
 
-    this.write(
-      {
-        ...what,
-        name: "",
-        requestId: this.command?.requireId(),
-        isErrorResponse: true,
-      },
-      this.source,
-    );
+    const reply = {
+      ...what,
+      name: "",
+      requestId: this.command?.requireId(),
+      isErrorResponse: true,
+    };
+
+    reply.isRequest = undefined;
+    reply.isSuccessResponse = undefined;
+    reply.isStreamChunk = undefined;
+    reply.isStreamEnd = undefined;
+
+    this.write(reply, this.source);
   }
 
   failOrSend(what: CommandSpec): void {
@@ -356,15 +369,19 @@ export class ReactorExchange<T> implements Exchange<T> {
     this.requireRepliable();
     this.requireOpen();
 
-    this.write(
-      {
-        ...what,
-        name: "",
-        streamId: this.command?.requireId(),
-        isStreamChunk: true,
-      },
-      this.source,
-    );
+    const stream = {
+      ...what,
+      name: "",
+      streamId: this.command?.requireId(),
+      isStreamChunk: true,
+    };
+
+    stream.isRequest = undefined;
+    stream.isSuccessResponse = undefined;
+    stream.isErrorResponse = undefined;
+    stream.isStreamEnd = undefined;
+
+    this.write(stream, this.source);
   }
 
   finishStream(): void {
