@@ -9,17 +9,9 @@ const sockets: Set<Socket<SocketContext>> = new Set();
 const generateSessionId = makeDefaultIdGenerator(4);
 
 const reactor = new BunSocketReactor<SocketContext>()
-  .use((cmd, xchg, next) => {
-    console.log("Filter A start", cmd.name);
-    next();
-    console.log("Filter A end", cmd.name);
+  .on("echo", (cmd, exchange) => {
+    exchange.send(cmd);
   })
-  .use((cmd, xchg, next) => {
-    console.log("Filter B start", cmd.name);
-    next();
-    console.log("Filter B end", cmd.name);
-  })
-  .on("echo", (cmd, exchange) => exchange.send(cmd))
   .on("info", (_, exchange) =>
     exchange.reply({
       text: "trimsock reactor",

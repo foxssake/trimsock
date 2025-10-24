@@ -13,6 +13,7 @@ describe("StreamConvention", () =>
         name: "lobbies",
         text: "foo",
         chunks: [{ text: "foo", isQuoted: false }],
+        params: ["foo"],
         isStreamChunk: true,
         streamId: "0123",
       },
