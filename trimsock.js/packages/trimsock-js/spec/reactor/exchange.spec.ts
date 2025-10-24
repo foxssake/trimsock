@@ -4,7 +4,7 @@ import { TestingExchange } from "./testing.exchange.js";
 
 describe("Exchange", () => {
   describe("ReadableExchange", () => {
-    describe("onCommand", () => {
+    describe("onCommand()", () => {
       test("should return command", async () => {
         const exchange = new TestingExchange(
           "1",
@@ -31,7 +31,7 @@ describe("Exchange", () => {
         expect(async () => await exchange.onCommand()).toThrow();
       });
     });
-    describe("onReply", () => {
+    describe("onReply()", () => {
       test("should return response", async () => {
         const exchange = new TestingExchange(
           "1",
@@ -94,7 +94,7 @@ describe("Exchange", () => {
       });
     });
 
-    describe("onStream", () => {
+    describe("onStream()", () => {
       test("should return chunk", async () => {
         const exchange = new TestingExchange(
           "1",
@@ -225,7 +225,7 @@ describe("Exchange", () => {
       });
     });
 
-    describe("chunks", () => {
+    describe("chunks()", () => {
       test("should return chunks", async () => {
         const exchange = new TestingExchange(
           "1",
@@ -360,7 +360,7 @@ describe("Exchange", () => {
   });
 
   describe("WritableExchange", () => {
-    describe("send", () => {
+    describe("send()", () => {
       test("should send data", () => {
         const exchange = new TestingExchange();
         exchange.send({ name: "command", text: "data" });
@@ -370,7 +370,7 @@ describe("Exchange", () => {
       });
     });
 
-    describe("request", () => {
+    describe("request()", () => {
       test("should send request with generated id", () => {
         const exchange = new TestingExchange();
         exchange.request({
@@ -384,9 +384,31 @@ describe("Exchange", () => {
         expect(sent.isRequest).toBeTrue();
         expect(sent.requestId).not.toBeNull();
       });
+
+      test("should reset command flags", () => {
+        const exchange = new TestingExchange();
+        exchange.request({
+          name: "command",
+          text: "data",
+          isSuccessResponse: true,
+          isErrorResponse: true,
+          isStreamChunk: true,
+          isStreamEnd: true,
+        });
+
+        const sent = exchange.outbox[0][1];
+        expect(sent.name).toEqual("command");
+        expect(sent.text).toEqual("data");
+        expect(sent.isRequest).toBeTrue();
+        expect(sent.isSuccessResponse).toBeFalsy();
+        expect(sent.isErrorResponse).toBeFalsy();
+        expect(sent.isStreamChunk).toBeFalsy();
+        expect(sent.isStreamEnd).toBeFalsy();
+        expect(sent.requestId).not.toBeNull();
+      });
     });
 
-    describe("reply", () => {
+    describe("reply()", () => {
       test("should reply to request", () => {
         const exchange = new TestingExchange(
           "1",
@@ -411,6 +433,35 @@ describe("Exchange", () => {
           ],
         ]);
       });
+
+      test("should reset flags", () => {
+        const exchange = new TestingExchange(
+          "1",
+          new Command({
+            name: "request",
+            text: "",
+            requestId: "1234",
+            isRequest: true,
+          }),
+        );
+        exchange.reply({
+          text: "foo",
+          isErrorResponse: true,
+          isStreamChunk: true,
+          isStreamEnd: true,
+        });
+
+        const sent = exchange.outbox[0][1];
+        expect(sent.name).toEqual("");
+        expect(sent.text).toEqual("foo");
+        expect(sent.isRequest).toBeFalsy();
+        expect(sent.isSuccessResponse).toBeTrue();
+        expect(sent.isErrorResponse).toBeFalsy();
+        expect(sent.isStreamChunk).toBeFalsy();
+        expect(sent.isStreamEnd).toBeFalsy();
+        expect(sent.requestId).toBe("1234");
+      });
+
       test("should reply to stream", () => {
         const exchange = new TestingExchange(
           "1",
@@ -459,7 +510,7 @@ describe("Exchange", () => {
       });
     });
 
-    describe("fail", () => {
+    describe("fail()", () => {
       test("should reply failure to request", () => {
         const exchange = new TestingExchange(
           "1",
@@ -484,6 +535,36 @@ describe("Exchange", () => {
           ],
         ]);
       });
+
+      test("should reset flags", () => {
+        const exchange = new TestingExchange(
+          "1",
+          new Command({
+            name: "request",
+            text: "",
+            requestId: "1234",
+            isRequest: true,
+          }),
+        );
+        exchange.fail({
+          text: "error",
+          isRequest: true,
+          isSuccessResponse: true,
+          isStreamChunk: true,
+          isStreamEnd: true,
+        });
+
+        const sent = exchange.outbox[0][1];
+        expect(sent.name).toEqual("");
+        expect(sent.text).toEqual("error");
+        expect(sent.isRequest).toBeFalsy();
+        expect(sent.isSuccessResponse).toBeFalsy();
+        expect(sent.isErrorResponse).toBeTrue();
+        expect(sent.isStreamChunk).toBeFalsy();
+        expect(sent.isStreamEnd).toBeFalsy();
+        expect(sent.requestId).toBe("1234");
+      });
+
       test("should reply failure to stream", () => {
         const exchange = new TestingExchange(
           "1",
@@ -532,7 +613,7 @@ describe("Exchange", () => {
       });
     });
 
-    describe("stream", () => {
+    describe("stream()", () => {
       test("should stream with stream id", () => {
         const exchange = new TestingExchange(
           "1",
@@ -556,6 +637,36 @@ describe("Exchange", () => {
           ],
         ]);
       });
+
+      test("should reset flags", () => {
+        const exchange = new TestingExchange(
+          "1",
+          new Command({
+            name: "stream",
+            text: "",
+            streamId: "1234",
+            isStreamChunk: true,
+          }),
+        );
+        exchange.stream({
+          text: "foo",
+          isRequest: true,
+          isSuccessResponse: true,
+          isErrorResponse: true,
+          isStreamEnd: true,
+        });
+
+        const sent = exchange.outbox[0][1];
+        expect(sent.name).toEqual("");
+        expect(sent.text).toEqual("foo");
+        expect(sent.isRequest).toBeFalsy();
+        expect(sent.isSuccessResponse).toBeFalsy();
+        expect(sent.isErrorResponse).toBeFalsy();
+        expect(sent.isStreamChunk).toBeTrue();
+        expect(sent.isStreamEnd).toBeFalsy();
+        expect(sent.streamId).toBe("1234");
+      });
+
       test("should stream to request", () => {
         const exchange = new TestingExchange(
           "1",
@@ -602,7 +713,7 @@ describe("Exchange", () => {
       });
     });
 
-    describe("finish stream", () => {
+    describe("finishStream()", () => {
       test("should finish stream", () => {
         const exchange = new TestingExchange(
           "1",
@@ -626,6 +737,7 @@ describe("Exchange", () => {
           ],
         ]);
       });
+
       test("should finish to request", () => {
         const exchange = new TestingExchange(
           "1",
@@ -649,6 +761,7 @@ describe("Exchange", () => {
           ],
         ]);
       });
+
       test("should throw without id", () => {
         const exchange = new TestingExchange(
           "1",
