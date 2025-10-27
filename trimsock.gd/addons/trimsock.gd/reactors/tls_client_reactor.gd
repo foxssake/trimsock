@@ -1,4 +1,4 @@
-extends TrimsockReactor
+extends TrimsockClientReactor
 class_name TrimsockTLSClientReactor
 
 var _connection: StreamPeerTLS
@@ -7,15 +7,6 @@ var _connection: StreamPeerTLS
 func _init(connection: StreamPeerTLS):
 	_connection = connection
 	attach(_connection)
-
-func submit(command: TrimsockCommand) -> TrimsockExchange:
-	return send(_connection, command)
-
-func submit_request(command: TrimsockCommand) -> TrimsockExchange:
-	return request(_connection, command)
-
-func submit_stream(command: TrimsockCommand) -> TrimsockExchange:
-	return stream(_connection, command)
 
 func _poll() -> void:
 	_connection.poll()
