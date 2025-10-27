@@ -1,17 +1,17 @@
 extends TrimsockClientReactor
-class_name TrimsockTCPClientReactor
+class_name TrimsockTLSClientReactor
 
-var _connection: StreamPeerTCP
+var _connection: StreamPeerTLS
 
 
-func _init(connection: StreamPeerTCP):
+func _init(connection: StreamPeerTLS):
 	_connection = connection
 	attach(_connection)
 
 func _poll() -> void:
 	_connection.poll()
 
-	if _connection.get_status() != StreamPeerTCP.STATUS_CONNECTED:
+	if _connection.get_status() != StreamPeerTLS.STATUS_CONNECTED:
 		# Can't read
 		return
 
@@ -22,6 +22,6 @@ func _poll() -> void:
 		_ingest(_connection, res[1])
 
 func _write(target: Variant, command: TrimsockCommand) -> void:
-	assert(target is StreamPeerTCP, "Invalid target!")
-	var peer := target as StreamPeerTCP
+	assert(target is StreamPeerTLS, "Invalid target!")
+	var peer := target as StreamPeerTLS
 	command.serialize_to_stream(peer)
