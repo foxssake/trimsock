@@ -250,7 +250,7 @@ export class TrimsockReader {
   }
 
   /**
-   * Try and extract a command from the ingested ata
+   * Try and extract a command from the ingested data
    *
    * @returns the extracted command, or undefined
    */

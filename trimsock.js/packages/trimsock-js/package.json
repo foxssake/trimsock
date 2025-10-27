@@ -13,7 +13,9 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
-    "@types/node": "^24.8.1"
+    "@mitata/counters": "^0.0.8",
+    "@types/node": "^24.8.1",
+    "mitata": "^1.0.34"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
