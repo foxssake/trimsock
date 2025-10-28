@@ -31,5 +31,5 @@
     "outDir": "./dist/"
   },
 
-  "include": ["lib/**/*.ts", "spec/**/*.ts", "./index.ts"]
+  "include": ["lib/**/*.ts", "spec/**/*.ts", "perf/**/*.ts", "./index.ts"]
 }
