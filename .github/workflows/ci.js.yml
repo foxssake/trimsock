@@ -40,4 +40,12 @@ jobs:
         run: cd trimsock.js && bun install
       - name: Test
         run: cd trimsock.js && bun test
-
+  perf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Install
+        run: cd trimsock.js && bun install
+      - name: Test
+        run: cd trimsock.js && bun perf
