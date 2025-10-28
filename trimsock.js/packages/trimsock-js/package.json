@@ -1,6 +1,6 @@
 {
   "name": "@foxssake/trimsock-js",
-  "version": "0.18.1",
+  "version": "0.18.2",
   "module": "dist/index.js",
   "type": "module",
   "author": "Tamás Gálffy",
@@ -9,11 +9,14 @@
     "format": "biome format",
     "lint": "biome lint",
     "check": "biome check",
-    "build": "tsc -p tsconfig.build.json"
+    "build": "tsc -p tsconfig.build.json",
+    "perf": "bun perf/perf.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
-    "@types/node": "^24.8.1"
+    "@mitata/counters": "^0.0.8",
+    "@types/node": "^24.8.1",
+    "mitata": "^1.0.34"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"

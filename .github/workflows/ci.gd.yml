@@ -29,6 +29,8 @@ jobs:
       - name: Run tests
         run: cd trimsock.gd && sh/test.sh
   perf:
+    needs:
+      - test
     strategy:
       fail-fast: false
       matrix:

@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["spec/*"],
+  "exclude": ["spec/*", "perf/*"],
 
   "compilerOptions": {
     "noEmit": false

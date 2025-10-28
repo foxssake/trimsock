@@ -4,7 +4,7 @@ class_name TrimsockCommand
 class Chunk:
 	var text: String
 	var is_quoted: bool
-	
+
 	static func quoted(p_text: String) -> Chunk:
 		var chunk := Chunk.new()
 		chunk.is_quoted = true
@@ -16,7 +16,7 @@ class Chunk:
 		chunk.is_quoted = false
 		chunk.text = p_text
 		return chunk
-	
+
 	static func of_text(p_text: String) -> Chunk:
 		var chunk := Chunk.new()
 		chunk.is_quoted = p_text.contains(" ")
@@ -65,7 +65,7 @@ static func simple(name: String, text: String = "") -> TrimsockCommand:
 	command.name = name
 	if text:
 		command.chunks.append(Chunk.of_text(text))
-	
+
 	return command
 
 static func request(name: String, exchange_id: String = "") -> TrimsockCommand:
@@ -105,20 +105,20 @@ static func stream_finish(name: String, exchange_id: String = "") -> TrimsockCom
 
 static func error_from(command: TrimsockCommand, name: String, data) -> TrimsockCommand:
 	var result := TrimsockCommand.new()
-	
+
 	if not result.is_simple():
 		result.name = ""
 		result.type = Type.ERROR_RESPONSE
 		result.exchange_id = command.exchange_id
 	else:
 		result.name = name
-	
+
 	if typeof(data) == TYPE_ARRAY:
 		for param in data:
 			result.params.append(str(param))
 	else:
 		result.chunks.append(Chunk.of_text(str(data)))
-	
+
 	return result
 
 static func unescape(what: String) -> String:
@@ -285,7 +285,7 @@ func serialize_to_stream(out: StreamPeer) -> void:
 	if is_empty() and not is_raw:
 		out.put_u8(_ord("\n"))
 		return
-	
+
 	# Space after name
 	out.put_u8(_ord(" "))
 
@@ -308,11 +308,11 @@ func serialize_to_stream(out: StreamPeer) -> void:
 	elif not kv_pairs.is_empty() or not kv_map.is_empty() or not params.is_empty():
 		# Fall back to params if no chunks
 		var tokens := PackedStringArray()
-		
+
 		# Print params first
 		for param in params:
 			tokens.append(_autoquoted_chunk(param))
-		
+
 		# Print kv-params, either from `kv_pairs`, or `kv_map`
 		if not kv_pairs.is_empty():
 			for pair in kv_pairs:
@@ -340,10 +340,10 @@ func equals(what) -> bool:
 	if not command.name == name or \
 		not command.type == type:
 			return false
-	
+
 	if not is_simple() and exchange_id != command.exchange_id:
 		return false
-	
+
 	if not is_raw:
 		return text == command.text
 	else:

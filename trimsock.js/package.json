@@ -1,13 +1,14 @@
 {
   "name": "trimsock",
   "private": true,
-  "version": "0.18.1",
+  "version": "0.18.2",
   "type": "module",
   "scripts": {
     "docs": "typedoc",
     "format": "bun --filter '*' check --write --unsafe",
     "fmt": "bun format",
-    "build": "bun --filter '*' build"
+    "build": "bun --filter '*' build",
+    "perf": "bun --filter '*' perf"
   },
   "workspaces": [
     "packages/*",

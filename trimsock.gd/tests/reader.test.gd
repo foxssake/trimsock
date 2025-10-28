@@ -1,7 +1,7 @@
 extends VestTest
 
 func get_suite_name():
-	return "Reader"
+	return "TrimsockReader"
 
 var reader: TrimsockReader
 
@@ -9,7 +9,7 @@ func suite():
 	on_case_begin.connect(func(__):
 		reader = TrimsockReader.new()
 	)
-	
+
 	test("should read raw message", func():
 		ok()
 		reader.ingest_text("\rcommand 4\na\ncd\n")

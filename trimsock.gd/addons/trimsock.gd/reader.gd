@@ -23,11 +23,11 @@ func _pop() -> TrimsockCommand:
 		var data_size := int(_queued_raw.text)
 		if not _line_reader.has_data(data_size):
 			return null
-		
+
 		_queued_raw.raw = _line_reader.read_data(data_size)
 		_queued_raw.text = ""
 		_queued_raw.chunks.clear()
-		
+
 		var result := _queued_raw
 		_queued_raw = null
 		return result
@@ -36,13 +36,13 @@ func _pop() -> TrimsockCommand:
 	var line := _line_reader.read_text()
 	if not line:
 		return null
-	
+
 	var command := _line_parser.parse(line)
 	if command.is_raw:
 		# Command is raw, we'll keep it in the queue until we read the binary
 		# data for it
 		_queued_raw = command
-		
+
 		# Try getting it immediately, in case we already have the data in buffer
 		return _pop()
 
