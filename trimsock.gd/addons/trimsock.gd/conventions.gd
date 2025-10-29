@@ -1,11 +1,14 @@
 extends Object
 class_name _TrimsockConventions
 
+# Implements conventions on top of the core protocol spec
 
+# Apply all conventions to command, in-place
 static func apply(command: TrimsockCommand) -> void:
 	parse_type(command)
 	parse_params(command)
 
+# Figure out command type
 static func parse_type(command: TrimsockCommand) -> void:
 	var at := 0
 
@@ -42,6 +45,7 @@ static func parse_type(command: TrimsockCommand) -> void:
 	command.name = name
 	command.exchange_id = id
 
+# Parse params and kv-pairs
 static func parse_params(command: TrimsockCommand) -> void:
 	if command.is_raw or command.chunks.is_empty():
 		return
