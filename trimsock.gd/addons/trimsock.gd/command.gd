@@ -1,65 +1,91 @@
 extends RefCounted
 class_name TrimsockCommand
 
+## Represents a trimsock command
+
+## A chunk of command data
 class Chunk:
+	## Text contained in the chunk
 	var text: String
+	## True if the chunk is quoted
 	var is_quoted: bool
 
+	## Create a quoted command data chunk
 	static func quoted(p_text: String) -> Chunk:
 		var chunk := Chunk.new()
 		chunk.is_quoted = true
 		chunk.text = p_text
 		return chunk
 
+	## Create an quoted command data chunk
 	static func unquoted(p_text: String) -> Chunk:
 		var chunk := Chunk.new()
 		chunk.is_quoted = false
 		chunk.text = p_text
 		return chunk
 
+	## Create a command data chunk from [param text], quoted as needed
 	static func of_text(p_text: String) -> Chunk:
 		var chunk := Chunk.new()
 		chunk.is_quoted = p_text.contains(" ")
 		chunk.text = p_text
 		return chunk
 
+## Key-value pair specified in a command
+##
+## Note that both key and value are always strings
 class Pair:
+	## Key
 	var key: String
+	## Value
 	var value: String
 
+## Command type
 enum Type {
-	SIMPLE,
-	REQUEST,
-	SUCCESS_RESPONSE,
-	ERROR_RESPONSE,
-	STREAM_CHUNK,
-	STREAM_FINISH
+	SIMPLE,				## Simple command, without any conventions
+	REQUEST,			## Request command
+	SUCCESS_RESPONSE,	## Successful response command
+	ERROR_RESPONSE,		## Error response command
+	STREAM_CHUNK,		## Stream chunk command
+	STREAM_FINISH		## Stream finish command
 }
 
 # Core properties
+## Command name
 var name: String = ""
+## Text contents - empty string for raw commands
 var text: String = ""
+## Chunks making up the command data
 var chunks: Array[Chunk] = []
+## True if the command is raw
 var is_raw: bool = false
+## Raw data - empty for text commands
 var raw: PackedByteArray
 
 # Multiparam
+## Command parameters
 var params: Array[String]
 
 # Key-value pairs
+## Key-value params, in the form of pairs - a key may be specified multiple times
 var kv_pairs: Array[Pair]
+## Key-value params, as a dictionary - for repeating keys, only the last value is retained
 var kv_map: Dictionary
 
 # Request-response + Stream
+## Exchange ID - empty if not request, response, or stream
 var exchange_id: String
+## Command type
 var type: Type = Type.SIMPLE
 
+## Create a raw command from data buffer
 static func from_buffer(name: String, data: PackedByteArray) -> TrimsockCommand:
 	var command := TrimsockCommand.new()
 	command.is_raw = true
 	command.raw = data
 	return command
 
+## Create a simple command from name and text content
 static func simple(name: String, text: String = "") -> TrimsockCommand:
 	var command := TrimsockCommand.new()
 	command.name = name
@@ -68,6 +94,7 @@ static func simple(name: String, text: String = "") -> TrimsockCommand:
 
 	return command
 
+## Create a request command
 static func request(name: String, exchange_id: String = "") -> TrimsockCommand:
 	var command := TrimsockCommand.new()
 	command.name = name
@@ -75,6 +102,7 @@ static func request(name: String, exchange_id: String = "") -> TrimsockCommand:
 	command.exchange_id = exchange_id
 	return command
 
+## Create a success response command
 static func success_response(name: String, exchange_id: String = "") -> TrimsockCommand:
 	var command := TrimsockCommand.new()
 	command.name = name
@@ -82,6 +110,7 @@ static func success_response(name: String, exchange_id: String = "") -> Trimsock
 	command.exchange_id = exchange_id
 	return command
 
+## Create an error response command
 static func error_response(name: String, exchange_id: String = "") -> TrimsockCommand:
 	var command := TrimsockCommand.new()
 	command.name = name
@@ -89,6 +118,7 @@ static func error_response(name: String, exchange_id: String = "") -> TrimsockCo
 	command.exchange_id = exchange_id
 	return command
 
+## Create a stream chunk command
 static func stream_chunk(name: String, exchange_id: String = "") -> TrimsockCommand:
 	var command := TrimsockCommand.new()
 	command.name = name
@@ -96,6 +126,7 @@ static func stream_chunk(name: String, exchange_id: String = "") -> TrimsockComm
 	command.exchange_id = exchange_id
 	return command
 
+## Create a stream finish command
 static func stream_finish(name: String, exchange_id: String = "") -> TrimsockCommand:
 	var command := TrimsockCommand.new()
 	command.name = name
@@ -103,6 +134,7 @@ static func stream_finish(name: String, exchange_id: String = "") -> TrimsockCom
 	command.exchange_id = exchange_id
 	return command
 
+## Create an error response to the specified [param command]
 static func error_from(command: TrimsockCommand, name: String, data) -> TrimsockCommand:
 	var result := TrimsockCommand.new()
 
@@ -121,6 +153,7 @@ static func error_from(command: TrimsockCommand, name: String, data) -> Trimsock
 
 	return result
 
+## TODO: Move to reader
 static func unescape(what: String) -> String:
 	return (what
 		.replace("\\n", "\n")
@@ -128,9 +161,11 @@ static func unescape(what: String) -> String:
 		.replace("\\\"", "\"")
 	)
 
+## TODO: Move to writer
 static func escape_quoted(what: String) -> String:
 	return what.replace("\"", "\\\"")
 
+## TODO: Move to writer
 static func escape_unquoted(what: String) -> String:
 	return (what
 		.replace("\n", "\\n")
@@ -138,12 +173,14 @@ static func escape_unquoted(what: String) -> String:
 		.replace("\"", "\\\"")
 	)
 
+## Create a key-value pair for use with [member kv_pairs]
 static func pair_of(key: String, value: String) -> Pair:
 	var pair := Pair.new()
 	pair.key = key
 	pair.value = value
 	return pair
 
+## Convert the command [param type] to a string
 static func type_string(type: Type) -> String:
 	match type:
 		Type.SIMPLE: return "Simple"
@@ -155,33 +192,42 @@ static func type_string(type: Type) -> String:
 	return "%d???" % [type]
 
 
+## Return true if it's a simple command
 func is_simple() -> bool:
 	return type == Type.SIMPLE
 
+## Return true if it's a request command
 func is_request() -> bool:
 	return type == Type.REQUEST
 
+## Return true if it's a success response command
 func is_success() -> bool:
 	return type == Type.SUCCESS_RESPONSE
 
+## Return true if it's an error response command
 func is_error() -> bool:
 	return type == Type.ERROR_RESPONSE
 
+## Return true if it's a stream command - either a chunk or finish
 func is_stream() -> bool:
 	return is_stream_chunk() or is_stream_end()
 
+## Return true if it's a stream chunk command
 func is_stream_chunk() -> bool:
 	return type == Type.STREAM_CHUNK
 
+## Return true if it's a stream finish command
 func is_stream_end() -> bool:
 	return type == Type.STREAM_FINISH
 
+## Return true if the command has no data
 func is_empty() -> bool:
 	if is_raw:
 		return raw.is_empty()
 	else:
 		return text.is_empty() and chunks.is_empty() and params.is_empty() and kv_pairs.is_empty() and kv_map.is_empty()
 
+## Clear command, resetting all its flags and data
 func clear():
 	raw.clear()
 	chunks.clear()
@@ -190,76 +236,99 @@ func clear():
 	kv_map.clear()
 	text = ""
 
+## Set the command's name before returning it
 func with_name(p_name: String) -> TrimsockCommand:
 	name = p_name
 	return self
 
+## Set the command's text content before returning it
 func with_text(p_text: String) -> TrimsockCommand:
 	text = p_text
 	return self
 
+## Set the command's data chunks before returning it
 func with_chunks(p_chunks: Array[Chunk]) -> TrimsockCommand:
 	chunks += p_chunks
 	return self
 
+## Change the command into a raw command before returning it
 func as_raw() -> TrimsockCommand:
 	is_raw = true
 	text = ""
 	chunks = []
 	return self
 
+## Set the raw command data before returning it
 func with_data(data: PackedByteArray) -> TrimsockCommand:
 	as_raw()
 	raw = data
 	return self
 
+## Add more parameters to [member params] before returning the command
 func with_params(p_params: Array[String]) -> TrimsockCommand:
 	params += p_params
 	return self
 
+## Add more pairs to [member kv_pairs] before returning the command
 func with_kv_pairs(p_kv_pairs: Array[Pair]) -> TrimsockCommand:
 	kv_pairs += p_kv_pairs
 	for pair in kv_pairs:
 		kv_map[pair.key] = pair.value
 	return self
 
+## Merge [param p_kv_map] with [member p_kv_map] before returning the command
 func with_kv_map(p_kv_map: Dictionary) -> TrimsockCommand:
 	for key in p_kv_map:
 		var value = p_kv_map[key]
+		# TODO: Don't add pair if it was already present in the kv_map
 		kv_pairs.append(pair_of(key, value))
 	kv_map.merge(p_kv_map, true)
 	return self
 
+## Set the exchange ID of the command before returning it
 func with_exchange_id(p_exchange_id: String) -> TrimsockCommand:
 	exchange_id = p_exchange_id
 	return self
 
+## Set the command type to request before returning it
 func as_request() -> TrimsockCommand:
 	type = Type.REQUEST
 	return self
 
+## Set the command type to success response before returning it
 func as_success_response() -> TrimsockCommand:
 	type = Type.SUCCESS_RESPONSE
 	return self
 
+## Set the command type to error response before returning it
 func as_error_response() -> TrimsockCommand:
 	type = Type.ERROR_RESPONSE
 	return self
 
+## Set the command type to stream before returning it
+## [br][br]
+## If the command is empty, it will become a stream finish command, otherwise a
+## stream chunk.
 func as_stream() -> TrimsockCommand:
 	type = Type.STREAM_FINISH if is_empty() else Type.STREAM_CHUNK
 	return self
 
+# TODO: Move to writer
+## Serialize the command into a new [PackedByteArray]
 func serialize() -> PackedByteArray:
 	var out := PackedByteArray()
 	serialize_to_array(out)
 	return out
 
+# TODO: Move to writer
+## Serialize the command into an existing [PackedByteArray]
 func serialize_to_array(out: PackedByteArray) -> void:
 	var buffer := StreamPeerBuffer.new()
 	serialize_to_stream(buffer)
 	out.append_array(buffer.data_array)
 
+# TODO: Move to writer
+## Serialize the command into an existing [StreamPeer]
 func serialize_to_stream(out: StreamPeer) -> void:
 	# Add raw marker
 	if is_raw:
@@ -331,6 +400,7 @@ func serialize_to_stream(out: StreamPeer) -> void:
 	# Add closing NL
 	out.put_u8(_ord("\n"))
 
+## Return true if this command is considered equal to [param what]
 func equals(what) -> bool:
 	if not what is TrimsockCommand:
 		return false

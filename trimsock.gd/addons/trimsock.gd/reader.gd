@@ -1,16 +1,38 @@
 extends RefCounted
 class_name TrimsockReader
 
+## Ingests and parses incoming trimsock data
+##
+## As data arrives from a stream, call [method ingest_test] or
+## [method ingest_bytes] to prepare the data for parsing. Internally, the data
+## will be buffered.
+## [br][br]
+## After ingestion, call [method read] to extract commands from the ingested
+## data. Data that is parsed is immediately freed from the internal buffer.
+
+
 var _line_reader: _TrimsockLineReader = _TrimsockLineReader.new()
 var _line_parser: _TrimsockLineParser = _TrimsockLineParser.new()
 var _queued_raw: TrimsockCommand = null
 
+## Ingest incoming text
+## [br][br]
+## Returns [constant OK] on success, or [constant ERR_OUT_OF_MEMORY] if the
+## internal buffer can't store the data.
 func ingest_text(text: String) -> Error:
 	return _line_reader.ingest(text.to_utf8_buffer())
 
+## Ingest incoming binary data
+## [br][br]
+## Returns [constant OK] on success, or [constant ERR_OUT_OF_MEMORY] if the
+## internal buffer can't store the data.
 func ingest_bytes(bytes: PackedByteArray) -> Error:
 	return _line_reader.ingest(bytes)
 
+## Try and extract a command from the ingested data
+## [br][br]
+## Returns a parsed command, or [code]null[/code] if no command is available
+## yet.
 func read() -> TrimsockCommand:
 	var command := _pop()
 	if command:

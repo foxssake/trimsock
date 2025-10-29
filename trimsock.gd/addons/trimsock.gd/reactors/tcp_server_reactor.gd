@@ -1,6 +1,13 @@
 extends TrimsockReactor
 class_name TrimsockTCPServerReactor
 
+## Reactor communicating over TCP via [TCPServer]
+##
+## It will accept incoming connections and poll them.
+## [br][br]
+## See [TrimsockClientReactor] and [TrimsockReactor] for details.
+
+
 var _server: TCPServer
 
 func _init(server: TCPServer):

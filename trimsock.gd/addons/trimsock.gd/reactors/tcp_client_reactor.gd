@@ -1,6 +1,15 @@
 extends TrimsockClientReactor
 class_name TrimsockTCPClientReactor
 
+## Client reactor communicating over TCP via [StreamPeerTCP]
+##
+## When creating a new instance, a [StreamPeerTCP] must be specified. This will
+## be used as the host source, and will be polled every time when [method poll]
+## is called.
+## [br][br]
+## See [TrimsockClientReactor] and [TrimsockReactor] for details.
+
+
 var _connection: StreamPeerTCP
 
 
