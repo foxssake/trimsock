@@ -2,10 +2,8 @@ name: Publish site
 
 on:
   push:
-    branches:
-      - main
-    tags:
-      - v*
+    branches: [ "main" ]
+    tags: [ "v*" ]
   workflow_dispatch:
 
 concurrency:
@@ -24,7 +22,7 @@ jobs:
       - name: Build
         uses: Tiryoh/actions-mkdocs@v0
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v4
         with:
           path: './site'
       - name: Deploy to GitHub Pages
