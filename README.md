@@ -57,6 +57,7 @@ Anyone is free to implement the trimsock protocol. This repository hosts
 reference implementations in different languages.
 
 - [trimsock.js](./trimsock.js)
+- [trimsock.gd](./trimsock.gd)
 
 ## Specification
 
