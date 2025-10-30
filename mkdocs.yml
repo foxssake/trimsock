@@ -1,0 +1,21 @@
+site_name: trimsock
+site_url: 'https://foxssake.github.io/trimsock/'
+theme:
+  name: readthedocs
+  # logo: assets/trimsock-logo.png
+  # favicon: assets/trimsock-favicon.png
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - pymdownx.details
+  - pymdownx.keys
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+# extra:
+#   version:
+#     provider: mike
+nav:
+  - 'index.md'
