@@ -2,10 +2,8 @@ name: Publish site
 
 on:
   push:
-    branches:
-      - main
-    tags:
-      - v*
+    branches: [ "main" ]
+    tags: [ "v*" ]
   workflow_dispatch:
 
 concurrency:
@@ -16,6 +14,12 @@ jobs:
   deploy:
     name: Deploy docs to GitHub Pages
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout 
         uses: actions/checkout@v2
@@ -24,9 +28,9 @@ jobs:
       - name: Build
         uses: Tiryoh/actions-mkdocs@v0
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v4
         with:
           path: './site'
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
