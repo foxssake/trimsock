@@ -23,6 +23,33 @@ describe("Reactor", () => {
       // Outbox should be empty
       expect(reactor.outbox).toBeEmpty();
     });
+
+    test("should not throw on unknown exchange", async () => {
+      expect(
+        async () => await reactor.ingest(".1234 foo\n", "0"),
+      ).not.toThrow();
+    });
+
+    test("should never throw", async () => {
+      // Throw random strings at the reactor and see if it fails
+      const count = 1024;
+      const length = 32;
+      const charset =
+        "abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=,./<>?";
+
+      const inputs = [...new Array(count)].map(
+        () =>
+          `${[...new Array(length)]
+            .map(() => ~~(Math.random() * charset.length))
+            .map((idx) => charset.charAt(idx))
+            .join("")}\n`,
+      );
+
+      const promise = Promise.all(inputs.map((it) => reactor.ingest(it, "0")));
+
+      console.log("Randomized inputs: ", inputs);
+      expect(async () => await promise).not.toThrow();
+    });
   });
 
   describe("knownCommands", () => {

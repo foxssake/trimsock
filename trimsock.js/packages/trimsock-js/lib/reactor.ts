@@ -31,6 +31,11 @@ export type CommandErrorHandler<T> = (
   error: unknown,
 ) => void;
 
+export type IngestErrorHandler = (
+  error: unknown,
+  input: string | Buffer,
+) => void;
+
 /**
  * Callback type for generating exchange ID's
  *
@@ -551,6 +556,7 @@ export abstract class Reactor<T> {
   private handlers: Map<string, CommandHandler<T>> = new Map();
   private defaultHandler: CommandHandler<T> = () => {};
   private errorHandler: CommandErrorHandler<T> = () => {};
+  private ingestErrorHandler: IngestErrorHandler = () => {};
   private filters: CommandFilter<T>[] = [];
 
   private exchanges = new ExchangeMap<T, ReactorExchange<T>>();
@@ -563,6 +569,8 @@ export abstract class Reactor<T> {
   /**
    * Register a command handler
    *
+   * Note that one command can only have one handler active at a time. Calling
+   * this method will replace the currently active handler, if it exists.
    *
    * @param commandName command name
    * @param handler callback function
@@ -578,6 +586,9 @@ export abstract class Reactor<T> {
    * Whenever a command is received that has no associated handler, the unknown
    * command handler is called.
    *
+   * Note that there's only one handler at any time, calling this method will
+   * replace the currently active handler.
+   *
    * @param handler callback function
    */
   public onUnknown(handler: CommandHandler<T>): this {
@@ -591,10 +602,30 @@ export abstract class Reactor<T> {
    * Whenever an error occurs during command processing ( e.g. in one of the
    * registered handlers ), the error handler is called.
    *
+   * Note that there's only one handler at any time, calling this method will
+   * replace the currently active handler.
+   *
    * @param handler callback function
    */
   public onError(handler: CommandErrorHandler<T>): this {
     this.errorHandler = handler;
+    return this;
+  }
+
+  /**
+   * Register an ingest error handler
+   *
+   * If the reactor receives input that it can't manage ( e.g. it's malformed or
+   * the command is too long ), it rejects the command and calls the ingest error
+   * handler.
+   *
+   * Note that there's only one handler at any time, calling this method will
+   * replace the currently active handler.
+   *
+   * @param handler callback function
+   */
+  public onIngestError(handler: IngestErrorHandler): this {
+    this.ingestErrorHandler = handler;
     return this;
   }
 
@@ -683,15 +714,18 @@ export abstract class Reactor<T> {
    * @param data incoming data
    * @param source source connection
    */
-  public ingest(data: Buffer | string, source: T): void {
-    // TODO: Invoke error handler when ingest fails?
-    const reader = this.ensureReaderFor(source);
+  public async ingest(data: Buffer | string, source: T): Promise<void> {
+    try {
+      const reader = this.ensureReaderFor(source);
 
-    if (typeof data === "string") reader.ingest(Buffer.from(data, "utf8"));
-    else reader.ingest(data);
+      if (typeof data === "string") reader.ingest(Buffer.from(data, "utf8"));
+      else reader.ingest(data);
 
-    for (const item of reader.commands()) {
-      this.handle(new Command(item), source);
+      await Promise.all(
+        reader.commands().map((it) => this.handle(new Command(it), source)),
+      );
+    } catch (e) {
+      this.ingestErrorHandler(e, data);
     }
   }
 
