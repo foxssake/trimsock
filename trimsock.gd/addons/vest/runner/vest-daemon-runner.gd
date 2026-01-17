@@ -15,18 +15,20 @@ func with_debug() -> VestDaemonRunner:
 	return self
 
 ## Run a test script
-func run_script(script: Script) -> VestResult.Suite:
+func run_script(script: Script, only_mode: int = Vest.__.ONLY_DEFAULT) -> VestResult.Suite:
 	var params := VestCLI.Params.new()
 	params.run_file = script.resource_path
+	params.only_mode = only_mode
 
 	return await _run_with_params(params)
 
 ## Run test scripts matching glob
 ## [br][br]
 ## See [method String.match]
-func run_glob(glob: String) -> VestResult.Suite:
+func run_glob(glob: String, only_mode: int = Vest.__.ONLY_DEFAULT) -> VestResult.Suite:
 	var params := VestCLI.Params.new()
 	params.run_glob = glob
+	params.only_mode = only_mode
 
 	return await _run_with_params(params)
 
@@ -53,14 +55,24 @@ func _run_with_params(params: VestCLI.Params) -> VestResult.Suite:
 		return null
 
 	_peer = _server.take_connection()
+	var results = null
 
-	# Take results
-	if await timeout.until(func(): return _peer.get_available_bytes() > 0) != OK:
-		push_error("Didn't receive results in time! Available bytes: %d" % [_peer.get_available_bytes()])
-		_stop()
-		return null
+	while true:
+		await Vest.sleep()
 
-	var results = _peer.get_var(true)
+		_peer.poll()
+		if _peer.get_status() != StreamPeerTCP.STATUS_CONNECTED:
+			break
+
+		if _peer.get_available_bytes() <= 0:
+			# No data, wait some more
+			continue
+
+		var message = _peer.get_var(true)
+		if message is Dictionary:
+			results = message
+			on_partial_result.emit(VestResult.Suite._from_wire(results))
+
 	_stop()
 
 	if results == null:

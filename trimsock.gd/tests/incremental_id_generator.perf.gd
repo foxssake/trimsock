@@ -7,7 +7,7 @@ func test_sequence():
 	var generator := IncrementalTrimsockIDGenerator.new()
 	var min_seq := 1_000_000
 	var ids := {}
-	
+
 	benchmark("Generator", func(__):
 		var id := generator.get_id()
 		ids[id] = true
