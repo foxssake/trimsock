@@ -4,7 +4,11 @@ import {
   RequestResponseConvention,
   StreamConvention,
 } from "./conventions.js";
-import { BufferOverflowError, UnexpectedCharacterError } from "./errors.js";
+import {
+  BufferOverflowError,
+  ParserError,
+  UnexpectedCharacterError
+} from "./errors.js";
 
 /*
  * Converts the ingested data into either command lines that can be parsed, or
@@ -18,10 +22,17 @@ class CommandReader {
   private isQuote = false;
   private isEscape = false;
 
+  reset() {
+    this.buffer = Buffer.of();
+    this.at = 0;
+    this.isQuote = false;
+    this.isEscape = false;
+  }
+
   ingest(data: Buffer) {
     const newSize = this.buffer.byteLength + data.byteLength;
     if (newSize > this.maxSize) {
-      this.buffer = Buffer.of();
+      this.reset();
 
       throw new BufferOverflowError(
         `Buffer overflow! New size ${newSize} exceeds ${this.maxSize}!`,
@@ -58,10 +69,22 @@ class CommandReader {
     this.isEscape = false;
     this.isQuote = false;
 
-    if (this.buffer.length >= size) {
+    // The raw data is followed by a terminating newline, so both need to
+    // arrive before the command can be extracted
+    if (this.buffer.length > size) {
       const result = this.buffer.subarray(0, size);
+
+      this.at = size;
+      const isTerminated = this.char === "\n";
+
       this.at = size + 1;
       this.flush();
+
+      // Check for correct termination after flush to ensure reader remains in a valid state
+      if (!isTerminated)
+        throw new UnexpectedCharacterError(
+          `Expected newline after ${size} bytes of raw data!`,
+        );
 
       return result;
     }
@@ -222,6 +245,8 @@ export class TrimsockReader {
    *
    * If this size limit is exceeded, the buffer's contents are discarded and a
    * {@link BufferOverflowError} is thrown.
+   *
+   * Throws {@link ParserError} if command size is invalid.
    */
   public maxSize = 16384;
 
@@ -245,8 +270,14 @@ export class TrimsockReader {
   ingest(data: Buffer | string) {
     this.reader.maxSize = this.maxSize;
 
-    if (typeof data === "string") this.reader.ingest(Buffer.from(data, "utf8"));
-    else this.reader.ingest(data);
+    try {
+      if (typeof data === "string")
+        this.reader.ingest(Buffer.from(data, "utf8"));
+      else this.reader.ingest(data);
+    } catch (e) {
+      this.dequeueRaw();
+      throw e;
+    }
   }
 
   /**
@@ -284,7 +315,13 @@ export class TrimsockReader {
 
   private pop(): CommandSpec | undefined {
     if (this.queuedRawCommand !== undefined) {
-      const data = this.reader.readRaw(this.queuedRawSize);
+      let data: Buffer | undefined;
+      try {
+        data = this.reader.readRaw(this.queuedRawSize);
+      } catch (e) {
+        this.dequeueRaw();
+        throw e;
+      }
       if (!data) return;
 
       const result: CommandSpec = {
@@ -292,7 +329,7 @@ export class TrimsockReader {
         raw: data,
       };
 
-      this.queuedRawCommand = undefined;
+      this.dequeueRaw();
       return result;
     }
 
@@ -301,11 +338,24 @@ export class TrimsockReader {
 
     const command = this.parser.parse(line);
     if (command.raw !== undefined) {
+      const size = Number.parseInt(command.text ?? "");
+
+      // The data and the terminating newline must both fit in the buffer
+      if (!Number.isInteger(size) || size < 0 || size >= this.maxSize)
+        throw new ParserError(
+          `Invalid raw command size: ${command.text}`,
+        );
+
       this.queuedRawCommand = command;
-      this.queuedRawSize = Number.parseInt(command.text ?? "");
+      this.queuedRawSize = size;
       return this.read();
     }
 
     return command;
+  }
+
+  private dequeueRaw() {
+    this.queuedRawCommand = undefined;
+    this.queuedRawSize = -1;
   }
 }

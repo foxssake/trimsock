@@ -34,6 +34,9 @@ func parse(p_line: String) -> TrimsockCommand:
 	return command
 
 func read_name() -> String:
+	if is_eol():
+		return ""
+
 	if chr() == "\"":
 		return read_quoted()
 	else:

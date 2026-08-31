@@ -37,6 +37,8 @@ var _id_generator: TrimsockIDGenerator = RandomTrimsockIDGenerator.new(12)
 signal on_attach(source: Variant)
 ## Emitted when a known source is detached from the reactor
 signal on_detach(source: Variant)
+## Emitted when data received from a source can't be parsed
+signal on_ingest_error(source: Variant, error: Error, message: String)
 
 
 ## Poll all sources and process incoming data
@@ -48,6 +50,8 @@ func poll() -> void:
 		while true:
 			var command := reader.read()
 			if not command:
+				if reader.last_error != OK:
+					on_ingest_error.emit(source, reader.last_error, reader.last_error_message)
 				break
 
 			_handle(command, source)
@@ -155,7 +159,11 @@ func _write(target: Variant, command: TrimsockCommand) -> void:
 func _ingest(source: Variant, data: PackedByteArray) -> Error:
 	assert(_readers.has(source), "Ingesting data from unknown source! Did you call `attach()`?")
 	var reader := _readers[source] as TrimsockReader
-	return reader.ingest_bytes(data)
+	var error := reader.ingest_bytes(data)
+	if error != OK:
+		on_ingest_error.emit(source, error, reader.last_error_message)
+
+	return error
 
 func _handle(command: TrimsockCommand, source: Variant) -> void:
 	var xchg := _get_exchange_for(command, source)

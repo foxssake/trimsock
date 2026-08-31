@@ -75,12 +75,14 @@ export class BunSocketReactor<SocketData = undefined> extends Reactor<
         },
         close: (socket, error) => {
           baseHandlers.close?.call(baseHandlers.close, socket, error);
+          this.detach(socket);
         },
         drain: (socket) => {
           baseHandlers.drain?.call(baseHandlers.drain, socket);
         },
         error: (socket, error) => {
           baseHandlers.error?.call(baseHandlers.error, socket, error);
+          this.detach(socket);
         },
       },
     };
