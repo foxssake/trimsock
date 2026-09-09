@@ -18,7 +18,7 @@ func suite():
 	test("Parsing", func():
 		benchmark("Predefined commands", func(__):
 			reader.ingest_text(COMMANDS[idx])
-			while reader.read() != null:
+			while reader.read().value() != null:
 				pass
 			idx = (idx + 1) % COMMANDS.size()
 		)\

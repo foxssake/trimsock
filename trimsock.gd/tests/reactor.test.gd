@@ -101,8 +101,7 @@ func suite():
 	)
 
 	test("should keep parsing after an unsatisfiable raw command", func():
-		var errors := []
-		reactor.on_ingest_error.connect(func(source, error, message): errors.append(error))
+		capture_signal(reactor.on_ingest_error, 3)
 
 		var commands := []
 		reactor.on("command", func(cmd, xchg): commands.append(cmd))
@@ -114,6 +113,6 @@ func suite():
 		reactor.ingest_text(some_source, "command foo\n")
 		reactor.poll()
 
-		expect_not_empty(errors, "No errors reported!")
+		expect_not_empty(get_signal_emissions(reactor.on_ingest_error), "No errors reported!")
 		expect_not_empty(commands, "No commands handled!")
 	)

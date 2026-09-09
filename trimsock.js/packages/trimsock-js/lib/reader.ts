@@ -7,7 +7,7 @@ import {
 import {
   BufferOverflowError,
   ParserError,
-  UnexpectedCharacterError
+  UnexpectedCharacterError,
 } from "./errors.js";
 
 /*
@@ -342,9 +342,7 @@ export class TrimsockReader {
 
       // The data and the terminating newline must both fit in the buffer
       if (!Number.isInteger(size) || size < 0 || size >= this.maxSize)
-        throw new ParserError(
-          `Invalid raw command size: ${command.text}`,
-        );
+        throw new ParserError(`Invalid raw command size: ${command.text}`);
 
       this.queuedRawCommand = command;
       this.queuedRawSize = size;

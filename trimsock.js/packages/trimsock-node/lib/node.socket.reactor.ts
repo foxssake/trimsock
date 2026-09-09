@@ -33,6 +33,7 @@ export class NodeSocketReactor extends Reactor<net.Socket> {
       .on("connection", (socket: net.Socket) => {
         socket.on("data", (data: Buffer) => this.ingest(data, socket));
         socket.on("close", () => this.detach(socket));
+        socket.on("error", (err: Error) => console.error(err));
       });
   }
 
@@ -54,6 +55,7 @@ export class NodeSocketReactor extends Reactor<net.Socket> {
     const socket = net.createConnection(options, connectionListener);
     socket.on("data", (data: Buffer) => this.ingest(data, socket));
     socket.on("close", () => this.detach(socket));
+    socket.on("error", (err: Error) => console.error(err));
 
     return socket;
   }

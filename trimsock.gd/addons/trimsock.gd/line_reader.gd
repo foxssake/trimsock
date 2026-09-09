@@ -7,6 +7,7 @@ var at := 0
 var is_quote := false
 var is_escape := false
 
+
 func reset() -> void:
 	buffer.clear()
 	at = 0
@@ -38,7 +39,7 @@ func read_text() -> String:
 func has_data(size: int) -> bool:
 	return buffer.size() > size
 
-func read_data(size: int) -> Array:
+func read_data(size: int) -> TrimsockResult.Data:
 	assert(has_data(size), "Trying to read more bytes than available!")
 
 	# Grab result
@@ -53,9 +54,10 @@ func read_data(size: int) -> Array:
 	is_quote = false
 
 	if not is_terminated:
-		return [ERR_PARSE_ERROR, PackedByteArray()]
+		return TrimsockResult.Data.of_error(ERR_PARSE_ERROR,
+			"Expected newline after %d bytes of raw data!" % [size])
 
-	return [OK, result]
+	return TrimsockResult.Data.of_value(result)
 
 func chr() -> String:
 	return String.chr(buffer[at])

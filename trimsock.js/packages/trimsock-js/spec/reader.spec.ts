@@ -263,7 +263,7 @@ describe("TrimsockReader", () => {
       ]);
     });
 
-    test("should reject raw data with a malformed terminator", () => {
+    test("should reject raw data with incorrect size", () => {
       const reader = new TrimsockReader();
       reader.ingest("\rcommand 4\n1234X\n");
 
@@ -273,12 +273,14 @@ describe("TrimsockReader", () => {
     test("should keep parsing after a malformed terminator", () => {
       const reader = new TrimsockReader();
 
-      // The malformed terminator is consumed in its place, so parsing resumes
+      // The malformed terminator (X) is consumed in its place, so parsing resumes
       // on the next line
-      reader.ingest("\rcommand 4\n1234Xcommand foo\n");
+      reader.ingest("\rinvalid-command 4\n1234Xvalid-command foo\n");
       expect(() => [...reader.commands()]).toThrow(UnexpectedCharacterError);
 
-      expect([...reader.commands()].map((it) => it.name)).toEqual(["command"]);
+      expect([...reader.commands()].map((it) => it.name)).toEqual([
+        "valid-command",
+      ]);
     });
   });
 

@@ -48,10 +48,12 @@ func poll() -> void:
 	for source in _sources:
 		var reader := _readers[source] as TrimsockReader
 		while true:
-			var command := reader.read()
+			var result := reader.read()
+			var command := result.value()
 			if not command:
-				if reader.last_error != OK:
-					on_ingest_error.emit(source, reader.last_error, reader.last_error_message)
+				if not result.is_success():
+					var error := result.error()
+					on_ingest_error.emit(source, error.code, error.message)
 				break
 
 			_handle(command, source)
@@ -159,11 +161,13 @@ func _write(target: Variant, command: TrimsockCommand) -> void:
 func _ingest(source: Variant, data: PackedByteArray) -> Error:
 	assert(_readers.has(source), "Ingesting data from unknown source! Did you call `attach()`?")
 	var reader := _readers[source] as TrimsockReader
-	var error := reader.ingest_bytes(data)
-	if error != OK:
-		on_ingest_error.emit(source, error, reader.last_error_message)
+	var result := reader.ingest_bytes(data)
+	if not result.is_success():
+		var error := result.error()
+		on_ingest_error.emit(source, error.code, error.message)
+		return error.code
 
-	return error
+	return OK
 
 func _handle(command: TrimsockCommand, source: Variant) -> void:
 	var xchg := _get_exchange_for(command, source)

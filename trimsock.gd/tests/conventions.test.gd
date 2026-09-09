@@ -39,7 +39,7 @@ func suite():
 	
 	test("params should passthrough raw", func():
 		reader.ingest_text("\rcmd 4\n1234\n")
-		var command := reader.read()
+		var command := reader.read().value()
 		expect_not_null(command)
 		expect(command.is_raw, "Command must be raw!")
 		expect(not command.text, "Command should have no text!")
@@ -53,7 +53,7 @@ func check_type(name: String, input: String, expected_type: TrimsockCommand.Type
 	test(name, func():
 		reader.ingest_text(input)
 
-		var command := reader.read()
+		var command := reader.read().value()
 		expect_not_null(command, "Command was null!")
 		expect_equal(
 			TrimsockCommand.type_string(command.type), 
@@ -67,7 +67,7 @@ func check_params(name: String, input: String, expected_params: Array, expected_
 	test(name, func():
 		reader.ingest_text(input)
 		
-		var command := reader.read()
+		var command := reader.read().value()
 		expect_not_null(command)
 		expect_equal(command.params, expected_params, "Params did not match!")
 		expect_equal(command.kv_pairs.map(func(it): return [it.key, it.value]), expected_pairs, "KV-pairs did not match!")
