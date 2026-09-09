@@ -1,7 +1,7 @@
 {
   "name": "trimsock",
   "private": true,
-  "version": "0.19.0",
+  "version": "0.19.1",
   "type": "module",
   "scripts": {
     "docs": "typedoc",
@@ -10,10 +10,7 @@
     "build": "bun --filter '*' build",
     "perf": "bun --filter '*' perf"
   },
-  "workspaces": [
-    "packages/*",
-    "examples/*"
-  ],
+  "workspaces": ["packages/*", "examples/*"],
   "devDependencies": {
     "typedoc": "^0.28.8",
     "typedoc-plugin-markdown": "^4.8.0"
