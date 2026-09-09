@@ -24,6 +24,21 @@ describe("Reactor", () => {
       expect(reactor.outbox).toBeEmpty();
     });
 
+    test("should keep parsing after an unsatisfiable raw command", async () => {
+      const errors: unknown[] = [];
+      reactor.onIngestError((error) => errors.push(error));
+      reactor.on("echo", (cmd, xchg) => {
+        xchg.replyOrSend(cmd);
+      });
+
+      // The blank line terminating the headers parses as a raw command with no size.
+      await reactor.ingest("GET / HTTP/1.1\r\nHost: x\r\n\r\n", "0");
+      await reactor.ingest("echo foo\n", "0");
+
+      expect(errors).not.toBeEmpty();
+      expect(reactor.outbox).not.toBeEmpty();
+    });
+
     test("should not throw on unknown exchange", async () => {
       expect(
         async () => await reactor.ingest(".1234 foo\n", "0"),
@@ -49,6 +64,20 @@ describe("Reactor", () => {
 
       console.log("Randomized inputs: ", inputs);
       expect(async () => await promise).not.toThrow();
+    });
+  });
+
+  describe("detach()", () => {
+    test("should free the source's reader", async () => {
+      const handler = mock();
+      reactor.on("command", handler);
+
+      await reactor.ingest("comm", "0");
+      reactor.detach("0");
+
+      await reactor.ingest("and foo\n", "0");
+
+      expect(handler.mock.calls).toBeEmpty();
     });
   });
 

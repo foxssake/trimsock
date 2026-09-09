@@ -99,3 +99,20 @@ func suite():
 		expect(reactor.outbox[0].command.is_stream(), "Command was not a stream!")
 		expect_not_empty(reactor.outbox[0].command.exchange_id, "Stream ID was empty!")
 	)
+
+	test("should keep parsing after an unsatisfiable raw command", func():
+		capture_signal(reactor.on_ingest_error, 3)
+
+		var commands := []
+		reactor.on("command", func(cmd, xchg): commands.append(cmd))
+
+		# The blank line terminating the headers parses as a raw command with no size
+		reactor.ingest_text(some_source, "GET / HTTP/1.1\r\nHost: x\r\n\r\n")
+		reactor.poll()
+
+		reactor.ingest_text(some_source, "command foo\n")
+		reactor.poll()
+
+		expect_not_empty(get_signal_emissions(reactor.on_ingest_error), "No errors reported!")
+		expect_not_empty(commands, "No commands handled!")
+	)

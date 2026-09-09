@@ -7,10 +7,17 @@ var at := 0
 var is_quote := false
 var is_escape := false
 
+
+func reset() -> void:
+	buffer.clear()
+	at = 0
+	is_quote = false
+	is_escape = false
+
 func ingest(data: PackedByteArray) -> Error:
 	var new_size := buffer.size() + data.size()
 	if new_size > max_size:
-		buffer.clear()
+		reset()
 		return ERR_OUT_OF_MEMORY
 
 	buffer.append_array(data)
@@ -30,20 +37,27 @@ func read_text() -> String:
 	return ""
 
 func has_data(size: int) -> bool:
-	return buffer.size() >= size
+	return buffer.size() > size
 
-func read_data(size: int) -> PackedByteArray:
+func read_data(size: int) -> TrimsockResult.Data:
 	assert(has_data(size), "Trying to read more bytes than available!")
 
 	# Grab result
 	var result := buffer.slice(0, size)
-	buffer = buffer.slice(size)
+	var is_terminated := String.chr(buffer[size]) == "\n"
+
+	buffer = buffer.slice(size + 1)
+	at = 0
 
 	# Reset flags
 	is_escape = false
 	is_quote = false
 
-	return result
+	if not is_terminated:
+		return TrimsockResult.Data.of_error(ERR_PARSE_ERROR,
+			"Expected newline after %d bytes of raw data!" % [size])
+
+	return TrimsockResult.Data.of_value(result)
 
 func chr() -> String:
 	return String.chr(buffer[at])

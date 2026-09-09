@@ -66,6 +66,7 @@ export class BunSocketReactor<SocketData = undefined> extends Reactor<
 
     return {
       socket: {
+        ...baseHandlers,
         data: (socket, data) => {
           baseHandlers.data?.call(baseHandlers.data, socket, data);
           this.ingest(data, socket);
@@ -75,6 +76,7 @@ export class BunSocketReactor<SocketData = undefined> extends Reactor<
         },
         close: (socket, error) => {
           baseHandlers.close?.call(baseHandlers.close, socket, error);
+          this.detach(socket);
         },
         drain: (socket) => {
           baseHandlers.drain?.call(baseHandlers.drain, socket);

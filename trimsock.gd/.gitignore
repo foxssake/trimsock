@@ -3,3 +3,5 @@
 
 # Only for local use
 sh/ensure-uids.sh
+
+.vscode/
